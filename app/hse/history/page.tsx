@@ -1,10 +1,9 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import { ArrowRight, Inbox } from 'lucide-react'
+import { Inbox } from 'lucide-react'
 
-export default async function HSEPage() {
+export default async function HSEHistoryPage() {
   const user = await requireRole(['hse'])
 
   const supabase = await createClient()
@@ -16,38 +15,38 @@ export default async function HSEPage() {
       customer,
       pk_number,
       rft_tr_job,
-      quantity,
       trip,
       status,
+      unit_decision,
       created_at,
-      order_requirements (
-        id,
-        vehicle_type,
-        quantity
-      ),
       order_trucks (
         id,
         vehicle_type,
-        no_buntut,
         source,
         status
       )
     `)
+    .neq('status', 'waiting_unit')
+    .neq('status', 'cancelled')
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('HSE ORDERS ERROR:', error)
+    console.error('GET HSE HISTORY ERROR:', error)
   }
 
-  const hseOrders = (orders || []).filter((order) => {
-    const trucks = (order.order_trucks || []).filter(
-      (truck) => truck.source === 'internal'
+  const historyOrders = (orders || []).filter((order) => {
+    if (!order.unit_decision) return false
+
+    const internalTrucks = (order.order_trucks || []).filter(
+      (truck) => truck.source === 'internal' && truck.status !== 'cancelled'
     )
 
-    return trucks.some(
+    const stillWaiting = internalTrucks.some(
       (truck) =>
         truck.status === 'waiting_hse' || truck.status === 'inspection'
     )
+
+    return !stillWaiting
   })
 
   const avatarColors = [
@@ -65,13 +64,73 @@ export default async function HSEPage() {
     return avatarColors[index]
   }
 
+  const getVehicleSummary = (order: (typeof historyOrders)[number]) => {
+    const internalTrucks = (order.order_trucks || []).filter(
+      (truck) => truck.source === 'internal' && truck.status !== 'cancelled'
+    )
+
+    if (internalTrucks.length === 0) {
+      return 'Full VM (tidak ada unit Internal)'
+    }
+
+    const counts: Record<string, number> = {}
+    for (const truck of internalTrucks) {
+      counts[truck.vehicle_type] = (counts[truck.vehicle_type] || 0) + 1
+    }
+
+    return Object.entries(counts)
+      .map(([type, count]) => `${type} (${count})`)
+      .join(', ')
+  }
+
+  const getVmCount = (order: (typeof historyOrders)[number]) => {
+    return (order.order_trucks || []).filter(
+      (truck) => truck.source === 'vendor' && truck.status !== 'cancelled'
+    ).length
+  }
+
+  const getResultBadge = (order: (typeof historyOrders)[number]) => {
+    const internalTrucks = (order.order_trucks || []).filter(
+      (truck) => truck.source === 'internal' && truck.status !== 'cancelled'
+    )
+
+    if (internalTrucks.length === 0) {
+      return (
+        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
+          Full VM — Tidak Perlu HSE
+        </span>
+      )
+    }
+
+    const failedCount = internalTrucks.filter(
+      (truck) => truck.status === 'failed'
+    ).length
+
+    if (failedCount > 0) {
+      return (
+        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+          {failedCount} Unit Failed
+        </span>
+      )
+    }
+
+    return (
+      <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+        Semua Passed
+      </span>
+    )
+  }
+
   return (
     <DashboardShell user={user}>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">HSE Orders</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Inspection History
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Daftar order yang masih memiliki unit yang menunggu pemeriksaan
-          HSE.
+          Order yang sudah tidak menunggu pemeriksaan HSE lagi — sudah
+          selesai diperiksa, atau memang full-VM sehingga tidak pernah butuh
+          pemeriksaan.
         </p>
       </div>
 
@@ -87,60 +146,23 @@ export default async function HSEPage() {
                   PK / RFT
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Kendaraan
+                  Kendaraan Internal
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Progress
+                  VM
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Trip
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Action
+                  Hasil
                 </th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-gray-50">
-              {hseOrders.map((order) => {
-                const trucks = order.order_trucks || []
-
-                const activeTrucks = trucks.filter(
-                  (truck) =>
-                    truck.status !== 'cancelled' &&
-                    truck.source === 'internal'
-                )
-
-                const total = activeTrucks.length
-
-                const passed = activeTrucks.filter(
-                  (truck) => truck.status === 'ready_loading'
-                ).length
-
-                const failed = activeTrucks.filter(
-                  (truck) => truck.status === 'failed'
-                ).length
-
-                const waiting = activeTrucks.filter(
-                  (truck) =>
-                    truck.status === 'waiting_hse' ||
-                    truck.status === 'inspection'
-                ).length
-
-                const vehicleCounts: Record<string, number> = {}
-
-                for (const truck of activeTrucks) {
-                  const vehicleType = truck.vehicle_type || 'Unknown'
-                  vehicleCounts[vehicleType] =
-                    (vehicleCounts[vehicleType] || 0) + 1
-                }
-
-                const vehicleSummary = Object.entries(vehicleCounts)
-                  .map(([vehicleType, count]) => `${vehicleType} (${count})`)
-                  .join(', ')
+              {historyOrders.map((order) => {
+                const vmCount = getVmCount(order)
 
                 return (
                   <tr
@@ -168,53 +190,31 @@ export default async function HSEPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      {vehicleSummary || '-'}
+                      {getVehicleSummary(order)}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-semibold text-gray-900">
-                        {passed} / {total} Passed
-                      </div>
-                      <div className="mt-1 text-xs text-gray-400">
-                        {waiting} Waiting
-                        {failed > 0 && <>{' · '}{failed} Failed</>}
-                      </div>
+                      {vmCount > 0 ? (
+                        <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700">
+                          VM {vmCount}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-gray-600">{order.trip}</td>
-                    <td className="px-6 py-4">
-                      {waiting > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
-                          Waiting HSE
-                        </span>
-                      )}
-                      {waiting === 0 && failed > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
-                          Ada Unit Failed
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Link
-                        href={`/hse/orders/${order.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#01236A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#01236A]/85"
-                      >
-                        Detail
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    </td>
+                    <td className="px-6 py-4">{getResultBadge(order)}</td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
 
-          {!hseOrders.length && (
+          {!historyOrders.length && (
             <div className="flex flex-col items-center gap-3 p-14 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <Inbox className="h-6 w-6" />
               </div>
-              <p className="text-sm text-gray-400">
-                Tidak ada unit yang menunggu pemeriksaan HSE.
-              </p>
+              <p className="text-sm text-gray-400">Belum ada history HSE.</p>
             </div>
           )}
         </div>

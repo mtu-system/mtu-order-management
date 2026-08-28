@@ -1,8 +1,13 @@
 import { requireRole } from '@/lib/auth'
+import DashboardShell from '@/app/components/dashboard-shell'
 import CreateOrderForm from './create-order-form'
 
 export default async function CreateOrderPage() {
-  await requireRole(['marketing'])
+  const user = await requireRole(['marketing'])
 
-  return <CreateOrderForm />
+  return (
+    <DashboardShell user={user}>
+      <CreateOrderForm />
+    </DashboardShell>
+  )
 }

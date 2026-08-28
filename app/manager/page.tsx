@@ -32,7 +32,7 @@ export default async function ManagerPage() {
           />
 
           <DashboardCard
-            title="Ready Loading"
+            title="Menunggu SJ/UJ"
             value="0"
           />
         </div>

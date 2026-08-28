@@ -1,390 +1,276 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
+import {
+  ClipboardList,
+  ShieldCheck,
+  PackageCheck,
+  Truck,
+  AlertTriangle,
+} from 'lucide-react'
 
 export default async function MarketingPage() {
   const user = await requireRole(['marketing'])
 
   const supabase = await createClient()
 
-  // ==========================================
-  // 1. ORDER HARI INI
-  // ==========================================
+  const now = new Date()
 
-// ==========================================
-// 1. ORDER HARI INI
-// ==========================================
-
-// Hari ini berdasarkan WIB (Asia/Jakarta)
-const now = new Date()
-
-const jakartaDate = new Intl.DateTimeFormat(
-  'en-CA',
-  {
+  const jakartaDate = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Jakarta',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }
-).format(now)
+  }).format(now)
 
-// Awal hari WIB dalam UTC
-const startOfDay = new Date(
-  `${jakartaDate}T00:00:00+07:00`
-)
+  const startOfDay = new Date(`${jakartaDate}T00:00:00+07:00`)
+  const startOfNextDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
 
-// Awal besok WIB dalam UTC
-const startOfNextDay = new Date(
-  startOfDay.getTime() + 24 * 60 * 60 * 1000
-)
-
-const { count: todayCount } = await supabase
-  .from('orders')
-  .select('id', {
-    count: 'exact',
-    head: true,
-  })
-  .gte(
-    'created_at',
-    startOfDay.toISOString()
-  )
-  .lt(
-    'created_at',
-    startOfNextDay.toISOString()
-  )
-
-  // ==========================================
-  // 2. UNIT MENUNGGU HSE
-  // ==========================================
+  const { count: todayCount } = await supabase
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', startOfDay.toISOString())
+    .lt('created_at', startOfNextDay.toISOString())
 
   const { count: waitingHSECount } = await supabase
     .from('order_trucks')
-    .select('id', {
-      count: 'exact',
-      head: true,
-    })
+    .select('id', { count: 'exact', head: true })
     .eq('status', 'waiting_hse')
-
-  // ==========================================
-  // 3. UNIT READY LOADING
-  // ==========================================
 
   const { count: readyLoadingCount } = await supabase
     .from('order_trucks')
-    .select('id', {
-      count: 'exact',
-      head: true,
-    })
+    .select('id', { count: 'exact', head: true })
     .eq('status', 'ready_loading')
 
-  // ==========================================
-  // 4. UNIT SIAP BERANGKAT
-  // ==========================================
-
-  const { data: readyDepartureUnits, error } =
-    await supabase
-      .from('order_trucks')
-      .select(`
+  const { data: readyDepartureUnits, error } = await supabase
+    .from('order_trucks')
+    .select(`
+      id,
+      order_id,
+      vehicle_type,
+      no_buntut,
+      plate_number,
+      driver_name,
+      driver_phone,
+      status,
+      surat_jalan_distributed,
+      uang_jalan_distributed,
+      departure_ready_at,
+      orders (
         id,
-        order_id,
-        vehicle_type,
-        no_buntut,
-        plate_number,
-        driver_name,
-        driver_phone,
-        status,
-        surat_jalan_distributed,
-        uang_jalan_distributed,
-        departure_ready_at,
-        orders (
-          id,
-          customer,
-          pk_number,
-          rft_tr_job,
-          trip
-        )
-      `)
-      .eq('status', 'ready_to_depart')
-      .order('departure_ready_at', {
-        ascending: false,
-      })
+        customer,
+        pk_number,
+        rft_tr_job,
+        trip
+      )
+    `)
+    .eq('status', 'ready_to_depart')
+    .order('departure_ready_at', { ascending: false })
 
   if (error) {
-    console.error(
-      'MARKETING READY UNITS ERROR:',
-      error
-    )
+    console.error('MARKETING READY UNITS ERROR:', error)
   }
-
-  // ==========================================
-  // 5. UNIT FAILED
-  // ==========================================
 
   const { count: failedCount } = await supabase
     .from('order_trucks')
-    .select('id', {
-      count: 'exact',
-      head: true,
-    })
+    .select('id', { count: 'exact', head: true })
     .eq('status', 'failed')
+
+  const avatarColors = [
+    'bg-blue-100 text-blue-700',
+    'bg-violet-100 text-violet-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-amber-100 text-amber-700',
+    'bg-pink-100 text-pink-700',
+  ]
+
+  const getAvatarClass = (name: string) => {
+    const index =
+      name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+      avatarColors.length
+    return avatarColors[index]
+  }
 
   return (
     <DashboardShell user={user}>
-      <div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Dashboard Marketing
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Kelola dan monitor permintaan kendaraan.
+        </p>
+      </div>
 
-        {/* HEADER */}
-
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Dashboard Marketing
-          </h1>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Kelola dan monitor permintaan kendaraan.
+      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <ClipboardList className="h-5 w-5" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">Order Hari Ini</p>
+          <p className="mt-1 text-3xl font-bold text-gray-900">
+            {todayCount || 0}
           </p>
         </div>
 
-
-        {/* SUMMARY */}
-
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-5">
-
-          <DashboardCard
-            title="Order Hari Ini"
-            value={String(todayCount || 0)}
-          />
-
-          <DashboardCard
-            title="Waiting HSE"
-            value={String(waitingHSECount || 0)}
-          />
-
-          <DashboardCard
-            title="Ready Loading"
-            value={String(readyLoadingCount || 0)}
-          />
-
-          <DashboardCard
-            title="Ready to Depart"
-            value={String(
-              readyDepartureUnits?.length || 0
-            )}
-          />
-
-          <DashboardCard
-            title="Failed"
-            value={String(failedCount || 0)}
-          />
-
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">Waiting HSE</p>
+          <p className="mt-1 text-3xl font-bold text-gray-900">
+            {waitingHSECount || 0}
+          </p>
         </div>
 
-
-        {/* ==========================================
-            UNIT SIAP BERANGKAT
-        ========================================== */}
-
-        <div className="mt-8">
-
-          <div className="mb-5">
-
-            <h2 className="text-xl font-semibold text-gray-900">
-              Ready to Depart
-            </h2>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Unit yang sudah Passed HSE dan sudah
-              dipersiapkan Operational.
-            </p>
-
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <PackageCheck className="h-5 w-5" />
           </div>
+          <p className="text-sm font-medium text-gray-500">Menunggu SJ/UJ</p>
+          <p className="mt-1 text-3xl font-bold text-gray-900">
+            {readyLoadingCount || 0}
+          </p>
+        </div>
 
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+            <Truck className="h-5 w-5" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">
+            Ready to Depart
+          </p>
+          <p className="mt-1 text-3xl font-bold text-gray-900">
+            {readyDepartureUnits?.length || 0}
+          </p>
+        </div>
 
-          <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">Failed</p>
+          <p className="mt-1 text-3xl font-bold text-red-600">
+            {failedCount || 0}
+          </p>
+        </div>
+      </div>
 
+      <div>
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-gray-900">
+            Ready to Depart
+          </h2>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Unit yang sudah Passed HSE dan sudah dipersiapkan Operational.
+          </p>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-
-              <thead className="bg-gray-50">
-
+              <thead className="border-b border-gray-100 bg-gray-50">
                 <tr>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Customer
                   </th>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     PK / RFT
                   </th>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Unit
                   </th>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     No. Buntut
                   </th>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Plat
                   </th>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Driver
                   </th>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Trip
                   </th>
-
-                  <th className="px-5 py-4 text-left">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Status
                   </th>
-
                 </tr>
-
               </thead>
 
+              <tbody className="divide-y divide-gray-50">
+                {readyDepartureUnits?.map((truck: any) => {
+                  const order = truck.orders
 
-              <tbody>
-
-                {readyDepartureUnits?.map(
-                  (truck: any) => {
-
-                    const order =
-                      truck.orders
-
-                    return (
-
-                      <tr
-                        key={truck.id}
-                        className="border-t"
-                      >
-
-                        {/* CUSTOMER */}
-
-                        <td className="px-5 py-4 font-medium">
-                          {order?.customer || '-'}
-                        </td>
-
-
-                        {/* PK / RFT */}
-
-                        <td className="px-5 py-4">
-
-                          <div>
-                            {order?.pk_number || '-'}
+                  return (
+                    <tr
+                      key={truck.id}
+                      className="transition-colors hover:bg-gray-50/60"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${getAvatarClass(
+                              order?.customer || '-'
+                            )}`}
+                          >
+                            {(order?.customer || '-').charAt(0).toUpperCase()}
                           </div>
-
-                          <div className="text-xs text-gray-500">
-                            {order?.rft_tr_job || '-'}
-                          </div>
-
-                        </td>
-
-
-                        {/* UNIT */}
-
-                        <td className="px-5 py-4 font-medium">
-                          {truck.vehicle_type}
-                        </td>
-
-
-                        {/* NO BUNTUT */}
-
-                        <td className="px-5 py-4">
-                          {truck.no_buntut || '-'}
-                        </td>
-
-
-                        {/* PLAT */}
-
-                        <td className="px-5 py-4">
-                          {truck.plate_number || '-'}
-                        </td>
-
-
-                        {/* DRIVER */}
-
-                        <td className="px-5 py-4">
-
-                          <div>
-                            {truck.driver_name || '-'}
-                          </div>
-
-                          <div className="text-xs text-gray-500">
-                            {truck.driver_phone || '-'}
-                          </div>
-
-                        </td>
-
-
-                        {/* TRIP */}
-
-                        <td className="px-5 py-4">
-                          {order?.trip || '-'}
-                        </td>
-
-
-                        {/* STATUS */}
-
-                        <td className="px-5 py-4">
-
-                          <span className="inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
-                           Ready to Depart
+                          <span className="font-semibold text-gray-900">
+                            {order?.customer || '-'}
                           </span>
-
-                          <div className="mt-1 text-xs text-gray-500">
-                            SJ + UJ dibagikan
-                          </div>
-
-                        </td>
-
-                      </tr>
-
-                    )
-                  }
-                )}
-
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-gray-900">
+                          {order?.pk_number || '-'}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {order?.rft_tr_job || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-gray-900">
+                        {truck.vehicle_type}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {truck.no_buntut || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {truck.plate_number || '-'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-gray-900">
+                          {truck.driver_name || '-'}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {truck.driver_phone || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {order?.trip || '-'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
+                          Ready to Depart
+                        </span>
+                        <div className="mt-1 text-[11px] text-gray-400">
+                          SJ + UJ dibagikan
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
-
             </table>
 
-
             {!readyDepartureUnits?.length && (
-
-              <div className="p-10 text-center text-sm text-gray-500">
+              <div className="p-10 text-center text-sm text-gray-400">
                 Belum ada unit yang Ready to Depart.
               </div>
-
             )}
-
           </div>
-
         </div>
-
       </div>
     </DashboardShell>
-  )
-}
-
-
-function DashboardCard({
-  title,
-  value,
-}: {
-  title: string
-  value: string
-}) {
-  return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm">
-
-      <p className="text-sm text-gray-500">
-        {title}
-      </p>
-
-      <p className="mt-3 text-3xl font-bold text-gray-900">
-        {value}
-      </p>
-
-    </div>
   )
 }

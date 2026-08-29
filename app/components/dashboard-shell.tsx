@@ -15,6 +15,7 @@ import {
   BarChart3,
   ScrollText,
   Truck,
+  Activity,
 } from 'lucide-react'
 
 type DashboardShellProps = {
@@ -147,6 +148,7 @@ function getMenus(role: UserRole): MenuItem[] {
           href: '/marketing/orders/create',
           icon: PlusCircle,
         },
+        { label: 'Aktivitas', href: '/marketing/activity', icon: Activity },
         {
           label: 'Order History',
           href: '/marketing/orders/history',
@@ -162,12 +164,14 @@ function getMenus(role: UserRole): MenuItem[] {
           href: '/operational/orders',
           icon: ClipboardList,
         },
+        { label: 'Aktivitas', href: '/operational/activity', icon: Activity },
         { label: 'History', href: '/operational/history', icon: History },
       ]
 
     case 'hse':
       return [
         { label: 'Waiting Inspection', href: '/hse', icon: ShieldCheck },
+        { label: 'Aktivitas', href: '/hse/activity', icon: Activity },
         { label: 'Inspection History', href: '/hse/history', icon: History },
       ]
 

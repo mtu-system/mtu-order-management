@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import { ClipboardList, ArrowLeft, ArrowRight, Inbox } from 'lucide-react'
+import DashboardShell from '@/app/components/dashboard-shell'
+import { ArrowRight, Inbox } from 'lucide-react'
 
 export default async function OperationalOrdersPage() {
-  await requireRole(['operational'])
+  const user = await requireRole(['operational'])
 
   const supabase = await createClient()
 
@@ -33,159 +34,139 @@ export default async function OperationalOrdersPage() {
     console.error('OPERATIONAL ORDERS ERROR:', error)
   }
 
+  const avatarColors = [
+    'bg-blue-100 text-blue-700',
+    'bg-violet-100 text-violet-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-amber-100 text-amber-700',
+    'bg-pink-100 text-pink-700',
+  ]
+
+  const getAvatarClass = (name: string) => {
+    const index =
+      name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+      avatarColors.length
+    return avatarColors[index]
+  }
+
   return (
-    <main className="min-h-screen bg-[#f6f7fb] p-8">
-      <div className="mx-auto max-w-6xl">
-
-        {/* HEADER */}
-        <div className="mb-8 flex items-center gap-4 border-b border-gray-200 pb-6">
-
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm shadow-amber-200">
-            <ClipboardList className="h-5 w-5" />
-          </div>
-
-          <div>
-            <Link
-              href="/operational"
-              className="mb-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-700"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Control Tower
-            </Link>
-
-            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-              Operational Orders
-            </h1>
-
-            <p className="mt-0.5 text-sm text-gray-500">
-              Daftar order yang menunggu keputusan unit.
-            </p>
-          </div>
+    <DashboardShell user={user}>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Waiting Unit</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Daftar order yang menunggu keputusan unit dari Operational.
+          </p>
         </div>
 
-        {/* TABLE */}
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+        <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
+          {orders?.length || 0} Order
+        </span>
+      </div>
 
-              <thead className="border-b border-gray-200 bg-gray-50/80">
-                <tr>
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-gray-100 bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Customer
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  PK / RFT
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Kendaraan
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Quantity
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Trip
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Action
+                </th>
+              </tr>
+            </thead>
 
-                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Customer
-                  </th>
-
-                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    PK / RFT
-                  </th>
-
-                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Kendaraan
-                  </th>
-
-                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Quantity
-                  </th>
-
-                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Trip
-                  </th>
-
-                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Status
-                  </th>
-
-                  <th className="whitespace-nowrap px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Action
-                  </th>
-
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
-
-                {orders?.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="transition-colors hover:bg-gray-50/80"
-                  >
-
-                    {/* CUSTOMER */}
-                    <td className="px-5 py-4 font-medium text-gray-900">
-                      {order.customer}
-                    </td>
-
-                    {/* PK / RFT */}
-                    <td className="px-5 py-4">
-                      <div className="text-gray-900">
-                        {order.pk_number}
-                      </div>
-
-                      <div className="text-xs text-gray-500">
-                        {order.rft_tr_job || '-'}
-                      </div>
-                    </td>
-
-                    {/* KENDARAAN */}
-                    <td className="px-5 py-4 text-gray-600">
-                      {order.order_requirements
-                        ?.map(
-                          (item) =>
-                            `${item.vehicle_type} (${item.quantity})`
-                        )
-                        .join(', ') || '-'}
-                    </td>
-
-                    {/* QUANTITY */}
-                    <td className="px-5 py-4 font-medium text-gray-900">
-                      {order.quantity} Unit
-                    </td>
-
-                    {/* TRIP */}
-                    <td className="px-5 py-4 text-gray-600">
-                      {order.trip}
-                    </td>
-
-                    {/* STATUS */}
-                    <td className="px-5 py-4">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        Waiting Unit
-                      </span>
-                    </td>
-
-                    {/* ACTION */}
-                    <td className="px-5 py-4">
-                      <Link
-                        href={`/operational/orders/${order.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+            <tbody className="divide-y divide-gray-50">
+              {orders?.map((order) => (
+                <tr
+                  key={order.id}
+                  className="transition-colors hover:bg-gray-50/60"
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${getAvatarClass(
+                          order.customer
+                        )}`}
                       >
-                        Detail
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    </td>
+                        {order.customer.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-semibold text-gray-900">
+                        {order.customer}
+                      </span>
+                    </div>
+                  </td>
 
-                  </tr>
-                ))}
+                  <td className="px-6 py-4">
+                    <div className="text-gray-900">{order.pk_number}</div>
+                    <div className="text-xs text-gray-400">
+                      {order.rft_tr_job || '-'}
+                    </div>
+                  </td>
 
-              </tbody>
-            </table>
+                  <td className="px-6 py-4 text-gray-600">
+                    {order.order_requirements
+                      ?.map(
+                        (item) => `${item.vehicle_type} (${item.quantity})`
+                      )
+                      .join(', ') || '-'}
+                  </td>
 
-            {/* EMPTY STATE */}
-            {!orders?.length && (
-              <div className="flex flex-col items-center gap-3 p-14 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                  <Inbox className="h-6 w-6" />
-                </div>
-                <p className="text-sm text-gray-400">
-                  Tidak ada order yang menunggu unit.
-                </p>
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    {order.quantity} Unit
+                  </td>
+
+                  <td className="px-6 py-4 text-gray-600">{order.trip}</td>
+
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                      Waiting Unit
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 text-right">
+                    <Link
+                      href={`/operational/orders/${order.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#01236A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#01236A]/85"
+                    >
+                      Detail
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {!orders?.length && (
+            <div className="flex flex-col items-center gap-3 p-14 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <Inbox className="h-6 w-6" />
               </div>
-            )}
-
-          </div>
+              <p className="text-sm text-gray-400">
+                Tidak ada order yang menunggu unit.
+              </p>
+            </div>
+          )}
         </div>
       </div>
-    </main>
+    </DashboardShell>
   )
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/app/components/toast-provider'
 import { Truck, Save, Loader2 } from 'lucide-react'
 
 type Requirement = {
@@ -29,6 +30,7 @@ export default function UnitAllocationForm({
 }: UnitAllocationFormProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
 
   const [allocations, setAllocations] = useState<Allocation[]>(
     requirements.map((requirement) => ({
@@ -93,7 +95,8 @@ export default function UnitAllocationForm({
         allocation.internal + allocation.vendor + allocation.unavailable
 
       if (total !== required) {
-        alert(
+        toast.error(
+          'Alokasi Belum Sesuai',
           `${allocation.vehicle_type}: alokasi harus berjumlah ${required} unit. Saat ini ${total} unit.`
         )
         return
@@ -108,7 +111,7 @@ export default function UnitAllocationForm({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -137,8 +140,9 @@ export default function UnitAllocationForm({
         (existingLogs?.length ?? 0) > 0 || (existingTrucks?.length ?? 0) > 0
 
       if (hasExistingAllocation) {
-        alert(
-          'Alokasi untuk order ini sudah disimpan. Tidak dapat disimpan ulang.'
+        toast.warning(
+          'Sudah Pernah Disimpan',
+          'Alokasi untuk order ini sudah disimpan sebelumnya.'
         )
         router.refresh()
         return
@@ -156,7 +160,7 @@ export default function UnitAllocationForm({
 
       if (logError) {
         console.error('SAVE ALLOCATION LOG ERROR:', logError)
-        alert(logError.message)
+        toast.error('Gagal Menyimpan Alokasi', logError.message)
         return
       }
 
@@ -181,7 +185,7 @@ export default function UnitAllocationForm({
 
         if (vmError) {
           console.error('SAVE VM ERROR:', vmError)
-          alert(vmError.message)
+          toast.error('Gagal Menyimpan Unit Vendor', vmError.message)
           return
         }
       }
@@ -199,7 +203,7 @@ export default function UnitAllocationForm({
 
       if (orderError) {
         console.error('UPDATE ORDER STATUS ERROR:', orderError)
-        alert(orderError.message)
+        toast.error('Gagal Memperbarui Status Order', orderError.message)
         return
       }
 
@@ -223,17 +227,18 @@ export default function UnitAllocationForm({
         0
       )
 
-      alert(
-        `Alokasi berhasil disimpan.\n\n` +
-          `Internal: ${totalInternal} Unit\n` +
-          `VM: ${totalVm} Unit\n` +
-          `Tidak Tersedia: ${totalUnavailable} Unit`
+      toast.success(
+        'Alokasi Berhasil Disimpan',
+        `Internal: ${totalInternal} · VM: ${totalVm} · Tidak Tersedia: ${totalUnavailable}`
       )
 
       router.refresh()
     } catch (error) {
       console.error('SAVE ALLOCATION ERROR:', error)
-      alert('Terjadi kesalahan saat menyimpan alokasi unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menyimpan alokasi unit. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }

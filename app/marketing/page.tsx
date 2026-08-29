@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
+import RecentActivityFeed from '@/app/components/recent-activity-feed'
 import {
   ClipboardList,
   ShieldCheck,

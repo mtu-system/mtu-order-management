@@ -3,6 +3,7 @@ import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ArrowRight, Inbox } from 'lucide-react'
+import RecentActivityFeed from '@/app/components/recent-activity-feed'
 
 export default async function HSEPage() {
   const user = await requireRole(['hse'])

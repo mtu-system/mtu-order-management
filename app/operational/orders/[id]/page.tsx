@@ -7,17 +7,16 @@ import ChangeRequestReview from '@/app/operational/components/change-request-rev
 import UnitAllocationForm from '@/app/operational/components/unit-allocation-form'
 import UnitDecisionForm from '@/app/operational/components/unit-decision-form'
 import TruckDetailForm from '@/app/operational/components/truck-detail-form'
-import UnitProcessing from '@/app/operational/components/unit-processing'
+import ReadyLoadingUnitsTable from '@/app/operational/components/ready-loading-units-table'
 import FailedUnitResolution from '@/app/operational/components/failed-unit-resolution'
 import VMUnitsPanel from '@/app/components/vm-units-panel'
 import OrderHistoryTimeline from '@/app/components/order-history-timeline'
+import CollapsibleSection from '@/app/components/collapsible-section'
 
 import {
   ArrowLeft,
   FileText,
   Truck,
-  ClipboardList,
-  StickyNote,
   MessageSquare,
   Gauge,
   PackageCheck,
@@ -285,160 +284,112 @@ export default async function OperationalOrderDetailPage({
     <main className="min-h-screen bg-[#f6f7fb] p-8">
       <div className="mx-auto max-w-5xl">
         {/* HEADER */}
-        <div className="mb-8 border-b border-gray-100 pb-6">
+        <div className="mb-6 flex items-center gap-4">
           <Link
             href="/operational"
-            className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Kembali ke Control Tower
+            <ArrowLeft className="h-4 w-4" />
           </Link>
 
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#01236A] text-white shadow-sm">
-              <FileText className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                Detail Order
-              </h1>
-              <p className="mt-0.5 text-sm text-gray-500">
-                Monitor dan proses setiap unit dalam order.
-              </p>
-            </div>
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#01236A] text-white">
+            <FileText className="h-5 w-5" />
+          </div>
+
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-gray-900">
+              {order.customer}
+            </h1>
+            <p className="text-xs text-gray-500">
+              PK {order.pk_number} · Detail Order
+            </p>
           </div>
         </div>
 
-        {/* INFORMASI ORDER */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-5 flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-            <ClipboardList className="h-4.5 w-4.5 text-gray-400" />
-            Informasi Order
-          </h2>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* INFO + KEBUTUHAN — 1 KARTU RINGKAS */}
+        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Customer
-              </p>
-              <p className="mt-1.5 font-bold text-gray-900">
-                {order.customer}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Nomor PK
-              </p>
-              <p className="mt-1.5 font-bold text-gray-900">
-                {order.pk_number}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                 RFT / TR / Job
               </p>
-              <p className="mt-1.5 font-bold text-gray-900">
+              <p className="text-sm font-bold text-gray-900">
                 {order.rft_tr_job || '-'}
               </p>
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                 Trip
               </p>
-              <p className="mt-1.5 font-bold text-gray-900">{order.trip}</p>
+              <p className="text-sm font-bold text-gray-900">{order.trip}</p>
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Status Order
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                Status
               </p>
-              <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
                 {order.status}
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                 Dibuat Oleh
               </p>
-              <p className="mt-1.5 font-bold text-gray-900">
+              <p className="text-sm font-bold text-gray-900">
                 {order.created_by === user.id ? 'Anda' : order.created_by}
               </p>
             </div>
           </div>
-        </div>
 
-        {/* KEBUTUHAN KENDARAAN */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-              <Truck className="h-4.5 w-4.5 text-gray-400" />
-              Kebutuhan Kendaraan
-            </h2>
-            <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-3 py-1.5 text-xs font-bold text-[#01236A]">
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
+            <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              Kebutuhan:
+            </span>
+
+            {Object.entries(requirementSummary).map(
+              ([vehicleType, quantity]) => (
+                <span
+                  key={vehicleType}
+                  className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
+                >
+                  {vehicleType} · {quantity} Unit
+                </span>
+              )
+            )}
+
+            <span className="ml-auto inline-flex items-center rounded-full bg-[#01236A]/10 px-3 py-1 text-xs font-bold text-[#01236A]">
               Total {totalRequiredUnits} Unit
             </span>
           </div>
-
-          <div className="overflow-hidden rounded-xl border border-gray-100">
-            <table className="w-full text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    No
-                  </th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Jenis Kendaraan
-                  </th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                    Kebutuhan
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {Object.entries(requirementSummary).map(
-                  ([vehicleType, quantity], index) => (
-                    <tr key={vehicleType}>
-                      <td className="px-4 py-3 text-gray-600">{index + 1}</td>
-                      <td className="px-4 py-3 font-bold text-gray-900">
-                        {vehicleType}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {quantity} Unit
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
 
-        {/* INSTRUKSI & CATATAN */}
-        <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="mb-3 flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-              <MessageSquare className="h-4.5 w-4.5 text-gray-400" />
-              Instruksi
-            </h2>
-            <p className="whitespace-pre-wrap text-sm text-gray-600">
-              {order.instruction || '-'}
-            </p>
+        {/* INSTRUKSI & CATATAN — COLLAPSIBLE */}
+        <CollapsibleSection
+          title="Instruksi & Catatan"
+          icon={<MessageSquare className="h-4.5 w-4.5" />}
+        >
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Instruksi
+              </p>
+              <p className="whitespace-pre-wrap text-sm text-gray-600">
+                {order.instruction || '-'}
+              </p>
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Catatan
+              </p>
+              <p className="whitespace-pre-wrap text-sm text-gray-600">
+                {order.notes || '-'}
+              </p>
+            </div>
           </div>
-
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="mb-3 flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-              <StickyNote className="h-4.5 w-4.5 text-gray-400" />
-              Catatan
-            </h2>
-            <p className="whitespace-pre-wrap text-sm text-gray-600">
-              {order.notes || '-'}
-            </p>
-          </div>
-        </div>
+        </CollapsibleSection>
 
         {/* KEPUTUSAN UNIT */}
         {!order.unit_decision && (
@@ -521,24 +472,18 @@ export default async function OperationalOrderDetailPage({
           </div>
         )}
 
-        {/* HISTORY INTERNAL */}
+        {/* HISTORY UNIT INTERNAL — COLLAPSIBLE */}
         {historyInternalTrucks.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-                  <History className="h-4.5 w-4.5 text-gray-400" />
-                  History Unit Internal
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Unit internal yang sudah diinformasikan oleh Operational.
-                </p>
-              </div>
-              <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-3 py-1.5 text-xs font-bold text-[#01236A]">
+          <CollapsibleSection
+            title="History Unit Internal"
+            subtitle="Unit internal yang sudah diinformasikan oleh Operational."
+            icon={<History className="h-4.5 w-4.5" />}
+            badge={
+              <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#01236A]">
                 {historyInternalTrucks.length} Unit
               </span>
-            </div>
-
+            }
+          >
             <div className="space-y-3">
               {historyInternalTrucks.map((truck, index) => (
                 <div
@@ -573,7 +518,7 @@ export default async function OperationalOrderDetailPage({
                 </div>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
         )}
 
         {/* FORM DETAIL INTERNAL YANG MASIH KURANG */}
@@ -603,7 +548,7 @@ export default async function OperationalOrderDetailPage({
           </div>
         )}
 
-        {/* UNIT VENDOR / VM (READ ONLY, SHARED) */}
+        {/* UNIT VENDOR / VM (COLLAPSIBLE, KOMPONEN SENDIRI) */}
         <VMUnitsPanel orderId={order.id} />
 
         {/* REQUEST PERUBAHAN MARKETING */}
@@ -714,51 +659,36 @@ export default async function OperationalOrderDetailPage({
           </div>
         )}
 
-        {/* UNIT SIAP DIPROSES */}
+               {/* UNIT SIAP DIPROSES — TABEL RINGKAS */}
         {readyLoadingTrucks.length > 0 && (
-          <div className="mb-6">
-            <div className="mb-5">
-              <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-                <PackageCheck className="h-4.5 w-4.5 text-gray-400" />
-                Unit Siap Diproses
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Unit yang sudah Passed HSE dapat langsung diproses.
-              </p>
-            </div>
-
-            <div className="space-y-5">
-              {readyLoadingTrucks.map((truck) => (
-                <UnitProcessing
-                  key={truck.id}
-                  truck={{
-                    id: truck.id,
-                    order_id: truck.order_id,
-                    vehicle_type: truck.vehicle_type,
-                    no_buntut: truck.no_buntut,
-                    plate_number: truck.plate_number,
-                    driver_name: truck.driver_name,
-                    driver_phone: truck.driver_phone,
-                    status: truck.status,
-                    surat_jalan_distributed:
-                      truck.surat_jalan_distributed ?? false,
-                    uang_jalan_distributed:
-                      truck.uang_jalan_distributed ?? false,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
+          <ReadyLoadingUnitsTable
+            units={readyLoadingTrucks.map((truck) => ({
+              id: truck.id,
+              order_id: truck.order_id,
+              vehicle_type: truck.vehicle_type,
+              no_buntut: truck.no_buntut,
+              plate_number: truck.plate_number,
+              driver_name: truck.driver_name,
+              driver_phone: truck.driver_phone,
+              status: truck.status,
+              surat_jalan_distributed:
+                truck.surat_jalan_distributed ?? false,
+              uang_jalan_distributed: truck.uang_jalan_distributed ?? false,
+            }))}
+          />
         )}
 
-        {/* UNIT READY TO DEPART */}
+        {/* UNIT READY TO DEPART — COLLAPSIBLE */}
         {readyToDepartTrucks.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-              <Truck className="h-4.5 w-4.5 text-gray-400" />
-              Unit Ready to Depart
-            </h2>
-
+          <CollapsibleSection
+            title="Unit Ready to Depart"
+            icon={<Truck className="h-4.5 w-4.5" />}
+            badge={
+              <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-bold text-violet-700">
+                {readyToDepartTrucks.length} Unit
+              </span>
+            }
+          >
             <div className="space-y-3">
               {readyToDepartTrucks.map((truck, index) => (
                 <div
@@ -781,7 +711,7 @@ export default async function OperationalOrderDetailPage({
                 </div>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
         )}
 
         {/* BELUM ADA UNIT PASSED */}
@@ -804,7 +734,7 @@ export default async function OperationalOrderDetailPage({
             </div>
           )}
 
-        {/* RIWAYAT UNIT & ORDER */}
+        {/* RIWAYAT UNIT & ORDER — COLLAPSIBLE, KOMPONEN SENDIRI */}
         <OrderHistoryTimeline orderId={order.id} />
       </div>
     </main>

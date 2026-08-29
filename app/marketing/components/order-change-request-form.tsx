@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/app/components/toast-provider'
 import { Send, Loader2 } from 'lucide-react'
 
 type OrderChangeRequestFormProps = {
@@ -45,6 +46,7 @@ export default function OrderChangeRequestForm({
 }: OrderChangeRequestFormProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
 
   const [vehicleOptions, setVehicleOptions] = useState<VehicleOption[]>([])
 
@@ -85,7 +87,7 @@ export default function OrderChangeRequestForm({
     if (saving) return
 
     if (!changeType) {
-      alert('Jenis perubahan wajib dipilih.')
+      toast.error('Data Belum Lengkap', 'Jenis perubahan wajib dipilih.')
       return
     }
 
@@ -95,7 +97,7 @@ export default function OrderChangeRequestForm({
         changeType === 'change_vehicle') &&
       !vehicleType
     ) {
-      alert('Jenis kendaraan wajib dipilih.')
+      toast.error('Data Belum Lengkap', 'Jenis kendaraan wajib dipilih.')
       return
     }
 
@@ -109,12 +111,12 @@ export default function OrderChangeRequestForm({
     ]
 
     if (valueChangeTypes.includes(changeType) && !requestedValue.trim()) {
-      alert('Nilai perubahan wajib diisi.')
+      toast.error('Data Belum Lengkap', 'Nilai perubahan wajib diisi.')
       return
     }
 
     if (!reason.trim()) {
-      alert('Alasan perubahan wajib diisi.')
+      toast.error('Data Belum Lengkap', 'Alasan perubahan wajib diisi.')
       return
     }
 
@@ -124,13 +126,13 @@ export default function OrderChangeRequestForm({
       requestedQuantity !== null &&
       (!Number.isInteger(requestedQuantity) || requestedQuantity <= 0)
     ) {
-      alert('Jumlah perubahan tidak valid.')
+      toast.error('Jumlah Tidak Valid', 'Jumlah perubahan tidak valid.')
       return
     }
 
     if (changeType === 'reduce_unit') {
       if (requestedQuantity === null) {
-        alert('Jumlah unit wajib diisi.')
+        toast.error('Data Belum Lengkap', 'Jumlah unit wajib diisi.')
         return
       }
 
@@ -141,7 +143,8 @@ export default function OrderChangeRequestForm({
       const availableQuantity = selectedVehicle?.quantity || 0
 
       if (requestedQuantity > availableQuantity) {
-        alert(
+        toast.error(
+          'Jumlah Melebihi Batas',
           `Jumlah ${vehicleType} yang dapat dikurangi maksimal ${availableQuantity} unit.`
         )
         return
@@ -149,28 +152,32 @@ export default function OrderChangeRequestForm({
     }
 
     if (changeType === 'add_unit' && requestedQuantity === null) {
-      alert('Jumlah unit wajib diisi.')
+      toast.error('Data Belum Lengkap', 'Jumlah unit wajib diisi.')
       return
     }
 
     if (changeType === 'change_vehicle') {
       if (!currentVehicleType) {
-        alert('Jenis kendaraan saat ini wajib dipilih.')
+        toast.error(
+          'Data Belum Lengkap',
+          'Jenis kendaraan saat ini wajib dipilih.'
+        )
         return
       }
 
       if (!vehicleType) {
-        alert('Jenis kendaraan baru wajib dipilih.')
+        toast.error('Data Belum Lengkap', 'Jenis kendaraan baru wajib dipilih.')
         return
       }
 
       if (requestedQuantity === null) {
-        alert('Jumlah unit wajib diisi.')
+        toast.error('Data Belum Lengkap', 'Jumlah unit wajib diisi.')
         return
       }
 
       if (currentVehicleType === vehicleType) {
-        alert(
+        toast.error(
+          'Data Tidak Valid',
           'Jenis kendaraan baru harus berbeda dari jenis kendaraan saat ini.'
         )
         return
@@ -183,7 +190,8 @@ export default function OrderChangeRequestForm({
       const availableQuantity = currentVehicle?.quantity || 0
 
       if (requestedQuantity > availableQuantity) {
-        alert(
+        toast.error(
+          'Jumlah Melebihi Batas',
           `Jumlah ${currentVehicleType} yang dapat diganti maksimal ${availableQuantity} unit.`
         )
         return
@@ -198,7 +206,7 @@ export default function OrderChangeRequestForm({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -224,7 +232,10 @@ export default function OrderChangeRequestForm({
 
       if (error || !request) {
         console.error('CREATE CHANGE REQUEST ERROR:', error)
-        alert(error?.message || 'Request perubahan gagal dibuat.')
+        toast.error(
+          'Gagal Mengirim Permintaan',
+          error?.message || 'Request perubahan gagal dibuat.'
+        )
         return
       }
 
@@ -245,7 +256,7 @@ export default function OrderChangeRequestForm({
 
         if (applyError) {
           console.error('AUTO APPLY CHANGE REQUEST ERROR:', applyError)
-          alert(applyError.message)
+          toast.error('Gagal Menerapkan Perubahan', applyError.message)
           return
         }
 
@@ -281,11 +292,15 @@ export default function OrderChangeRequestForm({
       }
 
       if (autoApplied) {
-        alert(
+        toast.success(
+          'Perubahan Diterapkan',
           'Perubahan berhasil diterapkan langsung karena belum ada detail truk.'
         )
       } else {
-        alert('Permintaan perubahan berhasil dikirim ke Operational.')
+        toast.success(
+          'Permintaan Terkirim',
+          'Permintaan perubahan berhasil dikirim ke Operational.'
+        )
       }
 
       setChangeType('')
@@ -298,7 +313,10 @@ export default function OrderChangeRequestForm({
       router.refresh()
     } catch (error) {
       console.error('CHANGE REQUEST ERROR:', error)
-      alert('Terjadi kesalahan saat mengirim permintaan perubahan.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal mengirim permintaan perubahan. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }
@@ -314,7 +332,7 @@ export default function OrderChangeRequestForm({
   )
 
   const inputClass =
-    'w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10'
+    'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10'
 
   const labelClass =
     'mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500'

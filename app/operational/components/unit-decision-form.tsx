@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/app/components/toast-provider'
 import {
   Save,
   Loader2,
@@ -73,6 +74,7 @@ export default function UnitDecisionForm({
 
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -89,24 +91,21 @@ export default function UnitDecisionForm({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
       const statusMap = {
         available: 'waiting_unit',
         partial: 'waiting_unit',
-        vendor: 'vendor_process',
         unavailable: 'pending',
       } as const
 
       const nextStatus =
-        statusMap[
-          decision as keyof typeof statusMap
-        ]
+        statusMap[decision as keyof typeof statusMap]
 
       if (!nextStatus) {
-        alert('Keputusan tidak valid.')
+        toast.error('Keputusan Tidak Valid', 'Silakan pilih ulang keputusan unit.')
         return
       }
 
@@ -123,16 +122,19 @@ export default function UnitDecisionForm({
 
       if (error) {
         console.error('UPDATE DECISION ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Menyimpan Keputusan', error.message)
         return
       }
 
-      alert('Keputusan berhasil disimpan.')
+      toast.success('Keputusan Tersimpan', 'Keputusan unit berhasil disimpan.')
 
       router.refresh()
     } catch (error) {
       console.error('DECISION ERROR:', error)
-      alert('Terjadi kesalahan saat menyimpan keputusan.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menyimpan keputusan. Silakan coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -140,7 +142,6 @@ export default function UnitDecisionForm({
 
   return (
     <form onSubmit={handleSubmit} className="mt-5 space-y-6">
-      {/* PILIHAN KEPUTUSAN */}
       <div>
         <label className="mb-3 block text-xs font-semibold uppercase tracking-wide text-gray-500">
           Keputusan Unit
@@ -184,7 +185,6 @@ export default function UnitDecisionForm({
         </div>
       </div>
 
-      {/* CATATAN */}
       <div>
         <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500">
           Catatan Keputusan
@@ -200,7 +200,6 @@ export default function UnitDecisionForm({
         />
       </div>
 
-      {/* BUTTON */}
       <button
         type="submit"
         disabled={!decision || loading}

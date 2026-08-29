@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/app/components/toast-provider'
 import { MinusCircle, Loader2, CheckCircle2 } from 'lucide-react'
 
 type Truck = {
@@ -36,6 +37,7 @@ export default function ReduceUnitForm({
 }: ReduceUnitFormProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
 
   const [selectedTruckIds, setSelectedTruckIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
@@ -55,7 +57,10 @@ export default function ReduceUnitForm({
       }
 
       if (current.length >= requestedQuantity) {
-        alert(`Maksimal ${requestedQuantity} unit yang boleh dipilih.`)
+        toast.warning(
+          'Batas Maksimal',
+          `Maksimal ${requestedQuantity} unit yang boleh dipilih.`
+        )
         return current
       }
 
@@ -67,17 +72,26 @@ export default function ReduceUnitForm({
     if (saving) return
 
     if (selectedTruckIds.length !== requestedQuantity) {
-      alert(`Pilih tepat ${requestedQuantity} unit terlebih dahulu.`)
+      toast.error(
+        'Pilihan Belum Lengkap',
+        `Pilih tepat ${requestedQuantity} unit terlebih dahulu.`
+      )
       return
     }
 
     if (requestedQuantity > requirementQuantity) {
-      alert(`Jumlah pengurangan melebihi kebutuhan ${requestedVehicleType}.`)
+      toast.error(
+        'Jumlah Tidak Valid',
+        `Jumlah pengurangan melebihi kebutuhan ${requestedVehicleType}.`
+      )
       return
     }
 
     if (requestedQuantity > currentOrderQuantity) {
-      alert('Jumlah pengurangan melebihi total unit order.')
+      toast.error(
+        'Jumlah Tidak Valid',
+        'Jumlah pengurangan melebihi total unit order.'
+      )
       return
     }
 
@@ -89,7 +103,7 @@ export default function ReduceUnitForm({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -106,12 +120,13 @@ export default function ReduceUnitForm({
         .in('id', selectedTruckIds)
 
       if (truckFetchError) {
-        alert(truckFetchError.message)
+        toast.error('Gagal Memuat Data Unit', truckFetchError.message)
         return
       }
 
       if (!currentTrucks || currentTrucks.length !== requestedQuantity) {
-        alert(
+        toast.error(
+          'Data Berubah',
           'Data unit berubah. Silakan refresh halaman dan pilih ulang unit.'
         )
         return
@@ -126,7 +141,8 @@ export default function ReduceUnitForm({
       )
 
       if (invalidTruck) {
-        alert(
+        toast.error(
+          'Unit Tidak Tersedia',
           'Salah satu unit sudah tidak dapat dibatalkan. Silakan pilih ulang.'
         )
         return
@@ -155,7 +171,7 @@ export default function ReduceUnitForm({
 
       if (updateTruckError) {
         console.error('CANCEL TRUCK ERROR:', updateTruckError)
-        alert(updateTruckError.message)
+        toast.error('Gagal Membatalkan Unit', updateTruckError.message)
         return
       }
 
@@ -181,7 +197,7 @@ export default function ReduceUnitForm({
             .eq('id', truck.id)
         }
 
-        alert(requirementError.message)
+        toast.error('Gagal Memperbarui Kebutuhan', requirementError.message)
         return
       }
 
@@ -203,7 +219,7 @@ export default function ReduceUnitForm({
 
       if (orderError) {
         console.error('UPDATE ORDER ERROR:', orderError)
-        alert(orderError.message)
+        toast.error('Gagal Memperbarui Order', orderError.message)
         return
       }
 
@@ -236,21 +252,26 @@ export default function ReduceUnitForm({
 
       if (logError) {
         console.error('REDUCE ACTIVITY LOG ERROR:', logError)
-        alert(
+        toast.warning(
+          'Pengurangan Berhasil, Log Gagal',
           `Pengurangan berhasil diproses, tetapi activity log gagal disimpan: ${logError.message}`
         )
         router.refresh()
         return
       }
 
-      alert(
+      toast.success(
+        'Pengurangan Berhasil',
         `Berhasil mengurangi ${requestedQuantity} ${requestedVehicleType}.`
       )
 
       router.refresh()
     } catch (error) {
       console.error('REDUCE UNIT ERROR:', error)
-      alert('Terjadi kesalahan saat memproses pengurangan unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal memproses pengurangan unit. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }

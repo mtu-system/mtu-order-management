@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/app/components/toast-provider'
+import { useConfirm } from '@/app/components/confirm-dialog-provider'
 import {
   AlertTriangle,
   Check,
@@ -83,6 +85,8 @@ export default function ChangeRequestReview({
 }: ChangeRequestReviewProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [selectedTruckIds, setSelectedTruckIds] = useState<string[]>([])
 
@@ -160,7 +164,10 @@ export default function ChangeRequestReview({
 
   function validateNewUnits() {
     if (newUnits.length !== requestedQuantity) {
-      alert(`Detail ${requestedQuantity} unit harus diisi.`)
+      toast.error(
+        'Data Belum Lengkap',
+        `Detail ${requestedQuantity} unit harus diisi.`
+      )
       return false
     }
 
@@ -168,27 +175,42 @@ export default function ChangeRequestReview({
       const unit = newUnits[index]
 
       if (!unit.vehicle_type.trim()) {
-        alert(`Jenis kendaraan Unit ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Jenis kendaraan Unit ${index + 1} wajib diisi.`
+        )
         return false
       }
 
       if (!unit.plate_number.trim()) {
-        alert(`Plat nomor Unit ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Plat nomor Unit ${index + 1} wajib diisi.`
+        )
         return false
       }
 
       if (!unit.driver_name.trim()) {
-        alert(`Nama driver Unit ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Nama driver Unit ${index + 1} wajib diisi.`
+        )
         return false
       }
 
       if (!unit.driver_phone.trim()) {
-        alert(`No. HP driver Unit ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `No. HP driver Unit ${index + 1} wajib diisi.`
+        )
         return false
       }
 
       if (unit.source === 'vendor' && !unit.vendor_name.trim()) {
-        alert(`Nama vendor Unit ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Nama vendor Unit ${index + 1} wajib diisi.`
+        )
         return false
       }
     }
@@ -199,13 +221,21 @@ export default function ChangeRequestReview({
   async function handleApproveWithoutTrucks() {
     if (loading) return
 
-    const confirmed = window.confirm(
-      request.change_type === 'reduce_unit'
-        ? `Kurangi ${requestedQuantity} unit dari order ini?\n\nDetail kendaraan belum diisi Operational, jadi sistem akan langsung mengurangi kebutuhan unit.`
-        : request.change_type === 'add_unit'
-        ? `Tambahkan ${requestedQuantity} unit ke kebutuhan order ini?\n\nDetail kendaraan belum diisi Operational, jadi sistem hanya akan menambah kebutuhan unit.`
-        : `Ubah ${requestedQuantity} unit menjadi ${request.requested_vehicle_type}?\n\nDetail kendaraan belum diisi Operational, jadi sistem hanya akan mengubah kebutuhan unit.`
-    )
+    const confirmed = await confirm({
+      title:
+        request.change_type === 'reduce_unit'
+          ? 'Kurangi Unit?'
+          : request.change_type === 'add_unit'
+          ? 'Tambah Unit?'
+          : 'Ganti Jenis Unit?',
+      message:
+        request.change_type === 'reduce_unit'
+          ? `Kurangi ${requestedQuantity} unit dari order ini? Detail kendaraan belum diisi Operational, jadi sistem akan langsung mengurangi kebutuhan unit.`
+          : request.change_type === 'add_unit'
+          ? `Tambahkan ${requestedQuantity} unit ke kebutuhan order ini? Detail kendaraan belum diisi Operational, jadi sistem hanya akan menambah kebutuhan unit.`
+          : `Ubah ${requestedQuantity} unit menjadi ${request.requested_vehicle_type}? Detail kendaraan belum diisi Operational, jadi sistem hanya akan mengubah kebutuhan unit.`,
+      confirmLabel: 'Ya, Lanjutkan',
+    })
 
     if (!confirmed) return
 
@@ -217,7 +247,7 @@ export default function ChangeRequestReview({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -228,7 +258,7 @@ export default function ChangeRequestReview({
 
       if (error) {
         console.error('APPLY CHANGE WITHOUT TRUCK ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Menerapkan Perubahan', error.message)
         return
       }
 
@@ -273,16 +303,19 @@ export default function ChangeRequestReview({
       }
 
       if (request.change_type === 'reduce_unit') {
-        alert(
-          `${requestedQuantity} unit berhasil dikurangi.\n\nDetail truck belum ada, jadi perubahan langsung diterapkan ke jumlah kebutuhan order.`
+        toast.success(
+          'Unit Berhasil Dikurangi',
+          `${requestedQuantity} unit berhasil dikurangi dari kebutuhan order.`
         )
       } else if (request.change_type === 'add_unit') {
-        alert(
-          `${requestedQuantity} unit berhasil ditambahkan.\n\nDetail truck belum ada, jadi kebutuhan unit langsung diperbarui.`
+        toast.success(
+          'Unit Berhasil Ditambahkan',
+          `${requestedQuantity} unit berhasil ditambahkan ke kebutuhan order.`
         )
       } else {
-        alert(
-          `${requestedQuantity} unit berhasil diubah menjadi ${request.requested_vehicle_type}.\n\nDetail truck belum ada, jadi perubahan langsung diterapkan ke kebutuhan order.`
+        toast.success(
+          'Jenis Unit Berhasil Diubah',
+          `${requestedQuantity} unit berhasil diubah menjadi ${request.requested_vehicle_type}.`
         )
       }
 
@@ -293,7 +326,10 @@ export default function ChangeRequestReview({
       router.refresh()
     } catch (error) {
       console.error('AUTO CHANGE WITHOUT TRUCK ERROR:', error)
-      alert('Terjadi kesalahan saat menerapkan perubahan tanpa detail truck.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menerapkan perubahan tanpa detail truck.'
+      )
     } finally {
       setLoading(false)
     }
@@ -308,13 +344,19 @@ export default function ChangeRequestReview({
     }
 
     if (selectedTruckIds.length !== requestedQuantity) {
-      alert(`Pilih tepat ${requestedQuantity} unit yang akan dikurangi.`)
+      toast.error(
+        'Pilihan Belum Lengkap',
+        `Pilih tepat ${requestedQuantity} unit yang akan dikurangi.`
+      )
       return
     }
 
-    const confirmed = window.confirm(
-      `Kurangi ${requestedQuantity} unit dari order ini?`
-    )
+    const confirmed = await confirm({
+      title: 'Kurangi Unit?',
+      message: `Kurangi ${requestedQuantity} unit dari order ini? Unit yang dipilih akan ditandai Cancelled.`,
+      confirmLabel: 'Ya, Kurangi',
+      danger: true,
+    })
 
     if (!confirmed) return
 
@@ -326,7 +368,7 @@ export default function ChangeRequestReview({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -337,7 +379,7 @@ export default function ChangeRequestReview({
         .single()
 
       if (orderBeforeError) {
-        alert(orderBeforeError.message)
+        toast.error('Gagal Memuat Data Order', orderBeforeError.message)
         return
       }
 
@@ -347,7 +389,7 @@ export default function ChangeRequestReview({
         .in('id', selectedTruckIds)
 
       if (trucksBeforeError) {
-        alert(trucksBeforeError.message)
+        toast.error('Gagal Memuat Data Unit', trucksBeforeError.message)
         return
       }
 
@@ -358,7 +400,7 @@ export default function ChangeRequestReview({
 
       if (error) {
         console.error('APPROVE REDUCE UNIT ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Menyetujui Pengurangan', error.message)
         return
       }
 
@@ -410,14 +452,20 @@ export default function ChangeRequestReview({
         console.error('ACTIVITY LOG ERROR:', logError)
       }
 
-      alert('Permintaan pengurangan unit berhasil disetujui dan diterapkan.')
+      toast.success(
+        'Pengurangan Disetujui',
+        'Permintaan pengurangan unit berhasil disetujui dan diterapkan.'
+      )
 
       setSelectedTruckIds([])
 
       router.refresh()
     } catch (error) {
       console.error('APPROVE REDUCE ERROR:', error)
-      alert('Terjadi kesalahan saat memproses pengurangan unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal memproses pengurangan unit. Silakan coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -435,9 +483,11 @@ export default function ChangeRequestReview({
       return
     }
 
-    const confirmed = window.confirm(
-      `Tambahkan ${requestedQuantity} unit baru ke order ini?`
-    )
+    const confirmed = await confirm({
+      title: 'Tambah Unit Baru?',
+      message: `Tambahkan ${requestedQuantity} unit baru ke order ini dengan status Waiting HSE?`,
+      confirmLabel: 'Ya, Tambahkan',
+    })
 
     if (!confirmed) return
 
@@ -449,7 +499,7 @@ export default function ChangeRequestReview({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -460,7 +510,7 @@ export default function ChangeRequestReview({
         .single()
 
       if (orderBeforeError) {
-        alert(orderBeforeError.message)
+        toast.error('Gagal Memuat Data Order', orderBeforeError.message)
         return
       }
 
@@ -470,7 +520,7 @@ export default function ChangeRequestReview({
         .eq('order_id', orderId)
 
       if (trucksBeforeError) {
-        alert(trucksBeforeError.message)
+        toast.error('Gagal Memuat Data Unit', trucksBeforeError.message)
         return
       }
 
@@ -494,7 +544,7 @@ export default function ChangeRequestReview({
 
       if (error) {
         console.error('APPROVE ADD UNIT ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Menambahkan Unit', error.message)
         return
       }
 
@@ -505,7 +555,7 @@ export default function ChangeRequestReview({
         .single()
 
       if (orderAfterError) {
-        alert(orderAfterError.message)
+        toast.error('Gagal Memuat Data Order', orderAfterError.message)
         return
       }
 
@@ -560,8 +610,9 @@ export default function ChangeRequestReview({
         console.error('ADD UNIT ACTIVITY LOG ERROR:', activityError)
       }
 
-      alert(
-        `${requestedQuantity} unit berhasil ditambahkan.\n\nStatus unit baru: Waiting HSE`
+      toast.success(
+        'Unit Berhasil Ditambahkan',
+        `${requestedQuantity} unit berhasil ditambahkan dengan status Waiting HSE.`
       )
 
       setNewUnits([])
@@ -569,7 +620,10 @@ export default function ChangeRequestReview({
       router.refresh()
     } catch (error) {
       console.error('APPROVE ADD UNIT ERROR:', error)
-      alert('Terjadi kesalahan saat menambahkan unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menambahkan unit. Silakan coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -579,7 +633,7 @@ export default function ChangeRequestReview({
     if (loading) return
 
     if (!request.requested_vehicle_type) {
-      alert('Jenis kendaraan baru belum ditentukan.')
+      toast.error('Data Tidak Valid', 'Jenis kendaraan baru belum ditentukan.')
       return
     }
 
@@ -589,12 +643,18 @@ export default function ChangeRequestReview({
     }
 
     if (selectedTruckIds.length !== requestedQuantity) {
-      alert(`Pilih tepat ${requestedQuantity} unit yang akan diganti.`)
+      toast.error(
+        'Pilihan Belum Lengkap',
+        `Pilih tepat ${requestedQuantity} unit yang akan diganti.`
+      )
       return
     }
 
     if (replacementUnits.length !== requestedQuantity) {
-      alert(`Detail ${requestedQuantity} unit pengganti harus diisi.`)
+      toast.error(
+        'Data Belum Lengkap',
+        `Detail ${requestedQuantity} unit pengganti harus diisi.`
+      )
       return
     }
 
@@ -603,7 +663,8 @@ export default function ChangeRequestReview({
     )
 
     if (selectedTrucks.length !== requestedQuantity) {
-      alert(
+      toast.error(
+        'Data Berubah',
         'Sebagian unit yang dipilih sudah tidak tersedia. Silakan refresh halaman.'
       )
       return
@@ -616,7 +677,8 @@ export default function ChangeRequestReview({
         unit.vehicle_type.trim().toLowerCase() !==
         request.requested_vehicle_type.trim().toLowerCase()
       ) {
-        alert(
+        toast.error(
+          'Data Belum Sesuai',
           `Jenis kendaraan Unit Pengganti ${
             index + 1
           } harus ${request.requested_vehicle_type}.`
@@ -625,22 +687,34 @@ export default function ChangeRequestReview({
       }
 
       if (!unit.plate_number.trim()) {
-        alert(`Plat nomor Unit Pengganti ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Plat nomor Unit Pengganti ${index + 1} wajib diisi.`
+        )
         return
       }
 
       if (!unit.driver_name.trim()) {
-        alert(`Nama driver Unit Pengganti ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Nama driver Unit Pengganti ${index + 1} wajib diisi.`
+        )
         return
       }
 
       if (!unit.driver_phone.trim()) {
-        alert(`No. HP driver Unit Pengganti ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `No. HP driver Unit Pengganti ${index + 1} wajib diisi.`
+        )
         return
       }
 
       if (unit.source === 'vendor' && !unit.vendor_name.trim()) {
-        alert(`Nama vendor Unit Pengganti ${index + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Nama vendor Unit Pengganti ${index + 1} wajib diisi.`
+        )
         return
       }
     }
@@ -652,15 +726,18 @@ export default function ChangeRequestReview({
           request.requested_vehicle_type!.trim().toLowerCase()
       )
     ) {
-      alert(
+      toast.error(
+        'Data Tidak Valid',
         'Jenis kendaraan baru sama dengan jenis kendaraan pada salah satu unit yang dipilih.'
       )
       return
     }
 
-    const confirmed = window.confirm(
-      `Ganti ${requestedQuantity} unit menjadi ${request.requested_vehicle_type}?\n\nUnit lama akan Cancelled dan unit pengganti akan dibuat dengan status Waiting HSE.`
-    )
+    const confirmed = await confirm({
+      title: 'Ganti Jenis Unit?',
+      message: `Ganti ${requestedQuantity} unit menjadi ${request.requested_vehicle_type}? Unit lama akan Cancelled dan unit pengganti akan dibuat dengan status Waiting HSE.`,
+      confirmLabel: 'Ya, Ganti Unit',
+    })
 
     if (!confirmed) return
 
@@ -672,7 +749,7 @@ export default function ChangeRequestReview({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -696,7 +773,7 @@ export default function ChangeRequestReview({
 
       if (error) {
         console.error('APPROVE CHANGE VEHICLE ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Mengganti Jenis Unit', error.message)
         return
       }
 
@@ -776,8 +853,9 @@ export default function ChangeRequestReview({
         console.error('CHANGE VEHICLE ACTIVITY LOG ERROR:', activityError)
       }
 
-      alert(
-        `${requestedQuantity} unit berhasil diganti menjadi ${request.requested_vehicle_type}.\n\nUnit lama: Cancelled\nUnit baru: Waiting HSE`
+      toast.success(
+        'Jenis Unit Berhasil Diganti',
+        `${requestedQuantity} unit berhasil diganti menjadi ${request.requested_vehicle_type}.`
       )
 
       setSelectedTruckIds([])
@@ -786,7 +864,10 @@ export default function ChangeRequestReview({
       router.refresh()
     } catch (error) {
       console.error('CHANGE VEHICLE ERROR:', error)
-      alert('Terjadi kesalahan saat mengganti jenis unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal mengganti jenis unit. Silakan coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -795,9 +876,13 @@ export default function ChangeRequestReview({
   async function handleCancelOrder() {
     if (loading) return
 
-    const confirmed = window.confirm(
-      'Yakin order ini dibatalkan? Semua unit yang masih aktif akan ditandai cancelled.'
-    )
+    const confirmed = await confirm({
+      title: 'Batalkan Order Ini?',
+      message:
+        'Semua unit yang masih aktif akan ditandai Cancelled. Tindakan ini tidak dapat dibatalkan.',
+      confirmLabel: 'Ya, Batalkan Order',
+      danger: true,
+    })
 
     if (!confirmed) return
 
@@ -809,7 +894,7 @@ export default function ChangeRequestReview({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -821,7 +906,7 @@ export default function ChangeRequestReview({
 
       if (trucksError) {
         console.error('GET ACTIVE TRUCKS ERROR:', trucksError)
-        alert(trucksError.message)
+        toast.error('Gagal Memuat Data Unit', trucksError.message)
         return
       }
 
@@ -832,7 +917,7 @@ export default function ChangeRequestReview({
         .single()
 
       if (orderBeforeError) {
-        alert(orderBeforeError.message)
+        toast.error('Gagal Memuat Data Order', orderBeforeError.message)
         return
       }
 
@@ -848,7 +933,7 @@ export default function ChangeRequestReview({
         .eq('status', orderBefore.status)
 
       if (orderError) {
-        alert(orderError.message)
+        toast.error('Gagal Membatalkan Order', orderError.message)
         return
       }
 
@@ -866,7 +951,7 @@ export default function ChangeRequestReview({
 
         if (truckError) {
           console.error('CANCEL TRUCKS ERROR:', truckError)
-          alert(truckError.message)
+          toast.error('Gagal Membatalkan Unit', truckError.message)
           return
         }
       }
@@ -900,7 +985,7 @@ export default function ChangeRequestReview({
         .eq('id', request.id)
 
       if (requestError) {
-        alert(requestError.message)
+        toast.error('Gagal Memperbarui Status Request', requestError.message)
         return
       }
 
@@ -918,12 +1003,15 @@ export default function ChangeRequestReview({
         console.error('ACTIVITY CANCEL LOG ERROR:', activityError)
       }
 
-      alert('Order berhasil dibatalkan.')
+      toast.success('Order Dibatalkan', 'Order berhasil dibatalkan.')
 
       router.refresh()
     } catch (error) {
       console.error('CANCEL ORDER ERROR:', error)
-      alert('Terjadi kesalahan saat membatalkan order.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal membatalkan order. Silakan coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -942,20 +1030,22 @@ export default function ChangeRequestReview({
     ]
 
     if (!valueChangeTypes.includes(request.change_type)) {
-      alert('Jenis perubahan ini tidak didukung.')
+      toast.error('Tidak Didukung', 'Jenis perubahan ini tidak didukung.')
       return
     }
 
     if (!request.requested_value?.trim()) {
-      alert('Nilai perubahan belum diisi.')
+      toast.error('Data Belum Lengkap', 'Nilai perubahan belum diisi.')
       return
     }
 
-    const confirmed = window.confirm(
-      `Setujui perubahan ${
+    const confirmed = await confirm({
+      title: 'Setujui Perubahan?',
+      message: `Setujui perubahan ${
         changeTypeLabels[request.change_type] || request.change_type
-      }?`
-    )
+      }? Nilai baru akan diterapkan langsung ke order.`,
+      confirmLabel: 'Ya, Setujui',
+    })
 
     if (!confirmed) return
 
@@ -967,7 +1057,7 @@ export default function ChangeRequestReview({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -983,7 +1073,7 @@ export default function ChangeRequestReview({
       const fieldName = fieldMap[request.change_type]
 
       if (!fieldName) {
-        alert('Field perubahan tidak ditemukan.')
+        toast.error('Data Tidak Valid', 'Field perubahan tidak ditemukan.')
         return
       }
 
@@ -1001,7 +1091,10 @@ export default function ChangeRequestReview({
         .single()
 
       if (orderBeforeError || !orderBefore) {
-        alert(orderBeforeError?.message || 'Data order tidak ditemukan.')
+        toast.error(
+          'Gagal Memuat Data Order',
+          orderBeforeError?.message || 'Data order tidak ditemukan.'
+        )
         return
       }
 
@@ -1019,7 +1112,7 @@ export default function ChangeRequestReview({
         .eq('id', orderId)
 
       if (updateError) {
-        alert(updateError.message)
+        toast.error('Gagal Menerapkan Perubahan', updateError.message)
         return
       }
 
@@ -1029,7 +1122,7 @@ export default function ChangeRequestReview({
         .eq('id', request.id)
 
       if (requestError) {
-        alert(requestError.message)
+        toast.error('Gagal Memperbarui Status Request', requestError.message)
         return
       }
 
@@ -1061,12 +1154,18 @@ export default function ChangeRequestReview({
         console.error('VALUE CHANGE ACTIVITY LOG ERROR:', activityError)
       }
 
-      alert('Perubahan order berhasil disetujui dan diterapkan.')
+      toast.success(
+        'Perubahan Disetujui',
+        'Perubahan order berhasil disetujui dan diterapkan.'
+      )
 
       router.refresh()
     } catch (error) {
       console.error('APPROVE VALUE CHANGE ERROR:', error)
-      alert('Terjadi kesalahan saat menerapkan perubahan order.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menerapkan perubahan order. Silakan coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -1075,7 +1174,12 @@ export default function ChangeRequestReview({
   async function handleReject() {
     if (loading) return
 
-    const confirmed = window.confirm('Tolak permintaan perubahan ini?')
+    const confirmed = await confirm({
+      title: 'Tolak Permintaan Ini?',
+      message: 'Permintaan perubahan ini akan ditandai sebagai ditolak.',
+      confirmLabel: 'Ya, Tolak',
+      danger: true,
+    })
 
     if (!confirmed) return
 
@@ -1087,7 +1191,7 @@ export default function ChangeRequestReview({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -1097,7 +1201,7 @@ export default function ChangeRequestReview({
         .eq('id', request.id)
 
       if (error) {
-        alert(error.message)
+        toast.error('Gagal Menolak Permintaan', error.message)
         return
       }
 
@@ -1109,12 +1213,15 @@ export default function ChangeRequestReview({
         new_value: 'Rejected',
       })
 
-      alert('Permintaan perubahan ditolak.')
+      toast.success('Permintaan Ditolak', 'Permintaan perubahan berhasil ditolak.')
 
       router.refresh()
     } catch (error) {
       console.error('REJECT CHANGE ERROR:', error)
-      alert('Terjadi kesalahan saat menolak request.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menolak request. Silakan coba lagi.'
+      )
     } finally {
       setLoading(false)
     }
@@ -1125,7 +1232,6 @@ export default function ChangeRequestReview({
 
   return (
     <div className="mb-6 overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm">
-      {/* HEADER */}
       <div className="border-b border-amber-100 bg-amber-50/60 px-6 py-4">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
@@ -1144,7 +1250,6 @@ export default function ChangeRequestReview({
         </p>
       </div>
 
-      {/* CONTENT */}
       <div className="p-6">
         <div className="mb-5 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -1196,7 +1301,6 @@ export default function ChangeRequestReview({
           </p>
         </div>
 
-        {/* INFO TANPA DETAIL TRUCK */}
         {!hasTruckDetails &&
           ['reduce_unit', 'add_unit', 'change_vehicle'].includes(
             request.change_type
@@ -1222,7 +1326,6 @@ export default function ChangeRequestReview({
             </div>
           )}
 
-        {/* REDUCE UNIT */}
         {request.change_type === 'reduce_unit' && (
           <div>
             {hasTruckDetails ? (
@@ -1345,7 +1448,6 @@ export default function ChangeRequestReview({
           </div>
         )}
 
-        {/* CHANGE VEHICLE */}
         {request.change_type === 'change_vehicle' && (
           <div className="mt-5">
             <div className="mb-4">
@@ -1666,7 +1768,7 @@ export default function ChangeRequestReview({
                       replacementUnits.length !== requestedQuantity)) ||
                   !request.requested_vehicle_type
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1683,7 +1785,6 @@ export default function ChangeRequestReview({
           </div>
         )}
 
-        {/* ADD UNIT */}
         {request.change_type === 'add_unit' && (
           <div className="mt-5">
             {hasTruckDetails ? (
@@ -1908,7 +2009,6 @@ export default function ChangeRequestReview({
           </div>
         )}
 
-        {/* VALUE CHANGE */}
         {[
           'change_trip',
           'change_pk',
@@ -1963,7 +2063,6 @@ export default function ChangeRequestReview({
           </div>
         )}
 
-        {/* CANCEL ORDER */}
         {request.change_type === 'cancel_order' && (
           <div className="mt-5">
             <div className="rounded-xl border border-red-200 bg-red-50 p-5">

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { History as HistoryIcon } from 'lucide-react'
+import CollapsibleSection from './collapsible-section'
 
 type OrderHistoryTimelineProps = {
   orderId: string
@@ -19,6 +20,7 @@ const actionLabels: Record<string, string> = {
   replace_failed_unit: 'Ganti Detail Truk (Unit Failed)',
   failed_unit_to_vendor: 'Unit Failed Dialihkan ke Vendor',
   cancel_failed_unit: 'Unit Failed Dibatalkan',
+  hse_inspection: 'Pemeriksaan HSE',
 }
 
 export default async function OrderHistoryTimeline({
@@ -74,18 +76,17 @@ export default async function OrderHistoryTimeline({
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-      <div className="mb-5">
-        <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-          <HistoryIcon className="h-4.5 w-4.5 text-gray-400" />
-          Riwayat Unit & Order
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Semua perubahan tercatat di sini dan bisa dilihat oleh Marketing,
-          Operational, dan HSE.
-        </p>
-      </div>
-
+    <CollapsibleSection
+      id="riwayat"
+      title="Riwayat Unit & Order"
+      subtitle="Semua perubahan tercatat di sini dan bisa dilihat oleh Marketing, Operational, dan HSE."
+      icon={<HistoryIcon className="h-4.5 w-4.5" />}
+      badge={
+        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-bold text-gray-600">
+          {combined.length} entri
+        </span>
+      }
+    >
       <div className="space-y-3">
         {combined.map((item) => (
           <div
@@ -118,6 +119,6 @@ export default async function OrderHistoryTimeline({
           </div>
         ))}
       </div>
-    </div>
+    </CollapsibleSection>
   )
 }

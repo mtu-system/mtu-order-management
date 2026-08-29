@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/app/components/toast-provider'
 import {
   Save,
   Loader2,
@@ -10,6 +11,7 @@ import {
   XCircle,
   Clock3,
 } from 'lucide-react'
+import { logUnitHistory } from '@/lib/history'
 
 type Inspection = {
   result: string
@@ -68,6 +70,13 @@ const colorClasses: Record<string, ColorClass> = {
   },
 }
 
+function formatResultLabel(result: string | null | undefined) {
+  if (result === 'passed') return 'Passed'
+  if (result === 'failed') return 'Failed'
+  if (result === 'on_going') return 'On Going'
+  return 'Belum Diperiksa'
+}
+
 export default function InspectionForm({
   truckId,
   orderId,
@@ -75,6 +84,7 @@ export default function InspectionForm({
 }: InspectionFormProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
 
   const [result, setResult] = useState(initialInspection?.result || '')
   const [notes, setNotes] = useState(initialInspection?.notes || '')
@@ -88,7 +98,7 @@ export default function InspectionForm({
     if (saving) return
 
     if (!result) {
-      alert('Hasil pemeriksaan wajib dipilih.')
+      toast.error('Data Belum Lengkap', 'Hasil pemeriksaan wajib dipilih.')
       return
     }
 
@@ -100,7 +110,7 @@ export default function InspectionForm({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -119,18 +129,8 @@ export default function InspectionForm({
 
       if (inspectionError) {
         console.error('SAVE INSPECTION ERROR:', inspectionError)
-        alert(inspectionError.message)
+        toast.error('Gagal Menyimpan Pemeriksaan', inspectionError.message)
         return
-      }
-
-      let unitStatus = 'waiting_hse'
-
-      if (result === 'passed') {
-        unitStatus = 'ready_loading'
-      } else if (result === 'failed') {
-        unitStatus = 'failed'
-      } else if (result === 'on_going') {
-        unitStatus = 'inspection'
       }
 
       let truckStatus = 'waiting_hse'
@@ -150,9 +150,20 @@ export default function InspectionForm({
 
       if (truckStatusError) {
         console.error('UPDATE TRUCK STATUS ERROR:', truckStatusError)
-        alert(truckStatusError.message)
+        toast.error('Gagal Memperbarui Status Unit', truckStatusError.message)
         return
       }
+
+      await logUnitHistory({
+        truckId,
+        orderId,
+        action: 'hse_inspection',
+        fieldName: 'status',
+        oldValue: formatResultLabel(initialInspection?.result),
+        newValue: formatResultLabel(result),
+        reason: notes.trim() || 'Tidak ada catatan dari HSE.',
+        changedBy: user.id,
+      })
 
       if (result === 'passed') {
         const { data: trucks, error: trucksError } = await supabase
@@ -162,7 +173,7 @@ export default function InspectionForm({
 
         if (trucksError) {
           console.error('CHECK ORDER TRUCKS ERROR:', trucksError)
-          alert(trucksError.message)
+          toast.error('Gagal Memeriksa Status Order', trucksError.message)
           return
         }
 
@@ -186,23 +197,29 @@ export default function InspectionForm({
 
           if (orderStatusError) {
             console.error('UPDATE ORDER STATUS ERROR:', orderStatusError)
-            alert(orderStatusError.message)
+            toast.error(
+              'Gagal Memperbarui Status Order',
+              orderStatusError.message
+            )
             return
           }
         }
       }
 
-      alert(
-        `Pemeriksaan berhasil disimpan.\n\n` +
-          `Unit: ${truckId}\n` +
-          `Hasil HSE: ${result}\n` +
-          `Status Unit: ${unitStatus}`
+      const resultLabel = formatResultLabel(result)
+
+      toast.success(
+        'Pemeriksaan Tersimpan',
+        `Hasil "${resultLabel}" berhasil disimpan untuk unit ini.`
       )
 
       router.refresh()
     } catch (error) {
       console.error('INSPECTION ERROR:', error)
-      alert('Terjadi kesalahan saat menyimpan pemeriksaan.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menyimpan pemeriksaan. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }

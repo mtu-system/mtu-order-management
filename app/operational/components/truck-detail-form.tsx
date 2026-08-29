@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/app/components/toast-provider'
 import { Truck as TruckIcon, Save, Loader2, Info } from 'lucide-react'
 
 type Requirement = {
@@ -29,6 +30,7 @@ export default function TruckDetailForm({
 }: TruckDetailFormProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
 
   const [trucks, setTrucks] = useState<Truck[]>(() =>
     requirements.flatMap((requirement) =>
@@ -62,17 +64,26 @@ export default function TruckDetailForm({
       const truck = trucks[i]
 
       if (!truck.plate_number.trim()) {
-        alert(`Plat Nomor Unit ${i + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Plat Nomor Unit ${i + 1} wajib diisi.`
+        )
         return
       }
 
       if (!truck.driver_name.trim()) {
-        alert(`Nama Driver Unit ${i + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `Nama Driver Unit ${i + 1} wajib diisi.`
+        )
         return
       }
 
       if (!truck.driver_phone.trim()) {
-        alert(`No. HP Driver Unit ${i + 1} wajib diisi.`)
+        toast.error(
+          'Data Belum Lengkap',
+          `No. HP Driver Unit ${i + 1} wajib diisi.`
+        )
         return
       }
     }
@@ -98,7 +109,7 @@ export default function TruckDetailForm({
 
       if (truckError) {
         console.error('SAVE INTERNAL TRUCK ERROR:', truckError)
-        alert(truckError.message)
+        toast.error('Gagal Menyimpan Detail Unit', truckError.message)
         return
       }
 
@@ -109,19 +120,23 @@ export default function TruckDetailForm({
 
       if (orderError) {
         console.error('UPDATE ORDER STATUS ERROR:', orderError)
-        alert(orderError.message)
+        toast.error('Gagal Memperbarui Status Order', orderError.message)
         return
       }
 
-      alert(
-        `Detail ${trucks.length} unit Internal berhasil disimpan dan dikirim ke HSE.`
+      toast.success(
+        'Detail Unit Tersimpan',
+        `${trucks.length} unit Internal berhasil disimpan dan dikirim ke HSE.`
       )
 
       router.push('/operational')
       router.refresh()
     } catch (error) {
       console.error('SAVE DETAIL UNIT ERROR:', error)
-      alert('Terjadi kesalahan saat menyimpan detail unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal menyimpan detail unit. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }

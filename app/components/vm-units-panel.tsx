@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { Building2 } from 'lucide-react'
+import CollapsibleSection from './collapsible-section'
 
 type VMUnitsPanelProps = {
   orderId: string
@@ -33,24 +34,16 @@ export default async function VMUnitsPanel({ orderId }: VMUnitsPanelProps) {
   }
 
   return (
-    <div className="mb-6 rounded-2xl border border-violet-100 bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-            <Building2 className="h-4.5 w-4.5 text-violet-500" />
-            Unit Vendor / VM
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Unit yang dipenuhi oleh Vendor. Tidak masuk pemeriksaan HSE
-            internal.{' '}
-            <span className="font-semibold text-gray-600">Read Only</span>
-          </p>
-        </div>
-        <span className="inline-flex items-center rounded-full bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700">
-          {trucks.length} Unit VM
+    <CollapsibleSection
+      title="Unit Vendor / VM"
+      subtitle="Unit yang dipenuhi oleh Vendor — Read Only"
+      icon={<Building2 className="h-4.5 w-4.5" />}
+      badge={
+        <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-bold text-violet-700">
+          {trucks.length} Unit
         </span>
-      </div>
-
+      }
+    >
       <div className="space-y-3">
         {trucks.map((truck, index) => (
           <div
@@ -84,6 +77,6 @@ export default async function VMUnitsPanel({ orderId }: VMUnitsPanelProps) {
           </div>
         ))}
       </div>
-    </div>
+    </CollapsibleSection>
   )
 }

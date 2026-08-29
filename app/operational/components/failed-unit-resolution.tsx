@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/app/components/toast-provider'
+import { useConfirm } from '@/app/components/confirm-dialog-provider'
 import {
   RefreshCw,
   Ban,
@@ -30,6 +32,8 @@ export default function FailedUnitResolution({
 }: FailedUnitResolutionProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [mode, setMode] = useState<Mode>(null)
   const [plateNumber, setPlateNumber] = useState('')
@@ -37,11 +41,28 @@ export default function FailedUnitResolution({
   const [driverPhone, setDriverPhone] = useState('')
   const [saving, setSaving] = useState(false)
 
+  async function getHseReason() {
+    const { data: inspection } = await supabase
+      .from('inspections')
+      .select('notes')
+      .eq('truck_id', truck.id)
+      .maybeSingle()
+
+    const notes = inspection?.notes?.trim()
+
+    return notes
+      ? `Alasan HSE: ${notes}`
+      : 'Alasan HSE: tidak ada catatan.'
+  }
+
   async function handleReplace() {
     if (saving) return
 
     if (!plateNumber.trim() || !driverName.trim() || !driverPhone.trim()) {
-      alert('Plat nomor, nama driver, dan No. HP wajib diisi.')
+      toast.error(
+        'Data Belum Lengkap',
+        'Plat nomor, nama driver, dan No. HP wajib diisi.'
+      )
       return
     }
 
@@ -53,9 +74,11 @@ export default function FailedUnitResolution({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
+
+      const hseReason = await getHseReason()
 
       const { error } = await supabase
         .from('order_trucks')
@@ -71,7 +94,7 @@ export default function FailedUnitResolution({
 
       if (error) {
         console.error('REPLACE FAILED UNIT ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Mengganti Detail Truk', error.message)
         return
       }
 
@@ -99,16 +122,22 @@ export default function FailedUnitResolution({
         fieldName: 'plate_number',
         oldValue: `${truck.plate_number || '-'} · ${truck.driver_name || '-'}`,
         newValue: `${plateNumber.trim()} · ${driverName.trim()}`,
-        reason: 'Unit Failed HSE - detail truk diganti oleh Operational',
+        reason: `${hseReason} Tindakan Operational: detail truk diganti, dikirim ulang ke HSE.`,
         changedBy: user.id,
       })
 
-      alert('Detail truk berhasil diganti. Unit dikirim ulang ke HSE.')
+      toast.success(
+        'Detail Truk Diganti',
+        'Unit dikirim ulang ke HSE untuk pemeriksaan.'
+      )
 
       router.refresh()
     } catch (error) {
       console.error('REPLACE FAILED UNIT ERROR:', error)
-      alert('Terjadi kesalahan saat mengganti detail truk.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal mengganti detail truk. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }
@@ -117,9 +146,11 @@ export default function FailedUnitResolution({
   async function handleUseVendor() {
     if (saving) return
 
-    const confirmed = window.confirm(
-      `Ganti unit ${truck.vehicle_type} ini menjadi Vendor / VM? Unit tidak akan masuk pemeriksaan HSE.`
-    )
+    const confirmed = await confirm({
+      title: 'Alihkan ke Vendor / VM?',
+      message: `Unit ${truck.vehicle_type} ini akan diganti menjadi Vendor / VM dan tidak akan masuk pemeriksaan HSE.`,
+      confirmLabel: 'Ya, Alihkan',
+    })
 
     if (!confirmed) return
 
@@ -131,9 +162,11 @@ export default function FailedUnitResolution({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
+
+      const hseReason = await getHseReason()
 
       const { error } = await supabase
         .from('order_trucks')
@@ -152,7 +185,7 @@ export default function FailedUnitResolution({
 
       if (error) {
         console.error('USE VENDOR FOR FAILED UNIT ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Mengalihkan ke Vendor', error.message)
         return
       }
 
@@ -176,16 +209,22 @@ export default function FailedUnitResolution({
         fieldName: 'source',
         oldValue: `Internal (Failed) · ${truck.plate_number || '-'}`,
         newValue: 'Vendor / VM',
-        reason: 'Unit Failed HSE - dialihkan ke Vendor oleh Operational',
+        reason: `${hseReason} Tindakan Operational: dialihkan ke Vendor / VM.`,
         changedBy: user.id,
       })
 
-      alert('Unit berhasil diganti menjadi Vendor / VM.')
+      toast.success(
+        'Unit Dialihkan ke Vendor',
+        `${truck.vehicle_type} sekarang tercatat sebagai Vendor / VM.`
+      )
 
       router.refresh()
     } catch (error) {
       console.error('USE VENDOR FOR FAILED UNIT ERROR:', error)
-      alert('Terjadi kesalahan saat mengganti unit ke Vendor.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal mengalihkan unit ke Vendor. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }
@@ -194,9 +233,12 @@ export default function FailedUnitResolution({
   async function handleCancel() {
     if (saving) return
 
-    const confirmed = window.confirm(
-      `Batalkan unit ${truck.vehicle_type} ini? Kebutuhan kendaraan akan dikurangi 1.`
-    )
+    const confirmed = await confirm({
+      title: 'Batalkan Unit Ini?',
+      message: `Unit ${truck.vehicle_type} akan dibatalkan dan kebutuhan kendaraan dikurangi 1. Tindakan ini tidak dapat dibatalkan.`,
+      confirmLabel: 'Ya, Batalkan',
+      danger: true,
+    })
 
     if (!confirmed) return
 
@@ -208,9 +250,11 @@ export default function FailedUnitResolution({
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
+
+      const hseReason = await getHseReason()
 
       const { error: truckError } = await supabase
         .from('order_trucks')
@@ -218,14 +262,14 @@ export default function FailedUnitResolution({
           status: 'cancelled',
           cancelled_by: user.id,
           cancelled_at: new Date().toISOString(),
-          cancel_reason: 'Unit Failed HSE - dibatalkan Operational',
+          cancel_reason: hseReason,
         })
         .eq('id', truck.id)
         .eq('status', 'failed')
 
       if (truckError) {
         console.error('CANCEL FAILED UNIT ERROR:', truckError)
-        alert(truckError.message)
+        toast.error('Gagal Membatalkan Unit', truckError.message)
         return
       }
 
@@ -297,7 +341,7 @@ export default function FailedUnitResolution({
         fieldName: 'status',
         oldValue: `Failed · ${truck.vehicle_type} · ${truck.plate_number || '-'}`,
         newValue: 'Cancelled',
-        reason: 'Unit Failed HSE - dibatalkan oleh Operational',
+        reason: `${hseReason} Tindakan Operational: unit dibatalkan, kebutuhan dikurangi 1.`,
         changedBy: user.id,
       })
 
@@ -308,17 +352,23 @@ export default function FailedUnitResolution({
           fieldName: 'quantity',
           oldValue: String(orderData.quantity),
           newValue: String(newOrderQuantity),
-          reason: 'Unit Failed HSE - dibatalkan, kebutuhan dikurangi 1',
+          reason: `${hseReason} Tindakan Operational: unit dibatalkan, kebutuhan dikurangi 1.`,
           changedBy: user.id,
         })
       }
 
-      alert('Unit berhasil dibatalkan.')
+      toast.success(
+        'Unit Dibatalkan',
+        `${truck.vehicle_type} berhasil dibatalkan.`
+      )
 
       router.refresh()
     } catch (error) {
       console.error('CANCEL FAILED UNIT ERROR:', error)
-      alert('Terjadi kesalahan saat membatalkan unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal membatalkan unit. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }

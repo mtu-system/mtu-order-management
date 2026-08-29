@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/app/components/toast-provider'
 import { PlusCircle, Trash2, Save } from 'lucide-react'
 
 type VehicleRequirement = {
@@ -27,6 +28,8 @@ const vehicleTypes = [
 
 export default function CreateOrderForm() {
   const router = useRouter()
+  const toast = useToast()
+
   const [requirements, setRequirements] = useState<VehicleRequirement[]>([
     {
       id: 1,
@@ -116,7 +119,7 @@ export default function CreateOrderForm() {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      alert('Session login tidak ditemukan.')
+      toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
       return
     }
 
@@ -148,7 +151,7 @@ export default function CreateOrderForm() {
 
     if (error) {
       console.error('CREATE ORDER ERROR:', error)
-      alert(error.message)
+      toast.error('Gagal Membuat Order', error.message)
       return
     }
 
@@ -167,7 +170,7 @@ export default function CreateOrderForm() {
 
     if (requirementError) {
       console.error('CREATE REQUIREMENTS ERROR:', requirementError)
-      alert(requirementError.message)
+      toast.error('Gagal Menyimpan Kebutuhan Kendaraan', requirementError.message)
       return
     }
 
@@ -187,17 +190,25 @@ export default function CreateOrderForm() {
 
     if (activityError) {
       console.error('ACTIVITY LOG ERROR:', activityError)
-      alert(activityError.message)
+      toast.error('Gagal Menyimpan Activity Log', activityError.message)
       return
     }
+
+    toast.success('Order Berhasil Dibuat', `Order untuk ${customer} berhasil disimpan.`)
 
     router.push('/marketing/orders')
     router.refresh()
   }
 
+  const inputClass =
+    'w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10'
+
+  const labelClass =
+    'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500'
+
   return (
-    <div>
-      <div className="mb-8">
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           Create New Order
         </h1>
@@ -206,65 +217,72 @@ export default function CreateOrderForm() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="customer"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              Customer <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="customer"
-              name="customer"
-              type="text"
-              placeholder="Contoh: Halliburton"
-              required
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
-            />
+      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="customer" className={labelClass}>
+                Customer <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="customer"
+                name="customer"
+                type="text"
+                placeholder="Contoh: Halliburton"
+                required
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="pk_number" className={labelClass}>
+                Nomor PK <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="pk_number"
+                name="pk_number"
+                type="text"
+                placeholder="Contoh: PK/HI/26/1096"
+                required
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="rft_tr_job" className={labelClass}>
+                RFT / TR / Job
+              </label>
+              <input
+                id="rft_tr_job"
+                name="rft_tr_job"
+                type="text"
+                placeholder="Contoh: RFT-001"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="trip" className={labelClass}>
+                Trip <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="trip"
+                name="trip"
+                type="text"
+                placeholder="Contoh: BSD - ONWJ"
+                required
+                className={inputClass}
+              />
+            </div>
           </div>
 
-          <div>
-            <label
-              htmlFor="rft_tr_job"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              RFT / TR / Job
-            </label>
-            <input
-              id="rft_tr_job"
-              name="rft_tr_job"
-              type="text"
-              placeholder="Contoh: RFT-001 / TR-001 / JOB-001"
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="pk_number"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              Nomor PK <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="pk_number"
-              name="pk_number"
-              type="text"
-              placeholder="Contoh: PK/HI/26/1096"
-              required
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
-            />
-          </div>
-
-          <div>
+          <div className="border-t border-gray-100 pt-5">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <label className={labelClass}>
                   Kebutuhan Kendaraan <span className="text-red-500">*</span>
                 </label>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="text-xs text-gray-400">
                   Satu order dapat memiliki beberapa jenis kendaraan.
                 </p>
               </div>
@@ -274,17 +292,16 @@ export default function CreateOrderForm() {
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {requirements.map((requirement, index) => (
                 <div
                   key={requirement.id}
-                  className="flex items-end gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4"
+                  className="flex items-end gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 p-3.5"
                 >
                   <div className="flex-1">
-                    <label className="mb-2 block text-xs font-semibold text-gray-500">
+                    <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">
                       Jenis Kendaraan {index + 1}
                     </label>
-
                     <select
                       value={requirement.vehicle_type}
                       onChange={(event) =>
@@ -293,7 +310,7 @@ export default function CreateOrderForm() {
                           event.target.value
                         )
                       }
-                      className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                      className={`bg-white ${inputClass}`}
                     >
                       <option value="">Pilih kendaraan</option>
                       {vehicleTypes.map((vehicle) => (
@@ -314,13 +331,13 @@ export default function CreateOrderForm() {
                           )
                         }
                         placeholder="Tulis jenis kendaraan"
-                        className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                        className={`mt-2 bg-white ${inputClass}`}
                       />
                     )}
                   </div>
 
-                  <div className="w-32">
-                    <label className="mb-2 block text-xs font-semibold text-gray-500">
+                  <div className="w-20">
+                    <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">
                       Jumlah
                     </label>
                     <input
@@ -333,7 +350,7 @@ export default function CreateOrderForm() {
                           Number(event.target.value)
                         )
                       }
-                      className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                      className={`bg-white ${inputClass}`}
                     />
                   </div>
 
@@ -341,7 +358,7 @@ export default function CreateOrderForm() {
                     type="button"
                     onClick={() => removeRequirement(requirement.id)}
                     disabled={requirements.length === 1}
-                    className="rounded-lg border border-gray-200 p-3 text-gray-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="rounded-lg border border-gray-200 p-2.5 text-gray-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -352,86 +369,62 @@ export default function CreateOrderForm() {
             <button
               type="button"
               onClick={addRequirement}
-              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
             >
-              <PlusCircle className="h-4 w-4" />
+              <PlusCircle className="h-3.5 w-3.5" />
               Tambah Jenis Kendaraan
             </button>
           </div>
 
-          <div>
-            <label
-              htmlFor="trip"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              Trip <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="trip"
-              name="trip"
-              type="text"
-              placeholder="Contoh: BSD Halliburton - ONWJ"
-              required
-              className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
-            />
-          </div>
+          <div className="grid grid-cols-1 gap-5 border-t border-gray-100 pt-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label htmlFor="instruction" className={labelClass}>
+                Instruksi
+              </label>
+              <textarea
+                id="instruction"
+                name="instruction"
+                rows={2}
+                placeholder="Contoh: Tolong disiapkan untuk muat besok."
+                className={`resize-none ${inputClass}`}
+              />
+            </div>
 
-          <div>
-            <label
-              htmlFor="instruction"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              Instruksi
-            </label>
-            <textarea
-              id="instruction"
-              name="instruction"
-              rows={3}
-              placeholder="Contoh: Tolong disiapkan untuk muat besok."
-              className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="bawa_ra"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              Bawa RA
-            </label>
-            <select
-              id="bawa_ra"
-              name="bawa_ra"
-              defaultValue="Tidak"
-              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
-            >
-              <option value="Tidak">Tidak</option>
-              <option value="Ya">Ya</option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="notes"
-              className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              Catatan Tambahan
-            </label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows={4}
-              placeholder="Catatan tambahan jika diperlukan..."
-              className="w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
-            />
-          </div>
-
-          <div className="flex items-center justify-between border-t border-gray-100 pt-6">
             <div>
-              <p className="text-sm font-semibold text-gray-700">
-                Total kebutuhan kendaraan
+              <label htmlFor="bawa_ra" className={labelClass}>
+                Bawa RA
+              </label>
+              <select
+                id="bawa_ra"
+                name="bawa_ra"
+                defaultValue="Tidak"
+                className={`bg-white ${inputClass}`}
+              >
+                <option value="Tidak">Tidak</option>
+                <option value="Ya">Ya</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label htmlFor="notes" className={labelClass}>
+                Catatan Tambahan
+              </label>
+              <textarea
+                id="notes"
+                name="notes"
+                rows={3}
+                placeholder="Catatan tambahan jika diperlukan..."
+                className={`resize-none ${inputClass}`}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-gray-100 pt-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Total kebutuhan
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-gray-900">
                 {totalQuantity} Unit
               </p>
             </div>
@@ -439,7 +432,7 @@ export default function CreateOrderForm() {
             <div className="flex gap-3">
               <Link
                 href="/marketing/orders"
-                className="rounded-lg border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 Batal
               </Link>
@@ -447,7 +440,7 @@ export default function CreateOrderForm() {
               <button
                 type="submit"
                 disabled={hasInvalidRequirement}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Save className="h-4 w-4" />
                 Simpan Order

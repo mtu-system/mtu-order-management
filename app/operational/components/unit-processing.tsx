@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ShieldCheck, Send, Loader2, Hash, Clock, Check } from 'lucide-react'
+import { useToast } from '@/app/components/toast-provider'
+import { useConfirm } from '@/app/components/confirm-dialog-provider'
+import { ShieldCheck, Send, Loader2, Hash, Clock } from 'lucide-react'
 
 type UnitProcessingProps = {
   truck: {
@@ -31,6 +33,8 @@ function hasNoBuntut(vehicleType: string) {
 export default function UnitProcessing({ truck }: UnitProcessingProps) {
   const router = useRouter()
   const supabase = createClient()
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [noBuntut, setNoBuntut] = useState(truck.no_buntut || '')
   const [saving, setSaving] = useState(false)
@@ -41,18 +45,24 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
     if (saving) return
 
     if (needNoBuntut && !noBuntut.trim()) {
-      alert('No. Buntut wajib diisi untuk unit ini.')
+      toast.error(
+        'Data Belum Lengkap',
+        'No. Buntut wajib diisi untuk unit ini.'
+      )
       return
     }
 
     if (truck.status !== 'ready_loading') {
-      alert('Unit belum berstatus Ready Loading.')
+      toast.error('Unit Belum Siap', 'Unit belum berstatus Ready Loading.')
       return
     }
 
-    const confirmed = window.confirm(
-      'Pastikan No. Buntut sudah benar dan Surat Jalan serta Uang Jalan sudah dibagikan. Tandai unit ini sebagai Ready to Depart?'
-    )
+    const confirmed = await confirm({
+      title: 'Tandai Ready to Depart?',
+      message:
+        'Pastikan No. Buntut sudah benar dan Surat Jalan serta Uang Jalan sudah dibagikan.',
+      confirmLabel: 'Ya, Tandai',
+    })
 
     if (!confirmed) return
 
@@ -64,7 +74,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        alert('Session login tidak ditemukan.')
+        toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
         return
       }
 
@@ -87,7 +97,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
 
       if (error) {
         console.error('PROCESS UNIT ERROR:', error)
-        alert(error.message)
+        toast.error('Gagal Menyimpan', error.message)
         return
       }
 
@@ -98,7 +108,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
 
       if (trucksError) {
         console.error('CHECK ORDER TRUCKS ERROR:', trucksError)
-        alert(trucksError.message)
+        toast.error('Gagal Memeriksa Status Order', trucksError.message)
         return
       }
 
@@ -124,22 +134,23 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
 
         if (orderStatusError) {
           console.error('UPDATE ORDER STATUS ERROR:', orderStatusError)
-          alert(orderStatusError.message)
+          toast.error('Gagal Memperbarui Status Order', orderStatusError.message)
           return
         }
       }
 
-      alert(
-        `Unit ${truck.vehicle_type} berhasil diproses.\n\n` +
-          `Surat Jalan: Sudah Dibagikan\n` +
-          `Uang Jalan: Sudah Dibagikan\n` +
-          `Status: Ready to Depart`
+      toast.success(
+        'Unit Berhasil Diproses',
+        `${truck.vehicle_type} — Surat Jalan & Uang Jalan sudah dibagikan, status Ready to Depart.`
       )
 
       router.refresh()
     } catch (error) {
       console.error('UNIT PROCESSING ERROR:', error)
-      alert('Terjadi kesalahan saat memproses unit.')
+      toast.error(
+        'Terjadi Kesalahan',
+        'Gagal memproses unit. Silakan coba lagi.'
+      )
     } finally {
       setSaving(false)
     }

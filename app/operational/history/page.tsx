@@ -1,7 +1,9 @@
 import { requireRole } from '@/lib/auth'
+import Link from 'next/link'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
-import { Inbox } from 'lucide-react'
+import { ArrowRight, Inbox } from 'lucide-react'
+import OrderUnitsModal from '@/app/operational/components/order-units-modal'
 
 export default async function OperationalHistoryPage() {
   const user = await requireRole(['operational'])
@@ -26,7 +28,10 @@ export default async function OperationalHistoryPage() {
         id,
         vehicle_type,
         source,
-        status
+        status,
+        no_buntut,
+        plate_number,
+        driver_name
       )
     `)
     .in('status', ['cancelled', 'ready_to_depart', 'ready_loading', 'pending'])
@@ -51,6 +56,21 @@ export default async function OperationalHistoryPage() {
 
     return false
   })
+
+  const avatarColors = [
+    'bg-blue-100 text-blue-700',
+    'bg-violet-100 text-violet-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-amber-100 text-amber-700',
+    'bg-pink-100 text-pink-700',
+  ]
+
+  const getAvatarClass = (name: string) => {
+    const index =
+      name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+      avatarColors.length
+    return avatarColors[index]
+  }
 
   const getReasonLabel = (order: (typeof historyOrders)[number]) => {
     if (order.status === 'cancelled') return order.cancel_reason || '-'
@@ -147,7 +167,10 @@ export default async function OperationalHistoryPage() {
                   Keterangan
                 </th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                  Tanggal
+                  Waktu
+                </th>
+                <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  Action
                 </th>
               </tr>
             </thead>
@@ -161,9 +184,21 @@ export default async function OperationalHistoryPage() {
                     key={order.id}
                     className="transition-colors hover:bg-gray-50/60"
                   >
-                    <td className="px-5 py-4 font-bold text-gray-900">
-                      {order.customer}
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${getAvatarClass(
+                            order.customer
+                          )}`}
+                        >
+                          {order.customer.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-bold text-gray-900">
+                          {order.customer}
+                        </span>
+                      </div>
                     </td>
+
                     <td className="px-5 py-4">
                       <div className="text-gray-900">
                         {order.pk_number || '-'}
@@ -172,9 +207,11 @@ export default async function OperationalHistoryPage() {
                         {order.rft_tr_job || '-'}
                       </div>
                     </td>
+
                     <td className="px-5 py-4 font-bold text-gray-900">
                       {order.quantity} Unit
                     </td>
+
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {internalCount > 0 && (
@@ -192,13 +229,17 @@ export default async function OperationalHistoryPage() {
                         )}
                       </div>
                     </td>
+
                     <td className="px-5 py-4 text-gray-600">
                       {order.trip || '-'}
                     </td>
+
                     <td className="px-5 py-4">{getStatusBadge(order)}</td>
+
                     <td className="max-w-xs px-5 py-4 text-gray-600">
                       {getReasonLabel(order)}
                     </td>
+
                     <td className="px-5 py-4 text-gray-500">
                       {order.cancelled_at
                         ? new Date(order.cancelled_at).toLocaleString(
@@ -208,6 +249,15 @@ export default async function OperationalHistoryPage() {
                         : new Date(order.created_at).toLocaleString('id-ID', {
                             timeZone: 'Asia/Jakarta',
                           })}
+                    </td>
+
+                                        <td className="px-5 py-4 text-right">
+                      <OrderUnitsModal
+                        orderId={order.id}
+                        customer={order.customer}
+                        pkNumber={order.pk_number}
+                        units={order.order_trucks || []}
+                      />
                     </td>
                   </tr>
                 )

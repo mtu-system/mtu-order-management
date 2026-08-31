@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { useConfirm } from '@/app/components/confirm-dialog-provider'
 import { ShieldCheck, Send, Loader2, Hash, Clock } from 'lucide-react'
+import { logUnitHistory } from '@/lib/history'
 
 type UnitProcessingProps = {
   truck: {
@@ -95,11 +96,22 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
         .eq('id', truck.id)
         .eq('status', 'ready_loading')
 
-      if (error) {
+           if (error) {
         console.error('PROCESS UNIT ERROR:', error)
         toast.error('Gagal Menyimpan', error.message)
         return
       }
+
+      await logUnitHistory({
+        truckId: truck.id,
+        orderId: truck.order_id,
+        action: 'ready_to_depart',
+        fieldName: 'status',
+        oldValue: 'ready_loading',
+        newValue: 'ready_to_depart',
+        reason: 'Surat Jalan dan Uang Jalan sudah dibagikan.',
+        changedBy: user.id,
+      })
 
       const { data: trucks, error: trucksError } = await supabase
         .from('order_trucks')

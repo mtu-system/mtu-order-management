@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { logOrderHistory, logUnitHistory } from '@/lib/history'
 
+
 type Truck = {
   id: string
   vehicle_type: string
@@ -1171,7 +1172,7 @@ export default function ChangeRequestReview({
     }
   }
 
-  async function handleReject() {
+   async function handleReject() {
     if (loading) return
 
     const confirmed = await confirm({
@@ -1211,6 +1212,16 @@ export default function ChangeRequestReview({
         action: 'reject_change_request',
         old_value: `Request ${request.change_type}`,
         new_value: 'Rejected',
+      })
+
+      await logOrderHistory({
+        orderId,
+        action: 'reject_change_request',
+        fieldName: 'status',
+        oldValue: changeTypeLabels[request.change_type] || request.change_type,
+        newValue: 'Ditolak',
+        reason: request.reason,
+        changedBy: user.id,
       })
 
       toast.success('Permintaan Ditolak', 'Permintaan perubahan berhasil ditolak.')

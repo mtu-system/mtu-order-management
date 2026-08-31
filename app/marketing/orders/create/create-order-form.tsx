@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { PlusCircle, Trash2, Save } from 'lucide-react'
+import { logOrderHistory } from '@/lib/history'
 
 type VehicleRequirement = {
   id: number
@@ -188,11 +189,21 @@ export default function CreateOrderForm() {
         },
       })
 
-    if (activityError) {
+       if (activityError) {
       console.error('ACTIVITY LOG ERROR:', activityError)
       toast.error('Gagal Menyimpan Activity Log', activityError.message)
       return
     }
+
+    await logOrderHistory({
+      orderId: order.id,
+      action: 'create_order',
+      fieldName: 'status',
+      oldValue: null,
+      newValue: 'waiting_unit',
+      reason: `Order baru untuk ${customer}, ${totalQuantity} unit.`,
+      changedBy: user.id,
+    })
 
     toast.success('Order Berhasil Dibuat', `Order untuk ${customer} berhasil disimpan.`)
 

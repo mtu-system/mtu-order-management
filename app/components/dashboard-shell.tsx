@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import LogoutButton from './logout-button'
 import type { UserRole } from '@/lib/auth'
 import type { LucideIcon } from 'lucide-react'
+import Image from 'next/image'
 import {
   LayoutDashboard,
   ClipboardList,
@@ -14,7 +15,6 @@ import {
   Users,
   BarChart3,
   ScrollText,
-  Truck,
   Activity,
 } from 'lucide-react'
 
@@ -45,15 +45,21 @@ export default function DashboardShell({
     <div className="flex min-h-screen bg-gray-50">
       {/* SIDEBAR */}
       <aside className="fixed inset-y-0 left-0 flex w-64 flex-col bg-[#01236A]">
-        <div className="flex items-center gap-3 px-6 py-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-            <Truck className="h-5 w-5 text-white" />
+               <div className="flex items-center gap-3 px-6 py-6">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white p-1.5">
+            <Image
+              src="/mtu.png"
+              alt="Mandiri Trucking"
+              width={28}
+              height={22}
+              className="object-contain"
+            />
           </div>
           <div>
             <h1 className="text-sm font-bold leading-tight text-white">
               MTU Order
             </h1>
-            <p className="text-[11px] text-blue-200/70">Management System</p>
+            <p className="text-[11px] text-gray-400">Management System</p>
           </div>
         </div>
 
@@ -126,18 +132,15 @@ export default function DashboardShell({
 function getMenus(role: UserRole): MenuItem[] {
   switch (role) {
     case 'manager':
-      return [
-        { label: 'Dashboard', href: '/manager', icon: LayoutDashboard },
-        { label: 'Orders', href: '/manager/orders', icon: ClipboardList },
-        { label: 'Monitoring', href: '/manager/monitoring', icon: BarChart3 },
-        { label: 'Reports', href: '/manager/reports', icon: ScrollText },
-        { label: 'Users', href: '/manager/users', icon: Users },
-        {
-          label: 'Activity Logs',
-          href: '/manager/activity-logs',
-          icon: History,
-        },
-      ]
+  return [
+    { label: 'Dashboard', href: '/manager', icon: LayoutDashboard },
+    { label: 'Orders', href: '/manager/orders', icon: ClipboardList },
+    {
+      label: 'Activity Logs',
+      href: '/manager/activity-logs',
+      icon: History,
+    },
+  ]
 
     case 'marketing':
       return [

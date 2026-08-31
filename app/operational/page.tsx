@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import DashboardShell from '@/app/components/dashboard-shell'
 import RecentActivityFeed from '@/app/components/recent-activity-feed'
 import OrderTablesPanel from '@/app/operational/components/order-tables-panel'
+import CopyWaFormatButton from '@/app/operational/components/copy-wa-format-button'
 import {
   ClipboardList,
   ShieldCheck,
@@ -382,13 +383,17 @@ export default async function OperationalPage() {
           </p>
         </div>
 
-        <Link
-          href="/operational/history"
-          className="inline-flex items-center gap-2 rounded-lg border border-[#01236A]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#01236A] shadow-sm transition hover:bg-[#01236A]/5"
-        >
-          <HistoryIcon className="h-4 w-4 text-[#01236A]" />
-          History
-        </Link>
+                <div className="flex items-center gap-3">
+          <CopyWaFormatButton />
+
+          <Link
+            href="/operational/history"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#01236A]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#01236A] shadow-sm transition hover:bg-[#01236A]/5"
+          >
+            <HistoryIcon className="h-4 w-4 text-[#01236A]" />
+            History
+          </Link>
+        </div>
       </div>
 
       {/* STATISTIK */}

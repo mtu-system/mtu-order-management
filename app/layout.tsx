@@ -6,6 +6,11 @@ import { ConfirmDialogProvider } from '@/app/components/confirm-dialog-provider'
 export const metadata: Metadata = {
   title: 'MTU Order Management',
   description: 'Internal Order Management System - PT Mandiri Trans Utama',
+  icons: {
+    icon: '/mtu.png',
+    shortcut: '/mtu.png',
+    apple: '/mtu.png',
+  },
 }
 
 export default function RootLayout({

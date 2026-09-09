@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 
 export default async function MarketingPage() {
-  const user = await requireRole(['marketing'])
+  const user = await requireRole(['marketing', 'marketing_admin'])
 
   const supabase = await createClient()
 
@@ -27,11 +27,17 @@ export default async function MarketingPage() {
   const startOfDay = new Date(`${jakartaDate}T00:00:00+07:00`)
   const startOfNextDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
 
-  const { count: todayCount } = await supabase
+  let todayCountQuery = supabase
     .from('orders')
     .select('id', { count: 'exact', head: true })
     .gte('created_at', startOfDay.toISOString())
     .lt('created_at', startOfNextDay.toISOString())
+
+  if (user.role === 'marketing') {
+    todayCountQuery = todayCountQuery.eq('created_by', user.id)
+  }
+
+  const { count: todayCount } = await todayCountQuery
 
   const { count: waitingHSECount } = await supabase
     .from('order_trucks')

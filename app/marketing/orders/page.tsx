@@ -3,19 +3,36 @@ import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { History as HistoryIcon, PlusCircle } from 'lucide-react'
+import OrdersTable from '@/app/marketing/components/orders-table'
+
+const avatarColors = [
+  'bg-blue-100 text-blue-700',
+  'bg-violet-100 text-violet-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-amber-100 text-amber-700',
+  'bg-pink-100 text-pink-700',
+]
+
+function getAvatarClass(name: string) {
+  const index =
+    name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+    avatarColors.length
+  return avatarColors[index]
+}
 
 export default async function MarketingOrdersPage() {
-  const user = await requireRole(['marketing'])
+  const user = await requireRole(['marketing', 'marketing_admin'])
 
   const supabase = await createClient()
 
-  const { data: orders, error } = await supabase
+  let query = supabase
     .from('orders')
     .select(`
       id,
       customer,
       rft_tr_job,
       pk_number,
+      order_type,
       vehicle_type,
       quantity,
       trip,
@@ -31,9 +48,13 @@ export default async function MarketingOrdersPage() {
         status
       )
     `)
-    .eq('created_by', user.id)
     .order('created_at', { ascending: false })
 
+  if (user.role === 'marketing') {
+    query = query.eq('created_by', user.id)
+  }
+
+  const { data: orders, error } = await query
   if (error) {
     console.error('Failed to fetch orders:', error)
   }
@@ -54,36 +75,70 @@ export default async function MarketingOrdersPage() {
     return true
   })
 
-  const avatarColors = [
-    'bg-blue-100 text-blue-700',
-    'bg-violet-100 text-violet-700',
-    'bg-emerald-100 text-emerald-700',
-    'bg-amber-100 text-amber-700',
-    'bg-pink-100 text-pink-700',
-  ]
+  const orderRows = activeOrders.map((order) => {
+    const activeTrucks =
+      order.order_trucks?.filter(
+        (truck) =>
+          truck.status !== 'cancelled' &&
+          truck.status !== 'departed' &&
+          truck.status !== 'finished' &&
+          truck.status !== 'failed'
+      ) || []
 
-  const getAvatarClass = (name: string) => {
-    const index =
-      name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) %
-      avatarColors.length
-    return avatarColors[index]
-  }
+    const vehicleSummary = activeTrucks.reduce(
+      (result: Record<string, number>, truck) => {
+        result[truck.vehicle_type] = (result[truck.vehicle_type] || 0) + 1
+        return result
+      },
+      {}
+    )
 
-  const statusStyle = (status: string | null) => {
-    switch (status) {
-      case 'waiting_unit':
-        return 'bg-amber-100 text-amber-800'
-      case 'waiting_hse':
-      case 'inspection':
-        return 'bg-blue-100 text-blue-800'
-      case 'ready_loading':
-        return 'bg-emerald-100 text-emerald-800'
-      case 'failed':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-700'
+    const vehicleText = Object.entries(vehicleSummary)
+      .map(([vehicleType, quantity]) => `${vehicleType} (${quantity})`)
+      .join(', ')
+
+    const internalTrucks = activeTrucks.filter(
+      (truck) => truck.source === 'internal'
+    )
+
+    const readyToDepartCount = internalTrucks.filter(
+      (truck) => truck.status === 'ready_to_depart'
+    ).length
+
+    const readyLoadingCount = internalTrucks.filter(
+      (truck) => truck.status === 'ready_loading'
+    ).length
+
+    const waitingHseCount = internalTrucks.filter(
+      (truck) =>
+        truck.status === 'waiting_hse' || truck.status === 'inspection'
+    ).length
+
+    const vmCount = activeTrucks.filter(
+      (truck) => truck.source === 'vendor'
+    ).length
+
+    return {
+      id: order.id,
+      customer: order.customer,
+      pkNumber: order.pk_number,
+      rftTrJob: order.rft_tr_job,
+      orderType: order.order_type,
+      vehicleText,
+      activeQuantity: activeTrucks.length,
+      internalCount: internalTrucks.length,
+      readyToDepartCount,
+      readyLoadingCount,
+      waitingHseCount,
+      vmCount,
+      trip: order.trip,
+      status: order.status,
+      avatarClass: getAvatarClass(order.customer),
+      reduceUnitRequested: order.reduce_unit_requested || false,
+      reduceUnitQuantity: order.reduce_unit_quantity,
+      reduceUnitVehicleType: order.reduce_unit_vehicle_type,
     }
-  }
+  })
 
   return (
     <DashboardShell user={user}>
@@ -114,214 +169,7 @@ export default async function MarketingOrdersPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-100 bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Customer
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  PK / RFT
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Kendaraan
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Progress
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Quantity
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Trip
-                </th>
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Action
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-50">
-              {!activeOrders.length ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-6 py-14 text-center text-sm text-gray-400"
-                  >
-                    Tidak ada order aktif.
-                  </td>
-                </tr>
-              ) : (
-                activeOrders.map((order) => {
-                  const activeTrucks =
-                    order.order_trucks?.filter(
-                      (truck) =>
-                        truck.status !== 'cancelled' &&
-                        truck.status !== 'departed' &&
-                        truck.status !== 'finished' &&
-                        truck.status !== 'failed'
-                    ) || []
-
-                  const vehicleSummary = activeTrucks.reduce(
-                    (result: Record<string, number>, truck) => {
-                      result[truck.vehicle_type] =
-                        (result[truck.vehicle_type] || 0) + 1
-                      return result
-                    },
-                    {}
-                  )
-
-                  const vehicleText = Object.entries(vehicleSummary)
-                    .map(
-                      ([vehicleType, quantity]) =>
-                        `${vehicleType} (${quantity})`
-                    )
-                    .join(', ')
-
-                  const activeQuantity = activeTrucks.length
-
-                  const internalTrucks = activeTrucks.filter(
-                    (truck) => truck.source === 'internal'
-                  )
-
-                  const readyToDepartCount = internalTrucks.filter(
-                    (truck) => truck.status === 'ready_to_depart'
-                  ).length
-
-                  const readyLoadingCount = internalTrucks.filter(
-                    (truck) => truck.status === 'ready_loading'
-                  ).length
-
-                  const waitingHseCount = internalTrucks.filter(
-                    (truck) =>
-                      truck.status === 'waiting_hse' ||
-                      truck.status === 'inspection'
-                  ).length
-
-                  const vmCount = activeTrucks.filter(
-                    (truck) => truck.source === 'vendor'
-                  ).length
-
-                  return (
-                    <tr
-                      key={order.id}
-                      className="transition-colors hover:bg-gray-50/60"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${getAvatarClass(
-                              order.customer
-                            )}`}
-                          >
-                            {order.customer.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-semibold text-gray-900">
-                            {order.customer}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <div className="text-gray-900">
-                          {order.pk_number || '-'}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {order.rft_tr_job || '-'}
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 text-gray-600">
-                        {vehicleText || '-'}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {internalTrucks.length > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
-                              {readyToDepartCount}/{internalTrucks.length}{' '}
-                              Ready to Depart
-                            </span>
-                          )}
-
-                          {readyLoadingCount > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                              {readyLoadingCount} Menunggu SJ/UJ
-                            </span>
-                          )}
-
-                          {waitingHseCount > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                              {waitingHseCount} Waiting HSE
-                            </span>
-                          )}
-
-                          {vmCount > 0 && (
-                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
-                              VM {vmCount}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-900">
-                          {activeQuantity} Unit
-                        </div>
-
-                        {order.reduce_unit_requested && (
-                          <div className="mt-1">
-                            <div className="text-xs font-semibold text-orange-600">
-                              -{order.reduce_unit_quantity} Unit{' '}
-                              {order.reduce_unit_vehicle_type}
-                            </div>
-                            <div className="mt-1 inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-700">
-                              Menunggu Operational
-                            </div>
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="max-w-xs px-6 py-4">
-                        <p className="truncate text-gray-600">
-                          {order.trip || '-'}
-                        </p>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${statusStyle(
-                            order.status
-                          )}`}
-                        >
-                          {order.status
-  ?.replaceAll('_', ' ')
-  .replace(/\b\w/g, (char: string) => char.toUpperCase()) ||
-  'Unknown'}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <Link
-                          href={`/marketing/orders/${order.id}`}
-                          className="text-sm font-semibold text-[#01236A] hover:underline"
-                        >
-                          Detail
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <OrdersTable orders={orderRows} />
     </DashboardShell>
   )
 }

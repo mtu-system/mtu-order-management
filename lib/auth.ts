@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export type UserRole =
   | 'manager'
   | 'marketing'
+  | 'marketing_admin'
   | 'operational'
   | 'hse'
   | 'pending'
@@ -59,7 +60,8 @@ export function getRoleHome(role: UserRole) {
     case 'manager':
       return '/manager'
 
-    case 'marketing':
+        case 'marketing':
+    case 'marketing_admin':
       return '/marketing'
 
     case 'operational':

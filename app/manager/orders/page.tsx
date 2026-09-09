@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
-import { Inbox } from 'lucide-react'
+import OrdersSearchTable from '@/app/manager/components/orders-search-table'
 
 function getStatusLabel(status: string) {
   switch (status) {
@@ -82,7 +82,27 @@ export default async function ManagerOrdersPage() {
     console.error('MANAGER ORDERS LIST ERROR:', error)
   }
 
-  const allOrders = orders || []
+  const orderRows = (orders || []).map((order) => ({
+    id: order.id,
+    customer: order.customer,
+    pkNumber: order.pk_number,
+    rftTrJob: order.rft_tr_job,
+    quantity: order.quantity,
+    trip: order.trip,
+    status: order.status,
+    statusLabel: getStatusLabel(order.status),
+    statusClass: getStatusClass(order.status),
+    dateLabel: new Date(order.created_at).toLocaleString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+    sortDateIso: order.created_at,
+    avatarClass: getAvatarClass(order.customer),
+  }))
 
   return (
     <DashboardShell user={user}>
@@ -95,109 +115,11 @@ export default async function ManagerOrdersPage() {
         </div>
 
         <span className="rounded-full bg-[#01236A]/10 px-3.5 py-1.5 text-xs font-bold text-[#01236A]">
-          {allOrders.length} Order
+          {orderRows.length} Order
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b border-gray-100 bg-gray-50">
-              <tr>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                  Customer
-                </th>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                  PK / RFT
-                </th>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                  Quantity
-                </th>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                  Trip
-                </th>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                  Status
-                </th>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                  Dibuat
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-50">
-              {allOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="transition-colors hover:bg-gray-50/60"
-                >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${getAvatarClass(
-                          order.customer
-                        )}`}
-                      >
-                        {order.customer.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-bold text-gray-900">
-                        {order.customer}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="px-5 py-3.5">
-                    <div className="text-gray-900">
-                      {order.pk_number || '-'}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {order.rft_tr_job || '-'}
-                    </div>
-                  </td>
-
-                  <td className="px-5 py-3.5 font-semibold text-gray-900">
-                    {order.quantity} Unit
-                  </td>
-
-                  <td className="px-5 py-3.5 text-gray-600">
-                    {order.trip || '-'}
-                  </td>
-
-                  <td className="px-5 py-3.5">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${getStatusClass(
-                        order.status
-                      )}`}
-                    >
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </td>
-
-                  <td className="px-5 py-3.5 text-gray-500">
-                    {new Date(order.created_at).toLocaleString('id-ID', {
-                      timeZone: 'Asia/Jakarta',
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {!allOrders.length && (
-            <div className="flex flex-col items-center gap-3 p-14 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                <Inbox className="h-6 w-6" />
-              </div>
-              <p className="text-sm text-gray-400">Belum ada order.</p>
-            </div>
-          )}
-        </div>
-      </div>
+      <OrdersSearchTable orders={orderRows} />
     </DashboardShell>
   )
 }

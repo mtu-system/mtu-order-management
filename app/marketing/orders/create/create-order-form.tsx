@@ -5,37 +5,29 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
-import { PlusCircle, Trash2, Save } from 'lucide-react'
 import { logOrderHistory } from '@/lib/history'
+import { PlusCircle, Trash2, Save, Loader2 } from 'lucide-react'
+import CustomerAutocomplete from '@/app/marketing/components/customer-autocomplete'
+import VehicleTypeAutocomplete from '@/app/marketing/components/vehicle-type-autocomplete'
 
 type VehicleRequirement = {
   id: number
   vehicle_type: string
-  custom_vehicle_type: string
   quantity: number
 }
-
-const vehicleTypes = [
-  'Trailer',
-  'Lowbed',
-  'Fuso',
-  'Tronton',
-  'Colt Diesel',
-  'Pickup',
-  'Double Cabin',
-  'Prime Mover',
-  'Lainnya',
-]
 
 export default function CreateOrderForm() {
   const router = useRouter()
   const toast = useToast()
 
+  const [saving, setSaving] = useState(false)
+  const [customer, setCustomer] = useState('')
+  const [orderType, setOrderType] = useState<'RFT' | 'PK' | ''>('')
+
   const [requirements, setRequirements] = useState<VehicleRequirement[]>([
     {
       id: 1,
       vehicle_type: '',
-      custom_vehicle_type: '',
       quantity: 1,
     },
   ])
@@ -46,7 +38,6 @@ export default function CreateOrderForm() {
       {
         id: Date.now(),
         vehicle_type: '',
-        custom_vehicle_type: '',
         quantity: 1,
       },
     ])
@@ -60,14 +51,6 @@ export default function CreateOrderForm() {
     setRequirements((current) =>
       current.map((item) =>
         item.id === id ? { ...item, vehicle_type } : item
-      )
-    )
-  }
-
-  function updateCustomVehicleType(id: number, custom_vehicle_type: string) {
-    setRequirements((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, custom_vehicle_type } : item
       )
     )
   }
@@ -88,10 +71,7 @@ export default function CreateOrderForm() {
   )
 
   const hasInvalidRequirement = requirements.some(
-    (item) =>
-      !item.vehicle_type ||
-      (item.vehicle_type === 'Lainnya' && !item.custom_vehicle_type.trim()) ||
-      item.quantity < 1
+    (item) => !item.vehicle_type.trim() || item.quantity < 1
   )
 
   async function handleSubmit(
@@ -99,15 +79,28 @@ export default function CreateOrderForm() {
   ) {
     event.preventDefault()
 
+    if (saving) return
+
+    if (!customer.trim()) {
+      toast.error('Data Belum Lengkap', 'Customer wajib diisi.')
+      return
+    }
+
+        if (!orderType) {
+      toast.error('Data Belum Lengkap', 'Tipe Order (RFT atau PK) wajib dipilih.')
+      return
+    }
+
     if (hasInvalidRequirement) {
       return
     }
+
+    setSaving(true)
 
     const supabase = createClient()
 
     const formData = new FormData(event.currentTarget)
 
-    const customer = formData.get('customer') as string
     const rft_tr_job = formData.get('rft_tr_job') as string
     const pk_number = formData.get('pk_number') as string
     const trip = formData.get('trip') as string
@@ -121,21 +114,19 @@ export default function CreateOrderForm() {
 
     if (!user) {
       toast.error('Sesi Login Tidak Ditemukan', 'Silakan login ulang.')
+      setSaving(false)
       return
     }
 
     const vehicleSummary = requirements
-      .map((item) =>
-        item.vehicle_type === 'Lainnya'
-          ? item.custom_vehicle_type
-          : item.vehicle_type
-      )
+      .map((item) => item.vehicle_type)
       .join(', ')
 
     const { data: order, error } = await supabase
       .from('orders')
-      .insert({
-        customer,
+            .insert({
+        customer: customer.trim(),
+        order_type: orderType,
         rft_tr_job,
         pk_number,
         vehicle_type: vehicleSummary,
@@ -152,16 +143,28 @@ export default function CreateOrderForm() {
 
     if (error) {
       console.error('CREATE ORDER ERROR:', error)
-      toast.error('Gagal Membuat Order', error.message)
+
+      if (error.code === '23505') {
+        toast.error(
+          'Nomor PK Sudah Dipakai',
+          'Nomor PK ini sudah digunakan order lain. Cek kembali nomor PK-nya.'
+        )
+      } else if (error.code === '23514') {
+        toast.error(
+          'Data Belum Lengkap',
+          'Customer, Trip, dan minimal salah satu (PK atau RFT/TR/Job) wajib diisi.'
+        )
+      } else {
+        toast.error('Gagal Membuat Order', error.message)
+      }
+
+      setSaving(false)
       return
     }
 
     const requirementRows = requirements.map((item) => ({
       order_id: order.id,
-      vehicle_type:
-        item.vehicle_type === 'Lainnya'
-          ? item.custom_vehicle_type
-          : item.vehicle_type,
+      vehicle_type: item.vehicle_type.trim(),
       quantity: item.quantity,
     }))
 
@@ -172,6 +175,7 @@ export default function CreateOrderForm() {
     if (requirementError) {
       console.error('CREATE REQUIREMENTS ERROR:', requirementError)
       toast.error('Gagal Menyimpan Kebutuhan Kendaraan', requirementError.message)
+      setSaving(false)
       return
     }
 
@@ -183,15 +187,16 @@ export default function CreateOrderForm() {
         action: 'CREATE_ORDER',
         old_value: null,
         new_value: {
-          customer,
+          customer: customer.trim(),
           pk_number,
           total_quantity: totalQuantity,
         },
       })
 
-       if (activityError) {
+    if (activityError) {
       console.error('ACTIVITY LOG ERROR:', activityError)
       toast.error('Gagal Menyimpan Activity Log', activityError.message)
+      setSaving(false)
       return
     }
 
@@ -201,11 +206,59 @@ export default function CreateOrderForm() {
       fieldName: 'status',
       oldValue: null,
       newValue: 'waiting_unit',
-      reason: `Order baru untuk ${customer}, ${totalQuantity} unit.`,
+      reason: `Order baru untuk ${customer.trim()}, ${totalQuantity} unit.`,
       changedBy: user.id,
     })
 
-    toast.success('Order Berhasil Dibuat', `Order untuk ${customer} berhasil disimpan.`)
+    // ==========================================
+    // TAMBAHIN KE MASTER CUSTOMER KALAU BELUM ADA
+    // ==========================================
+
+    const { data: existingCustomer } = await supabase
+      .from('customers')
+      .select('id')
+      .ilike('name', customer.trim())
+      .maybeSingle()
+
+    if (!existingCustomer) {
+      const { error: customerInsertError } = await supabase
+        .from('customers')
+        .insert({
+          name: customer.trim(),
+          created_by: user.id,
+        })
+
+      if (customerInsertError) {
+        console.error('SAVE NEW CUSTOMER ERROR:', customerInsertError)
+      }
+    }
+
+    // ==========================================
+    // TAMBAHIN KE MASTER JENIS KENDARAAN KALAU BELUM ADA
+    // ==========================================
+
+    for (const requirement of requirements) {
+      const { data: existingVehicleType } = await supabase
+        .from('vehicle_types')
+        .select('id')
+        .ilike('name', requirement.vehicle_type.trim())
+        .maybeSingle()
+
+      if (!existingVehicleType) {
+        const { error: vehicleTypeInsertError } = await supabase
+          .from('vehicle_types')
+          .insert({
+            name: requirement.vehicle_type.trim(),
+            created_by: user.id,
+          })
+
+        if (vehicleTypeInsertError) {
+          console.error('SAVE NEW VEHICLE TYPE ERROR:', vehicleTypeInsertError)
+        }
+      }
+    }
+
+    toast.success('Order Berhasil Dibuat', `Order untuk ${customer.trim()} berhasil disimpan.`)
 
     router.push('/marketing/orders')
     router.refresh()
@@ -230,31 +283,60 @@ export default function CreateOrderForm() {
 
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="customer" className={labelClass}>
                 Customer <span className="text-red-500">*</span>
               </label>
-              <input
-                id="customer"
-                name="customer"
-                type="text"
-                placeholder="Contoh: Halliburton"
-                required
-                className={inputClass}
+              <CustomerAutocomplete
+                value={customer}
+                onChange={setCustomer}
+                disabled={saving}
               />
             </div>
 
             <div>
+              <label className={labelClass}>
+                Tipe Order <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOrderType('RFT')}
+                  disabled={saving}
+                  className={`flex-1 rounded-lg border-2 px-3.5 py-2.5 text-sm font-bold transition disabled:opacity-50 ${
+                    orderType === 'RFT'
+                      ? 'border-[#01236A] bg-[#01236A]/5 text-[#01236A]'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  RFT
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderType('PK')}
+                  disabled={saving}
+                  className={`flex-1 rounded-lg border-2 px-3.5 py-2.5 text-sm font-bold transition disabled:opacity-50 ${
+                    orderType === 'PK'
+                      ? 'border-[#01236A] bg-[#01236A]/5 text-[#01236A]'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  PK
+                </button>
+              </div>
+            </div>
+
+            <div>
               <label htmlFor="pk_number" className={labelClass}>
-                Nomor PK <span className="text-red-500">*</span>
+                Nomor PK
               </label>
               <input
                 id="pk_number"
                 name="pk_number"
                 type="text"
                 placeholder="Contoh: PK/HI/26/1096"
-                required
+                disabled={saving}
                 className={inputClass}
               />
             </div>
@@ -268,6 +350,7 @@ export default function CreateOrderForm() {
                 name="rft_tr_job"
                 type="text"
                 placeholder="Contoh: RFT-001"
+                disabled={saving}
                 className={inputClass}
               />
             </div>
@@ -282,10 +365,15 @@ export default function CreateOrderForm() {
                 type="text"
                 placeholder="Contoh: BSD - ONWJ"
                 required
+                disabled={saving}
                 className={inputClass}
               />
             </div>
           </div>
+
+          <p className="-mt-2 text-xs text-gray-400">
+            Isi minimal salah satu: Nomor PK atau RFT/TR/Job.
+          </p>
 
           <div className="border-t border-gray-100 pt-5">
             <div className="mb-3 flex items-center justify-between">
@@ -313,38 +401,13 @@ export default function CreateOrderForm() {
                     <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">
                       Jenis Kendaraan {index + 1}
                     </label>
-                    <select
+                    <VehicleTypeAutocomplete
                       value={requirement.vehicle_type}
-                      onChange={(event) =>
-                        updateVehicleType(
-                          requirement.id,
-                          event.target.value
-                        )
+                      onChange={(value) =>
+                        updateVehicleType(requirement.id, value)
                       }
-                      className={`bg-white ${inputClass}`}
-                    >
-                      <option value="">Pilih kendaraan</option>
-                      {vehicleTypes.map((vehicle) => (
-                        <option key={vehicle} value={vehicle}>
-                          {vehicle}
-                        </option>
-                      ))}
-                    </select>
-
-                    {requirement.vehicle_type === 'Lainnya' && (
-                      <input
-                        type="text"
-                        value={requirement.custom_vehicle_type}
-                        onChange={(event) =>
-                          updateCustomVehicleType(
-                            requirement.id,
-                            event.target.value
-                          )
-                        }
-                        placeholder="Tulis jenis kendaraan"
-                        className={`mt-2 bg-white ${inputClass}`}
-                      />
-                    )}
+                      disabled={saving}
+                    />
                   </div>
 
                   <div className="w-20">
@@ -361,6 +424,7 @@ export default function CreateOrderForm() {
                           Number(event.target.value)
                         )
                       }
+                      disabled={saving}
                       className={`bg-white ${inputClass}`}
                     />
                   </div>
@@ -368,7 +432,7 @@ export default function CreateOrderForm() {
                   <button
                     type="button"
                     onClick={() => removeRequirement(requirement.id)}
-                    disabled={requirements.length === 1}
+                    disabled={requirements.length === 1 || saving}
                     className="rounded-lg border border-gray-200 p-2.5 text-gray-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -380,7 +444,8 @@ export default function CreateOrderForm() {
             <button
               type="button"
               onClick={addRequirement}
-              className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50"
+              disabled={saving}
+              className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
             >
               <PlusCircle className="h-3.5 w-3.5" />
               Tambah Jenis Kendaraan
@@ -397,6 +462,7 @@ export default function CreateOrderForm() {
                 name="instruction"
                 rows={2}
                 placeholder="Contoh: Tolong disiapkan untuk muat besok."
+                disabled={saving}
                 className={`resize-none ${inputClass}`}
               />
             </div>
@@ -409,6 +475,7 @@ export default function CreateOrderForm() {
                 id="bawa_ra"
                 name="bawa_ra"
                 defaultValue="Tidak"
+                disabled={saving}
                 className={`bg-white ${inputClass}`}
               >
                 <option value="Tidak">Tidak</option>
@@ -425,6 +492,7 @@ export default function CreateOrderForm() {
                 name="notes"
                 rows={3}
                 placeholder="Catatan tambahan jika diperlukan..."
+                disabled={saving}
                 className={`resize-none ${inputClass}`}
               />
             </div>
@@ -450,11 +518,15 @@ export default function CreateOrderForm() {
 
               <button
                 type="submit"
-                disabled={hasInvalidRequirement}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                                disabled={hasInvalidRequirement || saving || !orderType}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Save className="h-4 w-4" />
-                Simpan Order
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {saving ? 'Menyimpan...' : 'Simpan Order'}
               </button>
             </div>
           </div>

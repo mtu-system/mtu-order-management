@@ -11,7 +11,7 @@ export default async function OrderDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const user = await requireRole(['marketing'])
+  const user = await requireRole(['marketing', 'marketing_admin'])
   const { id } = await params
 
   const supabase = await createClient()

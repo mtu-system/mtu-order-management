@@ -89,7 +89,21 @@ export default async function OrderDetailPage({
     number
   ][]
 
-  const activeTotalQuantity = activeTrucks.length
+   const activeTotalQuantity = activeTrucks.length
+
+  const isPendingReject = order.status === 'pending'
+
+  let decidedByName: string | null = null
+
+  if (order.decided_by) {
+    const { data: deciderProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', order.decided_by)
+      .single()
+
+    decidedByName = deciderProfile?.full_name || 'Operational'
+  }
 
   return (
     <DashboardShell user={user}>
@@ -101,7 +115,53 @@ export default async function OrderDetailPage({
           </p>
         </div>
 
-        <div className="space-y-6">
+                <div className="space-y-6">
+          {isPendingReject && (
+            <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                  !
+                </span>
+                <div>
+                  <h2 className="text-lg font-bold text-red-900">
+                    Unit Tidak Tersedia
+                  </h2>
+                  <p className="mt-1 text-sm text-red-800">
+                    Operational memutuskan unit untuk order ini tidak
+                    sepenuhnya tersedia. Silakan pilih tindak lanjut di bagian
+                    &quot;Respon Reject&quot; di bawah.
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-red-400">
+                        Alasan dari Operational
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-red-900">
+                        {order.decision_note || 'Tidak ada catatan.'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-red-400">
+                        Diputuskan Oleh
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-red-900">
+                        {decidedByName || '-'}
+                        {order.decided_at
+                          ? ` · ${new Date(order.decided_at).toLocaleString(
+                              'id-ID',
+                              { timeZone: 'Asia/Jakarta' }
+                            )}`
+                          : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* INFORMASI ORDER */}
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="mb-5 text-lg font-bold text-gray-900">
@@ -460,16 +520,20 @@ export default async function OrderDetailPage({
               </div>
             )}
 
-            <div className="border-t border-gray-100 pt-5">
-              <h3 className="font-bold text-gray-900">Ajukan Perubahan</h3>
+                       <div className="border-t border-gray-100 pt-5">
+              <h3 className="font-bold text-gray-900">
+                {isPendingReject ? 'Respon Reject' : 'Ajukan Perubahan'}
+              </h3>
               <p className="mt-1 text-sm text-gray-500">
-                Perubahan tidak langsung diterapkan. Operational akan
-                menentukan tindakan dan unit yang terdampak.
+                {isPendingReject
+                  ? 'Pilih tindak lanjut atas keputusan Operational di atas.'
+                  : 'Perubahan tidak langsung diterapkan. Operational akan menentukan tindakan dan unit yang terdampak.'}
               </p>
 
               <OrderChangeRequestForm
                 orderId={order.id}
                 currentQuantity={activeTotalQuantity}
+                isPendingReject={isPendingReject}
               />
             </div>
           </div>

@@ -82,13 +82,53 @@ export default function OrderChangeForm({
       }
 
       // ==========================================
+      // RESOLVE JENIS KENDARAAN KE MASTER
+      // ==========================================
+
+      const { data: existingVehicleType, error: vehicleLookupError } =
+        await supabase
+          .from('vehicle_types')
+          .select('id, name')
+          .ilike('name', type)
+          .maybeSingle()
+
+      if (vehicleLookupError) {
+        console.error('LOOKUP VEHICLE TYPE ERROR:', vehicleLookupError)
+      }
+
+      let canonicalType = type
+
+      if (existingVehicleType) {
+        canonicalType = existingVehicleType.name
+      } else {
+        const { data: newVehicleType, error: vehicleTypeInsertError } =
+          await supabase
+            .from('vehicle_types')
+            .insert({
+              name: type,
+              created_by: user.id,
+            })
+            .select('name')
+            .single()
+
+        if (vehicleTypeInsertError) {
+          console.error(
+            'SAVE NEW VEHICLE TYPE ERROR:',
+            vehicleTypeInsertError
+          )
+        } else if (newVehicleType) {
+          canonicalType = newVehicleType.name
+        }
+      }
+
+      // ==========================================
       // CARI REQUIREMENT YANG SAMA
       // ==========================================
 
       const existingRequirement = requirements.find(
         (item) =>
           item.vehicle_type.toLowerCase() ===
-          type.toLowerCase()
+          canonicalType.toLowerCase()
       )
 
       // ==========================================
@@ -120,7 +160,7 @@ export default function OrderChangeForm({
           .from('order_requirements')
           .insert({
             order_id: orderId,
-            vehicle_type: type,
+            vehicle_type: canonicalType,
             quantity: amount,
           })
 
@@ -182,7 +222,7 @@ export default function OrderChangeForm({
               order_quantity: currentQuantity,
             }),
             new_value: JSON.stringify({
-              vehicle_type: type,
+              vehicle_type: canonicalType,
               added_quantity: amount,
               quantity: existingRequirement
                 ? existingRequirement.quantity +
@@ -211,7 +251,7 @@ export default function OrderChangeForm({
       // ==========================================
 
       alert(
-        `Berhasil menambahkan ${amount} ${type}.`
+        `Berhasil menambahkan ${amount} ${canonicalType}.`
       )
 
       setAddVehicleType('')

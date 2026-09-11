@@ -3,7 +3,7 @@ import DashboardShell from '@/app/components/dashboard-shell'
 import CreateOrderForm from './create-order-form'
 
 export default async function CreateOrderPage() {
-  const user = await requireRole(['marketing'])
+  const user = await requireRole(['marketing', 'marketing_admin'])
 
   return (
     <DashboardShell user={user}>

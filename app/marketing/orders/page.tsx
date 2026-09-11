@@ -61,9 +61,7 @@ export default async function MarketingOrdersPage() {
 
   const activeOrders = (orders || []).filter((order) => {
     if (order.status === 'cancelled') return false
-    if (order.status === 'pending') return false
     if (order.status === 'ready_to_depart') return false
-
     if (order.status === 'ready_loading') {
       const internalTrucks = (order.order_trucks || []).filter(
         (truck) =>
@@ -74,7 +72,6 @@ export default async function MarketingOrdersPage() {
 
     return true
   })
-
   const orderRows = activeOrders.map((order) => {
     const activeTrucks =
       order.order_trucks?.filter(

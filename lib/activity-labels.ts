@@ -16,6 +16,7 @@ export const actorLabel: Record<string, string> = {
   hse_inspection: 'HSE',
   ready_to_depart: 'Operational',
   reject_change_request: 'Operational',
+  unit_allocation: 'Operational',
 }
 
 export const activityMessage: Record<string, string> = {
@@ -36,6 +37,7 @@ export const activityMessage: Record<string, string> = {
   hse_inspection: 'Pemeriksaan HSE',
   ready_to_depart: 'SJ & UJ dikonfirmasi, unit Ready to Depart',
   reject_change_request: 'Permintaan perubahan ditolak',
+  unit_allocation: 'Alokasi unit disimpan',
 }
 
 export function getActivityMessage(action: string, newValue: string | null) {

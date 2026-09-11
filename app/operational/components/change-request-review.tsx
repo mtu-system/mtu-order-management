@@ -1102,7 +1102,40 @@ export default function ChangeRequestReview({
       const oldValue =
         (orderBefore as Record<string, string | null>)[fieldName] || ''
 
-      const newValue = request.requested_value.trim()
+      let newValue = request.requested_value.trim()
+
+      if (request.change_type === 'change_customer') {
+        const { data: existingCustomer, error: customerLookupError } =
+          await supabase
+            .from('customers')
+            .select('id, name')
+            .ilike('name', newValue)
+            .maybeSingle()
+
+        if (customerLookupError) {
+          console.error('LOOKUP CUSTOMER ERROR:', customerLookupError)
+        }
+
+        if (existingCustomer) {
+          newValue = existingCustomer.name
+        } else {
+          const { data: newCustomer, error: customerInsertError } =
+            await supabase
+              .from('customers')
+              .insert({
+                name: newValue,
+                created_by: user.id,
+              })
+              .select('name')
+              .single()
+
+          if (customerInsertError) {
+            console.error('SAVE NEW CUSTOMER ERROR:', customerInsertError)
+          } else if (newCustomer) {
+            newValue = newCustomer.name
+          }
+        }
+      }
 
       const { error: updateError } = await supabase
         .from('orders')
@@ -1581,32 +1614,13 @@ export default function ChangeRequestReview({
                               <label className="mb-1.5 block text-xs font-semibold text-gray-500">
                                 Jenis Kendaraan
                               </label>
-                              <select
-                                value={unit.vehicle_type}
-                                onChange={(event) =>
-                                  updateReplacementUnit(
-                                    index,
-                                    'vehicle_type',
-                                    event.target.value
-                                  )
-                                }
-                                disabled={loading}
-                                className={inputClass}
-                              >
-                                <option value="">Pilih kendaraan</option>
-                                <option value="Trailer">Trailer</option>
-                                <option value="Lowbed">Lowbed</option>
-                                <option value="Tronton">Tronton</option>
-                                <option value="Fuso">Fuso</option>
-                                <option value="Colt Diesel">
-                                  Colt Diesel
-                                </option>
-                                <option value="Double Cabin">
-                                  Double Cabin
-                                </option>
-                                <option value="Pickup">Pickup</option>
-                                <option value="Dolly">Dolly</option>
-                              </select>
+                              <div className="flex h-[42px] items-center rounded-lg border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-700">
+                                {request.requested_vehicle_type || '-'}
+                              </div>
+                              <p className="mt-1 text-xs text-gray-400">
+                                Mengikuti jenis kendaraan yang diminta pada
+                                request ini.
+                              </p>
                             </div>
 
                             <div>

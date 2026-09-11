@@ -3,7 +3,7 @@ import DashboardShell from '@/app/components/dashboard-shell'
 import RecentActivityFeed from '@/app/components/recent-activity-feed'
 
 export default async function MarketingActivityPage() {
-  const user = await requireRole(['marketing'])
+  const user = await requireRole(['marketing', 'marketing_admin'])
 
   return (
     <DashboardShell user={user}>

@@ -22,7 +22,6 @@ export default function CreateOrderForm() {
 
   const [saving, setSaving] = useState(false)
   const [customer, setCustomer] = useState('')
-  const [orderType, setOrderType] = useState<'RFT' | 'PK' | ''>('')
 
   const [requirements, setRequirements] = useState<VehicleRequirement[]>([
     {
@@ -81,13 +80,8 @@ export default function CreateOrderForm() {
 
     if (saving) return
 
-    if (!customer.trim()) {
+      if (!customer.trim()) {
       toast.error('Data Belum Lengkap', 'Customer wajib diisi.')
-      return
-    }
-
-        if (!orderType) {
-      toast.error('Data Belum Lengkap', 'Tipe Order (RFT atau PK) wajib dipilih.')
       return
     }
 
@@ -104,6 +98,20 @@ export default function CreateOrderForm() {
     const rft_tr_job = formData.get('rft_tr_job') as string
     const pk_number = formData.get('pk_number') as string
     const trip = formData.get('trip') as string
+
+    const trimmedPk = pk_number?.trim() || ''
+    const trimmedRft = rft_tr_job?.trim() || ''
+
+    if (!trimmedPk && !trimmedRft) {
+      toast.error(
+        'Data Belum Lengkap',
+        'Isi minimal salah satu: Nomor PK atau RFT/TR/Job.'
+      )
+      setSaving(false)
+      return
+    }
+
+    const orderType = trimmedPk ? 'PK' : 'RFT'
     const instruction = formData.get('instruction') as string
     const bawa_ra = formData.get('bawa_ra') as string
     const notes = formData.get('notes') as string
@@ -118,14 +126,102 @@ export default function CreateOrderForm() {
       return
     }
 
-    const vehicleSummary = requirements
+    // ==========================================
+    // RESOLVE CUSTOMER KE MASTER (pakai nama kanonik)
+    // ==========================================
+
+    const { data: existingCustomer, error: customerLookupError } =
+      await supabase
+        .from('customers')
+        .select('id, name')
+        .ilike('name', customer.trim())
+        .maybeSingle()
+
+    if (customerLookupError) {
+      console.error('LOOKUP CUSTOMER ERROR:', customerLookupError)
+    }
+
+    let canonicalCustomer = customer.trim()
+
+    if (existingCustomer) {
+      canonicalCustomer = existingCustomer.name
+    } else {
+      const { data: newCustomer, error: customerInsertError } =
+        await supabase
+          .from('customers')
+          .insert({
+            name: customer.trim(),
+            created_by: user.id,
+          })
+          .select('name')
+          .single()
+
+      if (customerInsertError) {
+        console.error('SAVE NEW CUSTOMER ERROR:', customerInsertError)
+      } else if (newCustomer) {
+        canonicalCustomer = newCustomer.name
+      }
+    }
+
+    // ==========================================
+    // RESOLVE JENIS KENDARAAN KE MASTER (pakai nama kanonik)
+    // ==========================================
+
+    const canonicalRequirements: VehicleRequirement[] = []
+
+    for (const requirement of requirements) {
+      const trimmedType = requirement.vehicle_type.trim()
+
+      const { data: existingVehicleType, error: vehicleLookupError } =
+        await supabase
+          .from('vehicle_types')
+          .select('id, name')
+          .ilike('name', trimmedType)
+          .maybeSingle()
+
+      if (vehicleLookupError) {
+        console.error('LOOKUP VEHICLE TYPE ERROR:', vehicleLookupError)
+      }
+
+      let canonicalType = trimmedType
+
+      if (existingVehicleType) {
+        canonicalType = existingVehicleType.name
+      } else {
+        const { data: newVehicleType, error: vehicleTypeInsertError } =
+          await supabase
+            .from('vehicle_types')
+            .insert({
+              name: trimmedType,
+              created_by: user.id,
+            })
+            .select('name')
+            .single()
+
+        if (vehicleTypeInsertError) {
+          console.error(
+            'SAVE NEW VEHICLE TYPE ERROR:',
+            vehicleTypeInsertError
+          )
+        } else if (newVehicleType) {
+          canonicalType = newVehicleType.name
+        }
+      }
+
+      canonicalRequirements.push({
+        ...requirement,
+        vehicle_type: canonicalType,
+      })
+    }
+
+    const vehicleSummary = canonicalRequirements
       .map((item) => item.vehicle_type)
       .join(', ')
 
     const { data: order, error } = await supabase
       .from('orders')
-            .insert({
-        customer: customer.trim(),
+      .insert({
+        customer: canonicalCustomer,
         order_type: orderType,
         rft_tr_job,
         pk_number,
@@ -162,9 +258,9 @@ export default function CreateOrderForm() {
       return
     }
 
-    const requirementRows = requirements.map((item) => ({
+    const requirementRows = canonicalRequirements.map((item) => ({
       order_id: order.id,
-      vehicle_type: item.vehicle_type.trim(),
+      vehicle_type: item.vehicle_type,
       quantity: item.quantity,
     }))
 
@@ -187,7 +283,7 @@ export default function CreateOrderForm() {
         action: 'CREATE_ORDER',
         old_value: null,
         new_value: {
-          customer: customer.trim(),
+          customer: canonicalCustomer,
           pk_number,
           total_quantity: totalQuantity,
         },
@@ -206,59 +302,14 @@ export default function CreateOrderForm() {
       fieldName: 'status',
       oldValue: null,
       newValue: 'waiting_unit',
-      reason: `Order baru untuk ${customer.trim()}, ${totalQuantity} unit.`,
+      reason: `Order baru untuk ${canonicalCustomer}, ${totalQuantity} unit.`,
       changedBy: user.id,
     })
 
-    // ==========================================
-    // TAMBAHIN KE MASTER CUSTOMER KALAU BELUM ADA
-    // ==========================================
-
-    const { data: existingCustomer } = await supabase
-      .from('customers')
-      .select('id')
-      .ilike('name', customer.trim())
-      .maybeSingle()
-
-    if (!existingCustomer) {
-      const { error: customerInsertError } = await supabase
-        .from('customers')
-        .insert({
-          name: customer.trim(),
-          created_by: user.id,
-        })
-
-      if (customerInsertError) {
-        console.error('SAVE NEW CUSTOMER ERROR:', customerInsertError)
-      }
-    }
-
-    // ==========================================
-    // TAMBAHIN KE MASTER JENIS KENDARAAN KALAU BELUM ADA
-    // ==========================================
-
-    for (const requirement of requirements) {
-      const { data: existingVehicleType } = await supabase
-        .from('vehicle_types')
-        .select('id')
-        .ilike('name', requirement.vehicle_type.trim())
-        .maybeSingle()
-
-      if (!existingVehicleType) {
-        const { error: vehicleTypeInsertError } = await supabase
-          .from('vehicle_types')
-          .insert({
-            name: requirement.vehicle_type.trim(),
-            created_by: user.id,
-          })
-
-        if (vehicleTypeInsertError) {
-          console.error('SAVE NEW VEHICLE TYPE ERROR:', vehicleTypeInsertError)
-        }
-      }
-    }
-
-    toast.success('Order Berhasil Dibuat', `Order untuk ${customer.trim()} berhasil disimpan.`)
+    toast.success(
+      'Order Berhasil Dibuat',
+      `Order untuk ${canonicalCustomer} berhasil disimpan.`
+    )
 
     router.push('/marketing/orders')
     router.refresh()
@@ -295,39 +346,7 @@ export default function CreateOrderForm() {
               />
             </div>
 
-            <div>
-              <label className={labelClass}>
-                Tipe Order <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOrderType('RFT')}
-                  disabled={saving}
-                  className={`flex-1 rounded-lg border-2 px-3.5 py-2.5 text-sm font-bold transition disabled:opacity-50 ${
-                    orderType === 'RFT'
-                      ? 'border-[#01236A] bg-[#01236A]/5 text-[#01236A]'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  RFT
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOrderType('PK')}
-                  disabled={saving}
-                  className={`flex-1 rounded-lg border-2 px-3.5 py-2.5 text-sm font-bold transition disabled:opacity-50 ${
-                    orderType === 'PK'
-                      ? 'border-[#01236A] bg-[#01236A]/5 text-[#01236A]'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  PK
-                </button>
-              </div>
-            </div>
-
-            <div>
+                        <div>
               <label htmlFor="pk_number" className={labelClass}>
                 Nomor PK
               </label>
@@ -518,7 +537,7 @@ export default function CreateOrderForm() {
 
               <button
                 type="submit"
-                                disabled={hasInvalidRequirement || saving || !orderType}
+                                               disabled={hasInvalidRequirement || saving}
                 className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? (

@@ -10,6 +10,7 @@ import {
   FileEdit,
   MinusCircle,
   PlusCircle,
+  Truck,
 } from 'lucide-react'
 
 type RecentActivityFeedProps = {
@@ -33,6 +34,7 @@ const actionLabels: Record<string, string> = {
   failed_unit_to_vendor: 'Unit Failed Dialihkan ke Vendor',
   cancel_failed_unit: 'Unit Failed Dibatalkan',
   hse_inspection: 'Unit Gagal HSE',
+  unit_allocation: 'Alokasi Unit',
 }
 
 type ActionStyle = {
@@ -76,6 +78,11 @@ const actionStyle: Record<string, ActionStyle> = {
     icon: PlusCircle,
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-700',
+  },
+  unit_allocation: {
+    icon: Truck,
+    iconBg: 'bg-sky-100',
+    iconColor: 'text-sky-700',
   },
 }
 

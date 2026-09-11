@@ -19,6 +19,7 @@ const actionLabels: Record<string, string> = {
   replace_failed_unit: 'Ganti Detail Truk (Unit Failed)',
   failed_unit_to_vendor: 'Unit Failed Dialihkan ke Vendor',
   cancel_failed_unit: 'Unit Failed Dibatalkan',
+  unit_allocation: 'Alokasi Unit',
 }
 
 export default async function OrderHistoryTimeline({

@@ -5,27 +5,18 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { Send, Loader2 } from 'lucide-react'
+import CustomerAutocomplete from './customer-autocomplete'
 
 type OrderChangeRequestFormProps = {
   orderId: string
   currentQuantity: number
+  isPendingReject?: boolean
 }
 
 type VehicleOption = {
   vehicle_type: string
   quantity: number
 }
-
-const ALL_VEHICLE_TYPES = [
-  'Trailer',
-  'Lowbed',
-  'Tronton',
-  'Fuso',
-  'Colt Diesel',
-  'Double Cabin',
-  'Pickup',
-  'Dolly',
-]
 
 const changeTypeOptions = [
   { value: 'reduce_unit', label: 'Kurangi Unit' },
@@ -37,18 +28,27 @@ const changeTypeOptions = [
   { value: 'change_customer', label: 'Ubah Customer' },
   { value: 'change_instruction', label: 'Ubah Instruksi' },
   { value: 'change_note', label: 'Ubah Catatan' },
-  { value: 'cancel_order', label: 'Batalkan Order' },
+   { value: 'cancel_order', label: 'Batalkan Order' },
+]
+
+const pendingRejectOptions = [
+  { value: 'cancel_order', label: 'Terima Reject (Batalkan Order)' },
+  { value: 'change_vehicle', label: 'Ganti Jenis Kendaraan' },
+  { value: 'reduce_unit', label: 'Kurangi Jumlah Unit' },
+  { value: 'change_note', label: 'Kirim Catatan ke Operational' },
 ]
 
 export default function OrderChangeRequestForm({
   orderId,
   currentQuantity,
+  isPendingReject,
 }: OrderChangeRequestFormProps) {
   const router = useRouter()
   const supabase = createClient()
   const toast = useToast()
 
   const [vehicleOptions, setVehicleOptions] = useState<VehicleOption[]>([])
+  const [masterVehicleTypes, setMasterVehicleTypes] = useState<string[]>([])
 
   const [changeType, setChangeType] = useState('')
   const [vehicleType, setVehicleType] = useState('')
@@ -78,6 +78,26 @@ export default function OrderChangeRequestForm({
 
     loadVehicleOptions()
   }, [orderId])
+
+  useEffect(() => {
+    async function loadMasterVehicleTypes() {
+      const { data, error } = await supabase
+        .from('vehicle_types')
+        .select('name')
+        .eq('is_active', true)
+        .order('name')
+
+      if (error) {
+        console.error('LOAD MASTER VEHICLE TYPES ERROR:', error)
+        setMasterVehicleTypes([])
+        return
+      }
+
+      setMasterVehicleTypes((data || []).map((item) => item.name))
+    }
+
+    loadMasterVehicleTypes()
+  }, [])
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -210,6 +230,45 @@ export default function OrderChangeRequestForm({
         return
       }
 
+      // ==========================================
+      // RESOLVE CUSTOMER BARU KE MASTER (kalau change_customer)
+      // ==========================================
+
+      let canonicalRequestedValue = requestedValue.trim()
+
+      if (changeType === 'change_customer' && canonicalRequestedValue) {
+        const { data: existingCustomer, error: customerLookupError } =
+          await supabase
+            .from('customers')
+            .select('id, name')
+            .ilike('name', canonicalRequestedValue)
+            .maybeSingle()
+
+        if (customerLookupError) {
+          console.error('LOOKUP CUSTOMER ERROR:', customerLookupError)
+        }
+
+        if (existingCustomer) {
+          canonicalRequestedValue = existingCustomer.name
+        } else {
+          const { data: newCustomer, error: customerInsertError } =
+            await supabase
+              .from('customers')
+              .insert({
+                name: canonicalRequestedValue,
+                created_by: user.id,
+              })
+              .select('name')
+              .single()
+
+          if (customerInsertError) {
+            console.error('SAVE NEW CUSTOMER ERROR:', customerInsertError)
+          } else if (newCustomer) {
+            canonicalRequestedValue = newCustomer.name
+          }
+        }
+      }
+
       const { data: request, error } = await supabase
         .from('order_change_requests')
         .insert({
@@ -222,6 +281,8 @@ export default function OrderChangeRequestForm({
           requested_value:
             changeType === 'change_vehicle'
               ? currentVehicleType
+              : changeType === 'change_customer'
+              ? canonicalRequestedValue
               : valueChangeTypes.includes(changeType)
               ? requestedValue.trim()
               : null,
@@ -260,9 +321,27 @@ export default function OrderChangeRequestForm({
           return
         }
 
-        autoApplied = applied === true
-      }
+              autoApplied = applied === true
 
+        if (
+          autoApplied &&
+          ['reduce_unit', 'add_unit', 'change_vehicle'].includes(changeType)
+        ) {
+          const { error: resetError } = await supabase
+            .from('orders')
+            .update({
+              status: 'waiting_unit',
+              unit_decision: null,
+              decision_note: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', orderId)
+
+          if (resetError) {
+            console.error('RESET ORDER STATUS ERROR:', resetError)
+          }
+        }
+      }
       const { error: logError } = await supabase
         .from('activity_logs')
         .insert({
@@ -279,6 +358,8 @@ export default function OrderChangeRequestForm({
             requested_value:
               changeType === 'change_vehicle'
                 ? currentVehicleType
+                : changeType === 'change_customer'
+                ? canonicalRequestedValue
                 : valueChangeTypes.includes(changeType)
                 ? requestedValue.trim()
                 : null,
@@ -327,9 +408,13 @@ export default function OrderChangeRequestForm({
     changeType === 'add_unit' ||
     changeType === 'change_vehicle'
 
-  const selectedVehicle = vehicleOptions.find(
+   const selectedVehicle = vehicleOptions.find(
     (item) => item.vehicle_type === vehicleType
   )
+
+  const activeChangeTypeOptions = isPendingReject
+    ? pendingRejectOptions
+    : changeTypeOptions
 
   const inputClass =
     'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10'
@@ -354,8 +439,8 @@ export default function OrderChangeRequestForm({
           disabled={saving}
           className={inputClass}
         >
-          <option value="">Pilih perubahan</option>
-          {changeTypeOptions.map((option) => (
+                    <option value="">Pilih perubahan</option>
+          {activeChangeTypeOptions.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -408,7 +493,7 @@ export default function OrderChangeRequestForm({
               <option value="">Pilih jenis kendaraan</option>
               {(changeType === 'reduce_unit'
                 ? vehicleOptions.map((item) => item.vehicle_type)
-                : ALL_VEHICLE_TYPES
+                : masterVehicleTypes
               )
                 .filter((type, index, list) => list.indexOf(type) === index)
                 .filter((type) => type !== currentVehicleType)
@@ -511,31 +596,37 @@ export default function OrderChangeRequestForm({
               : 'Catatan Baru'}
           </label>
 
-          <textarea
-            value={requestedValue}
-            onChange={(event) => setRequestedValue(event.target.value)}
-            disabled={saving}
-            rows={
-              changeType === 'change_instruction' ||
-              changeType === 'change_note'
-                ? 5
-                : 3
-            }
-            placeholder={
-              changeType === 'change_trip'
-                ? 'Contoh: Simpang Gas - Rebonjaro - Sambar'
-                : changeType === 'change_pk'
-                ? 'Masukkan PK baru'
-                : changeType === 'change_rft'
-                ? 'Masukkan RFT/TR/Job baru'
-                : changeType === 'change_customer'
-                ? 'Masukkan nama customer baru'
-                : changeType === 'change_instruction'
-                ? 'Masukkan instruksi baru'
-                : 'Masukkan catatan baru'
-            }
-            className={`resize-none ${inputClass}`}
-          />
+          {changeType === 'change_customer' ? (
+            <CustomerAutocomplete
+              value={requestedValue}
+              onChange={setRequestedValue}
+              disabled={saving}
+            />
+          ) : (
+            <textarea
+              value={requestedValue}
+              onChange={(event) => setRequestedValue(event.target.value)}
+              disabled={saving}
+              rows={
+                changeType === 'change_instruction' ||
+                changeType === 'change_note'
+                  ? 5
+                  : 3
+              }
+              placeholder={
+                changeType === 'change_trip'
+                  ? 'Contoh: Simpang Gas - Rebonjaro - Sambar'
+                  : changeType === 'change_pk'
+                  ? 'Masukkan PK baru'
+                  : changeType === 'change_rft'
+                  ? 'Masukkan RFT/TR/Job baru'
+                  : changeType === 'change_instruction'
+                  ? 'Masukkan instruksi baru'
+                  : 'Masukkan catatan baru'
+              }
+              className={`resize-none ${inputClass}`}
+            />
+          )}
         </div>
       )}
 

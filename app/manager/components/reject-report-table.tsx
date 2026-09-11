@@ -1,28 +1,26 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Inbox, Search, Download } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
-type OrderRow = {
+type ReportRow = {
   id: string
   customer: string
   pkNumber: string | null
   rftTrJob: string | null
+  orderType: string | null
   quantity: number
-  trip: string | null
-  status: string
-  statusLabel: string
-  statusClass: string
-  dateLabel: string
-  sortDateIso: string
-  avatarClass: string
+  decision: 'partial' | 'unavailable'
+  decisionNote: string | null
+  decidedByName: string
+  decidedAt: string | null
+  requirements: { vehicle_type: string; quantity: number }[]
 }
 
-type OrdersSearchTableProps = {
-  orders: OrderRow[]
-  initialStatus?: string
+type RejectReportTableProps = {
+  rows: ReportRow[]
 }
 
 type DatePreset = 'all' | '7d' | '30d' | 'month' | 'custom'
@@ -31,32 +29,36 @@ function toDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10)
 }
 
-export default function OrdersSearchTable({
-  orders,
-  initialStatus,
-}: OrdersSearchTableProps) {
-  const router = useRouter()
-  const [search, setSearch] = useState('')
-  const [showPk, setShowPk] = useState(false)
-  const [showRft, setShowRft] = useState(false)
- const [statusFilter, setStatusFilter] = useState(initialStatus || 'all')
+function formatDateLabel(iso: string | null) {
+  if (!iso) return '-'
+  return new Date(iso).toLocaleString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
-useEffect(() => {
-  setStatusFilter(initialStatus || 'all')
-}, [initialStatus])
+const decisionBadge: Record<string, string> = {
+  partial: 'bg-amber-100 text-amber-800',
+  unavailable: 'bg-red-100 text-red-700',
+}
+
+const decisionLabel: Record<string, string> = {
+  partial: 'Sebagian Tersedia',
+  unavailable: 'Tidak Tersedia',
+}
+
+export default function RejectReportTable({ rows }: RejectReportTableProps) {
+  const [search, setSearch] = useState('')
+    const [decisionFilter, setDecisionFilter] = useState(
+    'all' as 'all' | 'partial' | 'unavailable'
+  )
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [activePreset, setActivePreset] = useState<DatePreset>('all')
-
-  const statusOptions = useMemo(() => {
-    const unique = Array.from(new Set(orders.map((order) => order.status)))
-    return unique.map((status) => ({
-      value: status,
-      label:
-        orders.find((order) => order.status === status)?.statusLabel ||
-        status,
-    }))
-  }, [orders])
 
   function applyPreset(preset: DatePreset) {
     setActivePreset(preset)
@@ -96,55 +98,32 @@ useEffect(() => {
     }
   }
 
-  const pkCount = useMemo(
-    () => orders.filter((order) => order.pkNumber && order.pkNumber.trim())
-      .length,
-    [orders]
-  )
-
-  const rftCount = useMemo(
-    () => orders.filter((order) => order.rftTrJob && order.rftTrJob.trim())
-      .length,
-    [orders]
-  )
-
-  const filteredOrders = useMemo(() => {
+  const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase()
 
-    return orders.filter((order) => {
-      const hasPk = !!(order.pkNumber && order.pkNumber.trim())
-      const hasRft = !!(order.rftTrJob && order.rftTrJob.trim())
-
-      if (showPk && showRft) {
-        if (!hasPk && !hasRft) return false
-      } else if (showPk && !hasPk) {
-        return false
-      } else if (showRft && !hasRft) {
+    return rows.filter((row) => {
+      if (decisionFilter !== 'all' && row.decision !== decisionFilter) {
         return false
       }
 
-      if (statusFilter !== 'all' && order.status !== statusFilter) {
-        return false
-      }
-
-      if (dateFrom) {
-        const orderDate = new Date(order.sortDateIso)
+      if (dateFrom && row.decidedAt) {
+        const rowDate = new Date(row.decidedAt)
         const fromDate = new Date(`${dateFrom}T00:00:00`)
-        if (orderDate < fromDate) return false
+        if (rowDate < fromDate) return false
       }
 
-      if (dateTo) {
-        const orderDate = new Date(order.sortDateIso)
+      if (dateTo && row.decidedAt) {
+        const rowDate = new Date(row.decidedAt)
         const toDate = new Date(`${dateTo}T23:59:59`)
-        if (orderDate > toDate) return false
+        if (rowDate > toDate) return false
       }
 
       if (keyword) {
         const haystack = [
-          order.customer,
-          order.pkNumber || '',
-          order.rftTrJob || '',
-          order.trip || '',
+          row.customer,
+          row.pkNumber || '',
+          row.rftTrJob || '',
+          row.decisionNote || '',
         ]
           .join(' ')
           .toLowerCase()
@@ -154,25 +133,28 @@ useEffect(() => {
 
       return true
     })
-  }, [orders, search, showPk, showRft, statusFilter, dateFrom, dateTo])
+  }, [rows, search, decisionFilter, dateFrom, dateTo])
 
   function handleExport() {
-    const rows = filteredOrders.map((order) => ({
-      Customer: order.customer,
-      'Nomor PK': order.pkNumber || '-',
-      'RFT / TR / Job': order.rftTrJob || '-',
-      Quantity: order.quantity,
-      Trip: order.trip || '-',
-      Status: order.statusLabel,
-      Tanggal: order.dateLabel,
+    const exportRows = filteredRows.map((row) => ({
+      Tanggal: formatDateLabel(row.decidedAt),
+      Customer: row.customer,
+      'Nomor PK': row.pkNumber || '-',
+      'RFT / TR / Job': row.rftTrJob || '-',
+      'Kebutuhan Unit': row.requirements
+        .map((req) => `${req.vehicle_type} x${req.quantity}`)
+        .join(', '),
+      Keputusan: decisionLabel[row.decision],
+      Catatan: row.decisionNote || '-',
+      'Diputuskan Oleh': row.decidedByName,
     }))
 
-    const worksheet = XLSX.utils.json_to_sheet(rows)
+    const worksheet = XLSX.utils.json_to_sheet(exportRows)
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders')
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reject Report')
 
     const today = new Date().toISOString().slice(0, 10)
-    XLSX.writeFile(workbook, `manager-orders-${today}.xlsx`)
+    XLSX.writeFile(workbook, `reject-report-${today}.xlsx`)
   }
 
   const presets: { key: DatePreset; label: string }[] = [
@@ -191,67 +173,30 @@ useEffect(() => {
             type="text"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cari customer, PK, RFT, trip..."
+            placeholder="Cari customer, PK, RFT, catatan..."
             className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowPk((current) => !current)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-              showPk
-                ? 'border-[#01236A] bg-[#01236A] text-white'
-                : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            PK
-            <span
-              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${
-                showPk ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-              }`}
-            >
-              {pkCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowRft((current) => !current)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-              showRft
-                ? 'border-[#01236A] bg-[#01236A] text-white'
-                : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            RFT
-            <span
-              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${
-                showRft ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-              }`}
-            >
-              {rftCount}
-            </span>
-          </button>
-
           <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
+            value={decisionFilter}
+            onChange={(event) =>
+              setDecisionFilter(
+                event.target.value as 'all' | 'partial' | 'unavailable'
+              )
+            }
             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
           >
-            <option value="all">Semua Status</option>
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+            <option value="all">Semua Keputusan</option>
+            <option value="partial">Sebagian Tersedia</option>
+            <option value="unavailable">Tidak Tersedia</option>
           </select>
 
           <button
             type="button"
             onClick={handleExport}
-            disabled={!filteredOrders.length}
+            disabled={!filteredRows.length}
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Download className="h-3.5 w-3.5" />
@@ -304,7 +249,7 @@ useEffect(() => {
       </div>
 
       <div className="border-b border-gray-100 px-6 py-2 text-xs text-gray-400">
-        Menampilkan {filteredOrders.length} dari {orders.length} order
+        Menampilkan {filteredRows.length} dari {rows.length} entri
       </div>
 
       <div className="overflow-x-auto">
@@ -315,92 +260,87 @@ useEffect(() => {
                 Customer
               </th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                PK
+                PK / RFT
               </th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                RFT / TR / Job
+                Kebutuhan Unit
               </th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Quantity
+                Keputusan
               </th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Trip
+                Catatan
               </th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Status
+                Diputuskan Oleh
               </th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Dibuat
+                Tanggal
               </th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-50">
-            {!filteredOrders.length ? (
+            {!filteredRows.length ? (
               <tr>
                 <td colSpan={7} className="px-5 py-14 text-center">
                   <div className="flex flex-col items-center gap-3 text-gray-400">
                     <Inbox className="h-6 w-6" />
                     <span className="text-sm">
-                      Tidak ada order yang cocok dengan pencarian/filter ini.
+                      Tidak ada entri yang cocok dengan pencarian/filter ini.
                     </span>
                   </div>
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  onClick={() => router.push(`/manager/orders/${order.id}`)}
-                  className="cursor-pointer transition-colors hover:bg-gray-50/60"
-                >
+              filteredRows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50/60">
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${order.avatarClass}`}
-                      >
-                        {order.customer.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-bold text-gray-900">
-                        {order.customer}
-                      </span>
-                    </div>
+                    <Link
+                      href={`/manager/orders/${row.id}`}
+                      className="font-bold text-gray-900 hover:underline"
+                    >
+                      {row.customer}
+                    </Link>
                   </td>
 
-                  <td
-                    className={`px-5 py-3.5 font-semibold ${
-                      order.pkNumber ? 'text-gray-900' : 'text-gray-300'
-                    }`}
-                  >
-                    {order.pkNumber || '-'}
+                  <td className="px-5 py-3.5 text-gray-700">
+                    <p className="font-semibold">{row.pkNumber || '-'}</p>
+                    <p className="text-[11px] text-gray-400">
+                      {row.rftTrJob || '-'}
+                    </p>
                   </td>
 
-                  <td
-                    className={`px-5 py-3.5 ${
-                      order.rftTrJob ? 'text-gray-700' : 'text-gray-300'
-                    }`}
-                  >
-                    {order.rftTrJob || '-'}
-                  </td>
-
-                  <td className="px-5 py-3.5 font-semibold text-gray-900">
-                    {order.quantity} Unit
-                  </td>
-
-                  <td className="px-5 py-3.5 text-gray-600">
-                    {order.trip || '-'}
+                  <td className="px-5 py-3.5 text-gray-700">
+                    {row.requirements.length
+                      ? row.requirements
+                          .map((req) => `${req.vehicle_type} x${req.quantity}`)
+                          .join(', ')
+                      : `${row.quantity} Unit`}
                   </td>
 
                   <td className="px-5 py-3.5">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${order.statusClass}`}
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                        decisionBadge[row.decision]
+                      }`}
                     >
-                      {order.statusLabel}
+                      {decisionLabel[row.decision]}
                     </span>
                   </td>
 
+                  <td className="max-w-[220px] px-5 py-3.5 text-gray-600">
+                    <span className="line-clamp-2">
+                      {row.decisionNote || '-'}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-3.5 text-gray-700">
+                    {row.decidedByName}
+                  </td>
+
                   <td className="px-5 py-3.5 text-gray-500">
-                    {order.dateLabel}
+                    {formatDateLabel(row.decidedAt)}
                   </td>
                 </tr>
               ))

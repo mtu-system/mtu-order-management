@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import OrderTrendChart from '@/app/manager/components/order-trend-chart'
 import OrderStatusDonut from '@/app/manager/components/order-status-donut'
 import {
@@ -48,6 +49,7 @@ const actorLabel: Record<string, string> = {
   cancel_failed_unit: 'Operational',
   hse_inspection: 'HSE',
   ready_to_depart: 'Operational',
+  unit_allocation: 'Operational',
 }
 
 const activityMessage: Record<string, string> = {
@@ -67,6 +69,7 @@ const activityMessage: Record<string, string> = {
   cancel_failed_unit: 'Unit Failed dibatalkan',
   hse_inspection: 'Pemeriksaan HSE',
   ready_to_depart: 'SJ & UJ dikonfirmasi, unit Ready to Depart',
+  unit_allocation: 'Alokasi unit disimpan',
 }
 
 export default async function ManagerDashboardPage() {
@@ -238,6 +241,7 @@ export default async function ManagerDashboardPage() {
       no_buntut,
       plate_number,
       orders (
+        id,
         pk_number,
         customer,
         trip
@@ -257,6 +261,7 @@ export default async function ManagerDashboardPage() {
         .from('order_history')
         .select(`
           id,
+          order_id,
           action,
           new_value,
           changed_at,
@@ -268,6 +273,7 @@ export default async function ManagerDashboardPage() {
         .from('unit_history')
         .select(`
           id,
+          order_id,
           action,
           new_value,
           changed_at,
@@ -293,36 +299,42 @@ export default async function ManagerDashboardPage() {
       value: totalCount,
       icon: ClipboardList,
       color: 'text-[#01236A]',
+      href: '/manager/orders',
     },
     {
       label: 'Order Baru',
       value: newCount,
       icon: Inbox,
       color: 'text-amber-600',
+      href: '/manager/orders?status=waiting_unit',
     },
     {
       label: 'Dalam Proses',
       value: processCount,
       icon: Loader2,
       color: 'text-blue-600',
+      href: '/manager/orders?status=waiting_hse',
     },
     {
       label: 'Dialokasikan',
       value: allocatedCount,
       icon: PackageCheck,
       color: 'text-emerald-600',
+      href: '/manager/orders?status=ready_loading',
     },
     {
       label: 'Ready to Depart',
       value: readyCount,
       icon: Truck,
       color: 'text-violet-600',
+      href: '/manager/orders?status=ready_to_depart',
     },
     {
       label: 'Attention',
       value: needsAttention.length,
       icon: AlertTriangle,
       color: needsAttention.length > 0 ? 'text-red-600' : 'text-gray-300',
+      href: '#needs-attention',
     },
   ]
 
@@ -350,12 +362,16 @@ export default async function ManagerDashboardPage() {
       </div>
 
       {/* KPI STRIP — 1 KARTU, COMPACT */}
-      <div className="mb-5 grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mb-5 grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm sm:grid-cols-3 lg:grid-cols-6">
         {kpiItems.map((item) => {
           const Icon = item.icon
 
-          return (
-            <div key={item.label} className="flex items-center gap-3 px-5 py-4">
+                  return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-gray-50/60"
+            >
               <Icon className={`h-4.5 w-4.5 shrink-0 ${item.color}`} />
               <div>
                 <p className="text-lg font-bold leading-tight text-gray-900">
@@ -365,7 +381,7 @@ export default async function ManagerDashboardPage() {
                   {item.label}
                 </p>
               </div>
-            </div>
+                       </Link>
           )
         })}
       </div>
@@ -426,15 +442,23 @@ export default async function ManagerDashboardPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {readyTrucks.map((truck: any) => (
-                  <tr key={truck.id}>
+                  <tr
+                    key={truck.id}
+                    className="transition-colors hover:bg-gray-50/60"
+                  >
                     <td className="px-5 py-2.5">
-                      <p className="font-bold text-gray-900">
+                      <Link
+                        href={`/manager/orders/${truck.orders?.id || ''}`}
+                        className="block cursor-pointer"
+                      >
+                      <p className="font-bold text-gray-900 hover:underline">
                         {truck.vehicle_type}
                       </p>
                       <p className="text-[11px] text-gray-400">
                         {truck.plate_number || '-'}
                         {truck.no_buntut ? ` · ${truck.no_buntut}` : ''}
                       </p>
+                      </Link>
                     </td>
                     <td className="px-5 py-2.5 text-gray-700">
                       {truck.driver_name || '-'}
@@ -467,7 +491,10 @@ export default async function ManagerDashboardPage() {
 
       {/* NEEDS ATTENTION + RECENT ACTIVITY */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div
+          id="needs-attention"
+          className="rounded-2xl border border-gray-100 bg-white shadow-sm"
+        >
           <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <h2 className="text-sm font-bold text-gray-900">
@@ -483,9 +510,10 @@ export default async function ManagerDashboardPage() {
           {needsAttentionList.length > 0 ? (
             <div className="divide-y divide-gray-50">
               {needsAttentionList.map((item, index) => (
-                <div
+                <Link
                   key={`${item.orderId}-${index}`}
-                  className="flex items-center gap-3 border-l-2 border-amber-400 px-5 py-2.5"
+                  href={`/manager/orders/${item.orderId}`}
+                  className="flex items-center gap-3 border-l-2 border-amber-400 px-5 py-2.5 transition-colors hover:bg-gray-50/60"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-gray-900">
@@ -495,7 +523,7 @@ export default async function ManagerDashboardPage() {
                       {item.reason}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -534,7 +562,11 @@ export default async function ManagerDashboardPage() {
                 }
 
                 return (
-                  <div key={item.id} className="flex gap-2.5 py-1.5">
+                  <Link
+                    key={item.id}
+                    href={`/manager/orders/${item.order_id}`}
+                    className="flex gap-2.5 rounded-lg py-1.5 transition-colors hover:bg-gray-50/60"
+                  >
                     <div className="flex flex-col items-center pt-1.5">
                       <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#01236A]" />
                       {index < recentActivity.length - 1 && (
@@ -550,7 +582,7 @@ export default async function ManagerDashboardPage() {
                         {message}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 )
               })}
             </div>

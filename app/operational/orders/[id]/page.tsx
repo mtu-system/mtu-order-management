@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import ChangeRequestReview from '@/app/operational/components/change-request-review'
 import UnitAllocationForm from '@/app/operational/components/unit-allocation-form'
 import UnitDecisionForm from '@/app/operational/components/unit-decision-form'
+import RedecideButton from '@/app/operational/components/redecide-button'
 import TruckDetailForm from '@/app/operational/components/truck-detail-form'
 import ReadyLoadingUnitsTable from '@/app/operational/components/ready-loading-units-table'
 import FailedUnitResolution from '@/app/operational/components/failed-unit-resolution'
@@ -86,8 +87,20 @@ export default async function OperationalOrderDetailPage({
     .eq('id', id)
     .single()
 
-  if (orderError || !order) {
+   if (orderError || !order) {
     notFound()
+  }
+
+  let decidedByName: string | null = null
+
+  if (order.decided_by) {
+    const { data: deciderProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', order.decided_by)
+      .single()
+
+    decidedByName = deciderProfile?.full_name || 'User'
   }
 
   const { data: trucks, error: trucksError } = await supabase
@@ -391,7 +404,7 @@ export default async function OperationalOrderDetailPage({
           </div>
         </CollapsibleSection>
 
-        {/* KEPUTUSAN UNIT */}
+               {/* KEPUTUSAN UNIT */}
         {!order.unit_decision && (
           <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold tracking-tight text-gray-900">
@@ -401,6 +414,55 @@ export default async function OperationalOrderDetailPage({
               Tentukan ketersediaan unit untuk order ini.
             </p>
             <UnitDecisionForm orderId={order.id} />
+          </div>
+        )}
+
+        {(order.unit_decision === 'partial' ||
+          order.unit_decision === 'unavailable') && (
+          <div className="mb-6 rounded-2xl border-2 border-amber-200 bg-amber-50 p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <div>
+                <h2 className="text-lg font-bold text-amber-900">
+                  {order.unit_decision === 'unavailable'
+                    ? 'Unit Tidak Tersedia'
+                    : 'Sebagian Unit Tersedia'}
+                </h2>
+                <p className="mt-1 text-sm text-amber-800">
+                  Order ini sudah dikembalikan ke Marketing. Menunggu tindak
+                  lanjut dari Marketing (terima reject, ganti kendaraan,
+                  kurangi jumlah, atau catatan tambahan).
+                </p>
+
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-500">
+                      Catatan Keputusan
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-amber-900">
+                      {order.decision_note || 'Tidak ada catatan.'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-500">
+                      Diputuskan Oleh
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-amber-900">
+                      {decidedByName || '-'}
+                      {order.decided_at
+                        ? ` · ${new Date(order.decided_at).toLocaleString(
+                            'id-ID',
+                            { timeZone: 'Asia/Jakarta' }
+                          )}`
+                        : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <RedecideButton orderId={order.id} />
+              </div>
+            </div>
           </div>
         )}
 

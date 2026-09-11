@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
+import { logOrderHistory } from '@/lib/history'
 import { Truck, Save, Loader2 } from 'lucide-react'
 
 type Requirement = {
@@ -162,6 +163,19 @@ export default function UnitAllocationForm({
         console.error('SAVE ALLOCATION LOG ERROR:', logError)
         toast.error('Gagal Menyimpan Alokasi', logError.message)
         return
+      }
+
+      try {
+        await logOrderHistory({
+          orderId,
+          action: 'unit_allocation',
+          newValue: JSON.stringify(allocations),
+          changedBy: user.id,
+        })
+      } catch (historyError) {
+        // Alokasi & activity_logs sudah tersimpan; jangan gagalkan submit
+        // hanya karena entri riwayat Aktivitas gagal ditulis.
+        console.error('LOG ORDER HISTORY ERROR:', historyError)
       }
 
       const vmRows = allocations.flatMap((allocation) =>

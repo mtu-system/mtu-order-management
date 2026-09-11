@@ -21,6 +21,7 @@ const actionLabels: Record<string, string> = {
   failed_unit_to_vendor: 'Unit Failed Dialihkan ke Vendor',
   cancel_failed_unit: 'Unit Failed Dibatalkan',
   hse_inspection: 'Pemeriksaan HSE',
+  unit_allocation: 'Alokasi Unit',
 }
 
 export default async function OrderHistoryTimeline({

@@ -2,6 +2,7 @@ import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
 import OrdersSearchTable from '@/app/manager/components/orders-search-table'
+export const dynamic = 'force-dynamic'
 
 function getStatusLabel(status: string) {
   switch (status) {
@@ -59,8 +60,13 @@ function getAvatarClass(name: string) {
   return avatarColors[index]
 }
 
-export default async function ManagerOrdersPage() {
+export default async function ManagerOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>
+}) {
   const user = await requireRole(['manager'])
+  const { status } = await searchParams
 
   const supabase = await createClient()
 
@@ -119,7 +125,7 @@ export default async function ManagerOrdersPage() {
         </span>
       </div>
 
-      <OrdersSearchTable orders={orderRows} />
+      <OrdersSearchTable orders={orderRows} initialStatus={status} />
     </DashboardShell>
   )
 }

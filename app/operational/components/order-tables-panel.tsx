@@ -8,10 +8,17 @@ import {
   MinusCircle,
   PlusCircle,
   History as HistoryIcon,
+  ClipboardList,
+  ShieldCheck,
+  PackageCheck,
+  Truck,
+  AlertTriangle,
 } from 'lucide-react'
 
 type ActiveOrderRow = {
   id: string
+  status: string
+  hasFailedTruck: boolean
   avatarClass: string
   customer: string
   pkNumber: string | null
@@ -55,6 +62,11 @@ type OrderTablesPanelProps = {
   activeOrders: ActiveOrderRow[]
   readyUnits: ReadyUnitRow[]
   readyToDepartUnits: ReadyToDepartRow[]
+  waitingUnitCount: number
+  waitingHSECount: number
+  readyLoadingCount: number
+  readyToDepartCount: number
+  failedCount: number
 }
 
 type Tab = 'active' | 'ready' | 'depart'
@@ -63,11 +75,94 @@ export default function OrderTablesPanel({
   activeOrders,
   readyUnits,
   readyToDepartUnits,
+  waitingUnitCount,
+  waitingHSECount,
+  readyLoadingCount,
+  readyToDepartCount,
+  failedCount,
 }: OrderTablesPanelProps) {
   const [tab, setTab] = useState<Tab>('active')
+    const [activeStatusFilter, setActiveStatusFilter] = useState(
+    'all' as 'all' | 'waiting_unit' | 'waiting_hse' | 'failed'
+  )
+
+  const kpiItems = [
+    {
+      label: 'Waiting Unit',
+      value: waitingUnitCount,
+      icon: ClipboardList,
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+      onClick: () => {
+        setTab('active')
+        setActiveStatusFilter('waiting_unit')
+      },
+    },
+    {
+      label: 'Waiting HSE',
+      value: waitingHSECount,
+      icon: ShieldCheck,
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      onClick: () => {
+        setTab('active')
+        setActiveStatusFilter('waiting_hse')
+      },
+    },
+    {
+      label: 'Menunggu SJ/UJ',
+      value: readyLoadingCount,
+      icon: PackageCheck,
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      onClick: () => setTab('ready'),
+    },
+    {
+      label: 'Ready to Depart',
+      value: readyToDepartCount,
+      icon: Truck,
+      iconBg: 'bg-violet-50',
+      iconColor: 'text-violet-600',
+      onClick: () => setTab('depart'),
+    },
+    {
+      label: 'Failed',
+      value: failedCount,
+      icon: AlertTriangle,
+      iconBg: 'bg-red-50',
+      iconColor: 'text-red-600',
+      onClick: () => {
+        setTab('active')
+        setActiveStatusFilter('failed')
+      },
+      valueColor: 'text-red-600',
+    },
+  ]
+
+  const filteredActiveOrders = activeOrders.filter((order) => {
+    if (activeStatusFilter === 'all') return true
+    if (activeStatusFilter === 'failed') return order.hasFailedTruck
+    if (activeStatusFilter === 'waiting_hse') {
+      return order.status === 'waiting_hse' || order.status === 'inspection'
+    }
+    return order.status === activeStatusFilter
+  })
+
+  const activeStatusFilterLabel: Record<string, string> = {
+    waiting_unit: 'Waiting Unit',
+    waiting_hse: 'Waiting HSE',
+    failed: 'Failed',
+  }
 
   const tabs: { key: Tab; label: string; count: number }[] = [
-    { key: 'active', label: 'Order Aktif', count: activeOrders.length },
+        {
+      key: 'active',
+      label: 'Order Aktif',
+      count:
+        tab === 'active' && activeStatusFilter !== 'all'
+          ? filteredActiveOrders.length
+          : activeOrders.length,
+    },
     { key: 'ready', label: 'Menunggu SJ/UJ', count: readyUnits.length },
     {
       key: 'depart',
@@ -77,7 +172,40 @@ export default function OrderTablesPanel({
   ]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <div className="space-y-4">
+      {/* STATISTIK — KLIK UNTUK PINDAH TAB */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+        {kpiItems.map((item) => {
+          const Icon = item.icon
+
+          return (
+            <button
+              key={item.label}
+              type="button"
+              onClick={item.onClick}
+              className="rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition hover:border-[#01236A]/30 hover:shadow-md"
+            >
+              <div
+                className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg} ${item.iconColor}`}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+              <p className="text-sm font-medium text-gray-500">
+                {item.label}
+              </p>
+              <p
+                className={`mt-1 text-3xl font-bold ${
+                  item.valueColor || 'text-gray-900'
+                }`}
+              >
+                {item.value}
+              </p>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
       {/* TAB BAR */}
       <div className="flex items-center gap-1 border-b border-gray-100 bg-gray-50/60 px-3 pt-3">
         {tabs.map((item) => {
@@ -107,7 +235,22 @@ export default function OrderTablesPanel({
             </button>
           )
         })}
-      </div>
+            </div>
+
+      {tab === 'active' && activeStatusFilter !== 'all' && (
+        <div className="flex items-center gap-2 border-b border-gray-100 bg-amber-50/60 px-6 py-2.5">
+          <span className="text-xs font-semibold text-amber-700">
+            Filter aktif: {activeStatusFilterLabel[activeStatusFilter]}
+          </span>
+          <button
+            type="button"
+            onClick={() => setActiveStatusFilter('all')}
+            className="text-xs font-bold text-amber-800 underline hover:text-amber-900"
+          >
+            Hapus filter
+          </button>
+        </div>
+      )}
 
       {/* ORDER AKTIF */}
       {tab === 'active' && (
@@ -142,8 +285,8 @@ export default function OrderTablesPanel({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-gray-50">
-              {activeOrders.map((order) => (
+                        <tbody className="divide-y divide-gray-50">
+              {filteredActiveOrders.map((order) => (
                 <tr
                   key={order.id}
                   className="transition-colors hover:bg-gray-50/60"
@@ -274,12 +417,16 @@ export default function OrderTablesPanel({
             </tbody>
           </table>
 
-          {!activeOrders.length && (
+                   {!filteredActiveOrders.length && (
             <div className="flex flex-col items-center gap-3 p-14 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <Inbox className="h-6 w-6" />
               </div>
-              <p className="text-sm text-gray-400">Tidak ada order aktif.</p>
+              <p className="text-sm text-gray-400">
+                {activeStatusFilter === 'all'
+                  ? 'Tidak ada order aktif.'
+                  : 'Tidak ada order yang cocok dengan filter ini.'}
+              </p>
             </div>
           )}
         </div>
@@ -445,7 +592,7 @@ export default function OrderTablesPanel({
             </tbody>
           </table>
 
-          {!readyToDepartUnits.length && (
+                   {!readyToDepartUnits.length && (
             <div className="flex flex-col items-center gap-3 p-14 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <Inbox className="h-6 w-6" />
@@ -457,6 +604,7 @@ export default function OrderTablesPanel({
           )}
         </div>
       )}
+    </div>
     </div>
   )
 }

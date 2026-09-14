@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import OrderTrendChart from '@/app/manager/components/order-trend-chart'
 import OrderStatusDonut from '@/app/manager/components/order-status-donut'
+import OrderStatusPanel from '@/app/manager/components/order-status-panel'
 import {
   ClipboardList,
   Inbox,
@@ -72,6 +73,47 @@ const activityMessage: Record<string, string> = {
   unit_allocation: 'Alokasi unit disimpan',
 }
 
+function getStatusLabel(status: string) {
+  switch (status) {
+    case 'waiting_unit':
+      return 'Waiting Unit'
+    case 'waiting_hse':
+      return 'Waiting HSE'
+    case 'inspection':
+      return 'Inspection'
+    case 'ready_loading':
+      return 'Menunggu SJ/UJ'
+    case 'ready_to_depart':
+      return 'Ready to Depart'
+    case 'pending':
+      return 'Unit Tidak Tersedia'
+    case 'cancelled':
+      return 'Cancelled'
+    default:
+      return status
+  }
+}
+
+function getStatusClass(status: string) {
+  switch (status) {
+    case 'waiting_unit':
+      return 'bg-amber-100 text-amber-800'
+    case 'waiting_hse':
+    case 'inspection':
+      return 'bg-blue-100 text-blue-800'
+    case 'ready_loading':
+      return 'bg-emerald-100 text-emerald-800'
+    case 'ready_to_depart':
+      return 'bg-violet-100 text-violet-800'
+    case 'pending':
+      return 'bg-gray-200 text-gray-700'
+    case 'cancelled':
+      return 'bg-red-100 text-red-700'
+    default:
+      return 'bg-gray-100 text-gray-700'
+  }
+}
+
 export default async function ManagerDashboardPage() {
   const user = await requireRole(['manager'])
 
@@ -83,6 +125,9 @@ export default async function ManagerDashboardPage() {
       id,
       customer,
       pk_number,
+      rft_tr_job,
+      trip,
+      quantity,
       status,
       unit_decision,
       created_at
@@ -293,50 +338,65 @@ export default async function ManagerDashboardPage() {
     )
     .slice(0, 6)
 
-  const kpiItems = [
+  const orderRows = allOrders.map((order) => ({
+    id: order.id,
+    customer: order.customer,
+    pkNumber: order.pk_number,
+    rftTrJob: order.rft_tr_job,
+    trip: order.trip,
+    quantity: order.quantity,
+    status: order.status,
+    statusLabel: getStatusLabel(order.status),
+    statusClass: getStatusClass(order.status),
+    dateLabel: new Date(order.created_at).toLocaleString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+  }))
+
+   const kpiItems = [
     {
+      key: 'all',
       label: 'Total Order',
       value: totalCount,
-      icon: ClipboardList,
       color: 'text-[#01236A]',
-      href: '/manager/orders',
     },
     {
+      key: 'waiting_unit',
       label: 'Order Baru',
       value: newCount,
-      icon: Inbox,
       color: 'text-amber-600',
-      href: '/manager/orders?status=waiting_unit',
     },
     {
+      key: 'waiting_hse',
       label: 'Dalam Proses',
       value: processCount,
-      icon: Loader2,
       color: 'text-blue-600',
-      href: '/manager/orders?status=waiting_hse',
     },
     {
+      key: 'ready_loading',
       label: 'Dialokasikan',
       value: allocatedCount,
-      icon: PackageCheck,
       color: 'text-emerald-600',
-      href: '/manager/orders?status=ready_loading',
     },
     {
+      key: 'ready_to_depart',
       label: 'Ready to Depart',
       value: readyCount,
-      icon: Truck,
       color: 'text-violet-600',
-      href: '/manager/orders?status=ready_to_depart',
-    },
-    {
-      label: 'Attention',
-      value: needsAttention.length,
-      icon: AlertTriangle,
-      color: needsAttention.length > 0 ? 'text-red-600' : 'text-gray-300',
-      href: '#needs-attention',
     },
   ]
+
+  const attentionItem = {
+    label: 'Attention',
+    value: needsAttention.length,
+    color: needsAttention.length > 0 ? 'text-red-600' : 'text-gray-300',
+    href: '#needs-attention',
+  }
 
   return (
     <DashboardShell user={user}>
@@ -361,30 +421,12 @@ export default async function ManagerDashboardPage() {
         </span>
       </div>
 
-      {/* KPI STRIP — 1 KARTU, COMPACT */}
-          <div className="mb-5 grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm sm:grid-cols-3 lg:grid-cols-6">
-        {kpiItems.map((item) => {
-          const Icon = item.icon
-
-                  return (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-gray-50/60"
-            >
-              <Icon className={`h-4.5 w-4.5 shrink-0 ${item.color}`} />
-              <div>
-                <p className="text-lg font-bold leading-tight text-gray-900">
-                  {item.value}
-                </p>
-                <p className="text-[11px] font-medium leading-tight text-gray-500">
-                  {item.label}
-                </p>
-              </div>
-                       </Link>
-          )
-        })}
-      </div>
+      {/* KPI STRIP + TABEL — BISA DIKLIK UNTUK FILTER */}
+      <OrderStatusPanel
+        orders={orderRows}
+        kpiItems={kpiItems}
+        attentionItem={attentionItem}
+      />
 
       {/* TREND + STATUS */}
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-5">

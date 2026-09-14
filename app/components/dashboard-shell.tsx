@@ -132,7 +132,7 @@ export default function DashboardShell({
 
 function getMenus(role: UserRole): MenuItem[] {
   switch (role) {
-       case 'manager':
+         case 'manager':
   return [
     { label: 'Dashboard', href: '/manager', icon: LayoutDashboard },
     { label: 'Orders', href: '/manager/orders', icon: ClipboardList },
@@ -145,6 +145,11 @@ function getMenus(role: UserRole): MenuItem[] {
       label: 'Reject Report',
       href: '/manager/reject-report',
       icon: XCircle,
+    },
+    {
+      label: 'Customer Overview',
+      href: '/manager/customer-overview',
+      icon: Users,
     },
   ]
 

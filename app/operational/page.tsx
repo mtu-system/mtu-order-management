@@ -6,11 +6,6 @@ import RecentActivityFeed from '@/app/components/recent-activity-feed'
 import OrderTablesPanel from '@/app/operational/components/order-tables-panel'
 import CopyWaFormatButton from '@/app/operational/components/copy-wa-format-button'
 import {
-  ClipboardList,
-  ShieldCheck,
-  PackageCheck,
-  Truck,
-  AlertTriangle,
   History as HistoryIcon,
 } from 'lucide-react'
 
@@ -139,7 +134,11 @@ export default async function OperationalPage() {
     return true
   })
 
-  const activeOrderIds = activeOrders.map((order) => order.id)
+   const activeOrderIds = activeOrders.map((order) => order.id)
+
+  const readyToDepartOrders = (orders || []).filter(
+    (order) => order.status === 'ready_to_depart'
+  )
 
   const [{ data: orderHistoryForBadge }, { data: unitHistoryForBadge }] =
     activeOrderIds.length > 0
@@ -229,7 +228,7 @@ export default async function OperationalPage() {
       }))
   )
 
-  const readyToDepartUnits = activeOrders.flatMap((order) =>
+    const readyToDepartUnits = readyToDepartOrders.flatMap((order) =>
     (order.order_trucks || [])
       .filter((truck) => truck.status === 'ready_to_depart')
       .map((truck) => ({
@@ -267,10 +266,7 @@ export default async function OperationalPage() {
     (truck) => truck.status === 'ready_loading'
   ).length
 
-  const readyToDepartCount = activeTrucks.filter(
-    (truck) => truck.status === 'ready_to_depart'
-  ).length
-
+    const readyToDepartCount = readyToDepartUnits.length
   const failedCount = activeTrucks.filter(
     (truck) => truck.status === 'failed'
   ).length
@@ -351,8 +347,14 @@ export default async function OperationalPage() {
         )
         .join(', ')
 
+        const hasFailedTruck = (order.order_trucks || []).some(
+      (truck) => truck.status === 'failed'
+    )
+
     return {
       id: order.id,
+      status: order.status,
+      hasFailedTruck,
       avatarClass: getAvatarClass(order.customer),
       customer: order.customer,
       pkNumber: order.pk_number,
@@ -396,64 +398,16 @@ export default async function OperationalPage() {
         </div>
       </div>
 
-      {/* STATISTIK */}
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-            <ClipboardList className="h-5 w-5" />
-          </div>
-          <p className="text-sm font-medium text-gray-500">Waiting Unit</p>
-          <p className="mt-1 text-3xl font-bold text-gray-900">
-            {waitingUnitCount}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <p className="text-sm font-medium text-gray-500">Waiting HSE</p>
-          <p className="mt-1 text-3xl font-bold text-gray-900">
-            {waitingHSECount}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-            <PackageCheck className="h-5 w-5" />
-          </div>
-          <p className="text-sm font-medium text-gray-500">Menunggu SJ/UJ</p>
-          <p className="mt-1 text-3xl font-bold text-gray-900">
-            {readyLoadingCount}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-            <Truck className="h-5 w-5" />
-          </div>
-          <p className="text-sm font-medium text-gray-500">Ready to Depart</p>
-          <p className="mt-1 text-3xl font-bold text-gray-900">
-            {readyToDepartCount}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600">
-            <AlertTriangle className="h-5 w-5" />
-          </div>
-          <p className="text-sm font-medium text-gray-500">Failed</p>
-          <p className="mt-1 text-3xl font-bold text-red-600">
-            {failedCount}
-          </p>
-        </div>
-      </div>
-
-      {/* 1 TABEL BERTAB */}
+           {/* 1 TABEL BERTAB */}
       <OrderTablesPanel
         activeOrders={activeOrderRows}
         readyUnits={readyUnits}
         readyToDepartUnits={readyToDepartUnits}
+        waitingUnitCount={waitingUnitCount}
+        waitingHSECount={waitingHSECount}
+        readyLoadingCount={readyLoadingCount}
+        readyToDepartCount={readyToDepartCount}
+        failedCount={failedCount}
       />
     </DashboardShell>
   )

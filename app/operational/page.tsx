@@ -63,6 +63,17 @@ function getStatusClass(status: string) {
   }
 }
 
+const changeTypeLabels: Record<string, string> = {
+  change_vehicle: 'Ganti Jenis Unit',
+  change_trip: 'Ubah Trip',
+  change_pk: 'Ubah PK',
+  change_rft: 'Ubah RFT/TR/Job',
+  change_customer: 'Ubah Customer',
+  change_instruction: 'Ubah Instruksi',
+  change_note: 'Ubah Catatan',
+  cancel_order: 'Batalkan Order',
+}
+
 export default async function OperationalPage() {
   const user = await requireRole(['operational'])
 
@@ -134,7 +145,7 @@ export default async function OperationalPage() {
     return true
   })
 
-   const activeOrderIds = activeOrders.map((order) => order.id)
+  const activeOrderIds = activeOrders.map((order) => order.id)
 
   const readyToDepartOrders = (orders || []).filter(
     (order) => order.status === 'ready_to_depart'
@@ -165,6 +176,55 @@ export default async function OperationalPage() {
       (historyCountByOrder.get(row.order_id) || 0) + 1
     )
   }
+
+    const { data: pendingChangeRequestRows, error: pendingChangeRequestsError } =
+    await supabase
+      .from('order_change_requests')
+      .select(`
+        id,
+        change_type,
+        requested_quantity,
+        requested_vehicle_type,
+        reason,
+        created_at,
+        orders (
+          id,
+          customer,
+          pk_number,
+          rft_tr_job,
+          status
+        )
+      `)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+
+  if (pendingChangeRequestsError) {
+    console.error('GET PENDING CHANGE REQUESTS ERROR:', pendingChangeRequestsError)
+  }
+
+  const pendingChangeRequestAlerts = (pendingChangeRequestRows || [])
+    .filter((row) => row.orders)
+    .map((row) => {
+      const order = row.orders as unknown as {
+        id: string
+        customer: string
+        pk_number: string | null
+        rft_tr_job: string | null
+        status: string
+      }
+
+      return {
+        id: row.id,
+        orderId: order.id,
+        customer: order.customer,
+        pkNumber: order.pk_number,
+        rftTrJob: order.rft_tr_job,
+        orderStatus: order.status,
+        label: changeTypeLabels[row.change_type] || row.change_type,
+        quantity: row.requested_quantity,
+        vehicleType: row.requested_vehicle_type,
+      }
+    })
 
   const { data: allocationLogs, error: allocationLogsError } =
     await supabase
@@ -228,9 +288,13 @@ export default async function OperationalPage() {
       }))
   )
 
-    const readyToDepartUnits = readyToDepartOrders.flatMap((order) =>
+  const readyToDepartUnits = readyToDepartOrders.flatMap((order) =>
     (order.order_trucks || [])
-      .filter((truck) => truck.status === 'ready_to_depart')
+      .filter(
+        (truck) =>
+          truck.status === 'ready_to_depart' ||
+          (truck.source === 'vendor' && truck.status === 'vm')
+      )
       .map((truck) => ({
         id: truck.id,
         orderId: order.id,
@@ -266,7 +330,7 @@ export default async function OperationalPage() {
     (truck) => truck.status === 'ready_loading'
   ).length
 
-    const readyToDepartCount = readyToDepartUnits.length
+  const readyToDepartCount = readyToDepartUnits.length
   const failedCount = activeTrucks.filter(
     (truck) => truck.status === 'failed'
   ).length
@@ -289,6 +353,25 @@ export default async function OperationalPage() {
       .map((request) => ({
         id: request.id,
         quantity: request.requested_quantity || 0,
+      }))
+
+    const changeVehicleRequests = pendingChangeRequests
+      .filter((request) => request.change_type === 'change_vehicle')
+      .map((request) => ({
+        id: request.id,
+        quantity: request.requested_quantity || 0,
+      }))
+
+    const otherRequests = pendingChangeRequests
+      .filter(
+        (request) =>
+          !['reduce_unit', 'add_unit', 'change_vehicle'].includes(
+            request.change_type
+          )
+      )
+      .map((request) => ({
+        id: request.id,
+        label: changeTypeLabels[request.change_type] || request.change_type,
       }))
 
     const activeOrderTrucks =
@@ -347,7 +430,7 @@ export default async function OperationalPage() {
         )
         .join(', ')
 
-        const hasFailedTruck = (order.order_trucks || []).some(
+    const hasFailedTruck = (order.order_trucks || []).some(
       (truck) => truck.status === 'failed'
     )
 
@@ -364,11 +447,21 @@ export default async function OperationalPage() {
       filledCount: truckCount + vmCount,
       vmCount,
       unavailableCount,
-      statusLabel: getStatusLabel(order.status),
-      statusClass: getStatusClass(order.status),
+      statusLabel: (order.order_trucks || []).some(
+        (truck) => truck.source === 'internal' && truck.status === 'failed'
+      )
+        ? 'Unit Gagal HSE'
+        : getStatusLabel(order.status),
+      statusClass: (order.order_trucks || []).some(
+        (truck) => truck.source === 'internal' && truck.status === 'failed'
+      )
+        ? 'bg-red-100 text-red-700'
+        : getStatusClass(order.status),
       historyCount: historyCountByOrder.get(order.id) || 0,
       reduceRequests,
       addRequests,
+      changeVehicleRequests,
+      otherRequests,
     }
   })
 
@@ -385,7 +478,7 @@ export default async function OperationalPage() {
           </p>
         </div>
 
-                <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <CopyWaFormatButton />
 
           <Link
@@ -398,7 +491,46 @@ export default async function OperationalPage() {
         </div>
       </div>
 
-           {/* 1 TABEL BERTAB */}
+            {pendingChangeRequestAlerts.length > 0 && (
+        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <p className="mb-3 text-sm font-bold text-amber-900">
+            {pendingChangeRequestAlerts.length} Permintaan Perubahan Menunggu
+            Persetujuan
+          </p>
+          <div className="space-y-2">
+            {pendingChangeRequestAlerts.map((alert) => (
+              <Link
+                key={alert.id}
+                href={`/operational/orders/${alert.orderId}`}
+                className="flex items-center justify-between rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm transition hover:bg-amber-50/60"
+              >
+                <div>
+                  <span className="font-bold text-gray-900">
+                    {alert.customer}
+                  </span>
+                  <span className="ml-2 text-xs text-gray-400">
+                    {alert.pkNumber || alert.rftTrJob || '-'}
+                  </span>
+                  <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                    {alert.label}
+                    {alert.quantity ? ` (${alert.quantity} Unit)` : ''}
+                  </span>
+                  {alert.orderStatus === 'ready_to_depart' && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+                      Sudah Ready to Depart
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs font-bold text-[#01236A]">
+                  Proses →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 1 TABEL BERTAB */}
       <OrderTablesPanel
         activeOrders={activeOrderRows}
         readyUnits={readyUnits}

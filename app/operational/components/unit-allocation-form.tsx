@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { logOrderHistory } from '@/lib/history'
+import { syncOrderStatus } from '@/lib/sync-order-status'
 import { Truck, Save, Loader2 } from 'lucide-react'
 
 type Requirement = {
@@ -204,14 +205,20 @@ export default function UnitAllocationForm({
         }
       }
 
-      const hasInternal = allocations.some(
+          const hasInternal = allocations.some(
         (allocation) => allocation.internal > 0
       )
 
       const { error: orderError } = await supabase
         .from('orders')
         .update({
-          status: hasInternal ? 'waiting_hse' : 'ready_loading',
+          status: hasInternal ? 'waiting_hse' : 'ready_to_depart',
+          ...(hasInternal
+            ? {}
+            : {
+                departure_ready_by: user.id,
+                departure_ready_at: new Date().toISOString(),
+              }),
         })
         .eq('id', orderId)
 

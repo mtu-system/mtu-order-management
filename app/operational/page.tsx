@@ -126,7 +126,7 @@ export default async function OperationalPage() {
       )
     `)
     .or(
-      `updated_at.gte.${todayStartIso},status.in.(waiting_unit,waiting_hse,inspection,ready_loading,failed)`
+      `departure_ready_at.gte.${todayStartIso},status.in.(waiting_unit,waiting_hse,inspection,ready_loading,failed)`
     )
     .order('created_at', { ascending: false })
 

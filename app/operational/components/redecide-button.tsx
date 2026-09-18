@@ -31,7 +31,7 @@ export default function RedecideButton({ orderId }: RedecideButtonProps) {
     setLoading(true)
 
     try {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('orders')
         .update({
           status: 'waiting_unit',
@@ -42,10 +42,21 @@ export default function RedecideButton({ orderId }: RedecideButtonProps) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', orderId)
+        .in('unit_decision', ['partial', 'unavailable'])
+        .select('id')
 
       if (error) {
         console.error('REDECIDE ERROR:', error)
         toast.error('Gagal Reset Keputusan', error.message)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        toast.error(
+          'Tidak Bisa Reset',
+          'Order ini sudah berubah (mungkin diproses user lain). Silakan refresh halaman.'
+        )
+        router.refresh()
         return
       }
 

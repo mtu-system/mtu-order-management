@@ -109,7 +109,7 @@ export default function UnitDecisionForm({
         return
       }
 
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('orders')
         .update({
           unit_decision: decision,
@@ -119,10 +119,21 @@ export default function UnitDecisionForm({
           status: nextStatus,
         })
         .eq('id', orderId)
+        .is('unit_decision', null)
+        .select('id')
 
       if (error) {
         console.error('UPDATE DECISION ERROR:', error)
         toast.error('Gagal Menyimpan Keputusan', error.message)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        toast.error(
+          'Keputusan Sudah Diambil',
+          'Order ini sudah punya keputusan unit (mungkin oleh user lain). Silakan refresh halaman.'
+        )
+        router.refresh()
         return
       }
 

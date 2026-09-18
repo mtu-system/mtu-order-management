@@ -209,7 +209,7 @@ export default function UnitAllocationForm({
         (allocation) => allocation.internal > 0
       )
 
-      const { error: orderError } = await supabase
+      const { error: orderError, data: orderUpdateData } = await supabase
         .from('orders')
         .update({
           status: hasInternal ? 'waiting_hse' : 'ready_to_depart',
@@ -221,10 +221,25 @@ export default function UnitAllocationForm({
               }),
         })
         .eq('id', orderId)
+        .eq('status', 'waiting_unit')
+        .select('id')
 
       if (orderError) {
         console.error('UPDATE ORDER STATUS ERROR:', orderError)
         toast.error('Gagal Memperbarui Status Order', orderError.message)
+        return
+      }
+
+      if (!orderUpdateData || orderUpdateData.length === 0) {
+        // Order sudah tidak di status waiting_unit (misal alokasi ini sudah
+        // disimpan lebih dulu di tab/user lain). Unit yang baru saja
+        // di-insert di atas TETAP tersimpan -- operational perlu cek
+        // manual ke halaman order untuk hindari unit dobel.
+        toast.error(
+          'Order Sudah Berubah',
+          'Status order sudah berubah (mungkin alokasi ini baru disimpan di tempat lain). Silakan refresh dan periksa unit yang sudah tersimpan sebelum menyimpan ulang.'
+        )
+        router.refresh()
         return
       }
 

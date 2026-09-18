@@ -989,6 +989,7 @@ export default function ChangeRequestReview({
         .from('order_change_requests')
         .update({ status: 'approved' })
         .eq('id', request.id)
+        .eq('status', 'pending')
 
       if (requestError) {
         toast.error('Gagal Memperbarui Status Request', requestError.message)
@@ -1159,6 +1160,7 @@ export default function ChangeRequestReview({
         .from('order_change_requests')
         .update({ status: 'approved' })
         .eq('id', request.id)
+        .eq('status', 'pending')
 
       if (requestError) {
         toast.error('Gagal Memperbarui Status Request', requestError.message)
@@ -1238,6 +1240,7 @@ export default function ChangeRequestReview({
         .from('order_change_requests')
         .update({ status: 'rejected' })
         .eq('id', request.id)
+        .eq('status', 'pending')
 
       if (error) {
         toast.error('Gagal Menolak Permintaan', error.message)

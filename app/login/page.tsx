@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
   Loader2,
@@ -58,8 +59,14 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-500/[0.18] blur-3xl" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-sm font-bold text-white">
-            MT
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 p-1.5">
+            <Image
+              src="/mtu.png"
+              alt="Mandiri Trucking"
+              width={28}
+              height={22}
+              className="h-full w-full object-contain"
+            />
           </div>
           <div>
             <p className="text-sm font-semibold text-white">MTU</p>
@@ -70,8 +77,15 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 mx-auto w-full max-w-md text-center">
-          <div className="mx-auto mb-8 flex h-[180px] w-[180px] items-center justify-center rounded-3xl bg-white shadow-[0_24px_60px_rgba(0,0,0,0.3)]">
-            <span className="text-4xl font-extrabold text-[#0E2451]">MT</span>
+          <div className="mx-auto mb-8 flex h-[180px] w-[180px] items-center justify-center rounded-3xl bg-white p-8 shadow-[0_24px_60px_rgba(0,0,0,0.3)]">
+            <Image
+              src="/mtu.png"
+              alt="Mandiri Trucking"
+              width={190}
+              height={150}
+              className="h-auto w-full object-contain"
+              priority
+            />
           </div>
 
           <h2 className="text-3xl font-extrabold tracking-tight text-white">

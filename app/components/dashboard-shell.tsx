@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import LogoutButton from './logout-button'
 import type { UserRole } from '@/lib/auth'
@@ -55,8 +56,14 @@ export default function DashboardShell({
       {/* SIDEBAR */}
       <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-gray-200 bg-white px-3 py-4">
         <div className="mb-3 flex items-center gap-2.5 border-b border-gray-200 px-2 pb-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2563EB] text-sm font-bold text-white">
-            MT
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-100 bg-white p-1">
+            <Image
+              src="/mtu.png"
+              alt="Mandiri Trucking"
+              width={28}
+              height={22}
+              className="h-full w-full object-contain"
+            />
           </div>
           <div>
             <h1 className="text-[13.5px] font-bold leading-tight text-gray-900">

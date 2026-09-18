@@ -79,12 +79,6 @@ export default async function MarketingPage() {
     todayOrdersQuery = todayOrdersQuery.eq('created_by', user.id)
   }
 
-  const { data: todayOrders, error: todayError } = await todayOrdersQuery
-
-  if (todayError) {
-    console.error('MARKETING TODAY ORDERS ERROR:', todayError)
-  }
-
   // ==========================================
   // UNIT PER STATUS — HARUS DIBATASI KE ORDER MILIK SENDIRI
   // ==========================================
@@ -114,12 +108,16 @@ export default async function MarketingPage() {
     return query
   }
 
+  // todayOrdersQuery dan keempat query truck di bawah ini tidak saling
+  // butuh hasil satu sama lain, jadi digabung satu Promise.all.
   const [
+    { data: todayOrders, error: todayError },
     { data: waitingHseTrucks, error: waitingHseError },
     { data: readyLoadingTrucks, error: readyLoadingError },
     { data: readyDepartureUnits, error: readyDepartError },
     { data: failedTrucks, error: failedError },
   ] = await Promise.all([
+    todayOrdersQuery,
     scopeToOwner(
       supabase.from('order_trucks').select(truckSelect).eq('status', 'waiting_hse')
     ),
@@ -139,6 +137,7 @@ export default async function MarketingPage() {
     ),
   ])
 
+  if (todayError) console.error('MARKETING TODAY ORDERS ERROR:', todayError)
   if (waitingHseError) console.error('MARKETING WAITING HSE ERROR:', waitingHseError)
   if (readyLoadingError) console.error('MARKETING READY LOADING ERROR:', readyLoadingError)
   if (readyDepartError) console.error('MARKETING READY DEPART ERROR:', readyDepartError)

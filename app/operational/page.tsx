@@ -92,46 +92,75 @@ export default async function OperationalPage() {
 
   const todayStartIso = getJakartaTodayStartIso()
 
-  const { data: orders, error: ordersError } = await supabase
-    .from('orders')
-    .select(`
-      id,
-      customer,
-      pk_number,
-      rft_tr_job,
-      quantity,
-      trip,
-      status,
-      created_at,
-      order_requirements (
-        vehicle_type,
-        quantity
-      ),
-      order_change_requests (
+  // `orders` dan `pendingChangeRequestRows` tidak saling butuh hasil satu
+  // sama lain, jadi dijalankan paralel supaya ga nambah waktu tunggu.
+  const [
+    { data: orders, error: ordersError },
+    { data: pendingChangeRequestRows, error: pendingChangeRequestsError },
+  ] = await Promise.all([
+    supabase
+      .from('orders')
+      .select(`
+        id,
+        customer,
+        pk_number,
+        rft_tr_job,
+        quantity,
+        trip,
+        status,
+        created_at,
+        order_requirements (
+          vehicle_type,
+          quantity
+        ),
+        order_change_requests (
+          id,
+          change_type,
+          requested_quantity,
+          reason,
+          status,
+          created_at
+        ),
+        order_trucks (
+          id,
+          vehicle_type,
+          no_buntut,
+          plate_number,
+          driver_name,
+          status,
+          source
+        )
+      `)
+      .or(
+        `departure_ready_at.gte.${todayStartIso},status.in.(waiting_unit,waiting_hse,inspection,ready_loading,failed)`
+      )
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('order_change_requests')
+      .select(`
         id,
         change_type,
         requested_quantity,
+        requested_vehicle_type,
         reason,
-        status,
-        created_at
-      ),
-      order_trucks (
-        id,
-        vehicle_type,
-        no_buntut,
-        plate_number,
-        driver_name,
-        status,
-        source
-      )
-    `)
-    .or(
-      `departure_ready_at.gte.${todayStartIso},status.in.(waiting_unit,waiting_hse,inspection,ready_loading,failed)`
-    )
-    .order('created_at', { ascending: false })
+        created_at,
+        orders (
+          id,
+          customer,
+          pk_number,
+          rft_tr_job,
+          status
+        )
+      `)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false }),
+  ])
 
   if (ordersError) {
     console.error('GET OPERATIONAL ORDERS ERROR:', ordersError)
+  }
+  if (pendingChangeRequestsError) {
+    console.error('GET PENDING CHANGE REQUESTS ERROR:', pendingChangeRequestsError)
   }
 
   const activeOrders = (orders || []).filter((order) => {
@@ -159,7 +188,14 @@ export default async function OperationalPage() {
     (order) => order.status === 'ready_to_depart'
   )
 
-  const [{ data: orderHistoryForBadge }, { data: unitHistoryForBadge }] =
+  // Ketiga query di bawah ini (history-badge x2 + allocation log) sama-sama
+  // hanya butuh activeOrderIds/activeOrders dari query orders di atas, dan
+  // tidak saling butuh hasil satu sama lain — jadi digabung satu Promise.all.
+  const [
+    { data: orderHistoryForBadge },
+    { data: unitHistoryForBadge },
+    { data: allocationLogs, error: allocationLogsError },
+  ] =
     activeOrderIds.length > 0
       ? await Promise.all([
           supabase
@@ -170,8 +206,22 @@ export default async function OperationalPage() {
             .from('unit_history')
             .select('order_id')
             .in('order_id', activeOrderIds),
+          supabase
+            .from('activity_logs')
+            .select(`
+              order_id,
+              new_value,
+              created_at
+            `)
+            .eq('action', 'UNIT_ALLOCATION')
+            .in('order_id', activeOrderIds)
+            .order('created_at', { ascending: false }),
         ])
-      : [{ data: [] }, { data: [] }]
+      : [{ data: [] }, { data: [] }, { data: [], error: null }]
+
+  if (allocationLogsError) {
+    console.error('GET ALLOCATION LOG ERROR:', allocationLogsError)
+  }
 
   const historyCountByOrder = new Map<string, number>()
 
@@ -183,31 +233,6 @@ export default async function OperationalPage() {
       row.order_id,
       (historyCountByOrder.get(row.order_id) || 0) + 1
     )
-  }
-
-    const { data: pendingChangeRequestRows, error: pendingChangeRequestsError } =
-    await supabase
-      .from('order_change_requests')
-      .select(`
-        id,
-        change_type,
-        requested_quantity,
-        requested_vehicle_type,
-        reason,
-        created_at,
-        orders (
-          id,
-          customer,
-          pk_number,
-          rft_tr_job,
-          status
-        )
-      `)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-
-  if (pendingChangeRequestsError) {
-    console.error('GET PENDING CHANGE REQUESTS ERROR:', pendingChangeRequestsError)
   }
 
   const pendingChangeRequestAlerts = (pendingChangeRequestRows || [])
@@ -233,25 +258,6 @@ export default async function OperationalPage() {
         vehicleType: row.requested_vehicle_type,
       }
     })
-
-  const { data: allocationLogs, error: allocationLogsError } =
-    await supabase
-      .from('activity_logs')
-      .select(`
-        order_id,
-        new_value,
-        created_at
-      `)
-      .eq('action', 'UNIT_ALLOCATION')
-      .in(
-        'order_id',
-        activeOrders.map((order) => order.id)
-      )
-      .order('created_at', { ascending: false })
-
-  if (allocationLogsError) {
-    console.error('GET ALLOCATION LOG ERROR:', allocationLogsError)
-  }
 
   type AllocationEntry = {
     vehicle_type: string

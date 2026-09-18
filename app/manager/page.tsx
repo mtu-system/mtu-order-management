@@ -128,41 +128,98 @@ export default async function ManagerDashboardPage() {
 
    const todayStartIso = getJakartaDayStartIso(0)
 
-  const { data: orders, error: ordersError } = await supabase
-    .from('orders')
-    .select(`
-      id,
-      customer,
-      pk_number,
-      rft_tr_job,
-      trip,
-      quantity,
-      status,
-      unit_decision,
-      created_at
-    `)
-    .or(
-      `updated_at.gte.${todayStartIso},status.not.in.(ready_to_depart,cancelled)`
-    )
-    .order('created_at', { ascending: false })
-
-    
+  // Semua query di bawah ini independen satu sama lain (tidak ada yang
+  // butuh hasil query lainnya), jadi dijalankan paralel lewat Promise.all
+  // supaya total waktu tunggu = query paling lambat, bukan jumlah semuanya.
+  const [
+    { data: orders, error: ordersError },
+    { data: trendOrdersRaw, error: trendOrdersError },
+    { data: failedTrucksRaw },
+    { data: readyTrucks, error: readyTrucksError },
+    { data: orderHistoryRaw },
+    { data: unitHistoryRaw },
+  ] = await Promise.all([
+    supabase
+      .from('orders')
+      .select(`
+        id,
+        customer,
+        pk_number,
+        rft_tr_job,
+        trip,
+        quantity,
+        status,
+        unit_decision,
+        created_at
+      `)
+      .or(
+        `updated_at.gte.${todayStartIso},status.not.in.(ready_to_depart,cancelled)`
+      )
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('orders')
+      .select('created_at')
+      .gte('created_at', getJakartaDayStartIso(29)),
+    supabase
+      .from('order_trucks')
+      .select('order_id, orders ( customer, pk_number )')
+      .eq('status', 'failed'),
+    supabase
+      .from('order_trucks')
+      .select(`
+        id,
+        vehicle_type,
+        driver_name,
+        no_buntut,
+        plate_number,
+        orders (
+          id,
+          pk_number,
+          customer,
+          trip
+        )
+      `)
+      .eq('status', 'ready_to_depart')
+      .gte('departure_ready_at', todayStartIso)
+      .order('departure_ready_at', { ascending: false })
+      .limit(20),
+    supabase
+      .from('order_history')
+      .select(`
+        id,
+        order_id,
+        action,
+        new_value,
+        changed_at,
+        orders ( customer, pk_number )
+      `)
+      .order('changed_at', { ascending: false })
+      .limit(10),
+    supabase
+      .from('unit_history')
+      .select(`
+        id,
+        order_id,
+        action,
+        new_value,
+        changed_at,
+        orders ( customer, pk_number )
+      `)
+      .order('changed_at', { ascending: false })
+      .limit(10),
+  ])
 
   if (ordersError) {
     console.error('MANAGER ORDERS ERROR:', ordersError)
   }
-
-  const allOrders = orders || []
-
-  const { data: trendOrdersRaw, error: trendOrdersError } = await supabase
-    .from('orders')
-    .select('created_at')
-    .gte('created_at', getJakartaDayStartIso(29))
-
   if (trendOrdersError) {
     console.error('MANAGER TREND ORDERS ERROR:', trendOrdersError)
   }
+  if (readyTrucksError) {
+    console.error('MANAGER READY TRUCKS ERROR:', readyTrucksError)
+  }
 
+  const allOrders = orders || []
   const trendOrders = trendOrdersRaw || []
 
   const newCount = allOrders.filter(
@@ -285,11 +342,6 @@ export default async function ManagerDashboardPage() {
     }
   }
 
-  const { data: failedTrucksRaw } = await supabase
-    .from('order_trucks')
-    .select('order_id, orders ( customer, pk_number )')
-    .eq('status', 'failed')
-
   for (const truck of failedTrucksRaw || []) {
     const order = (truck as any).orders
 
@@ -301,58 +353,6 @@ export default async function ManagerDashboardPage() {
   }
 
   const needsAttentionList = needsAttention.slice(0, 6)
-
-  const { data: readyTrucks, error: readyTrucksError } = await supabase
-    .from('order_trucks')
-    .select(`
-      id,
-      vehicle_type,
-      driver_name,
-      no_buntut,
-      plate_number,
-      orders (
-        id,
-        pk_number,
-        customer,
-        trip
-      )
-    `)
-    .eq('status', 'ready_to_depart')
-    .gte('departure_ready_at', todayStartIso)
-    .order('departure_ready_at', { ascending: false })
-    .limit(20)
-
-  if (readyTrucksError) {
-    console.error('MANAGER READY TRUCKS ERROR:', readyTrucksError)
-  }
-
-  const [{ data: orderHistoryRaw }, { data: unitHistoryRaw }] =
-    await Promise.all([
-      supabase
-        .from('order_history')
-        .select(`
-          id,
-          order_id,
-          action,
-          new_value,
-          changed_at,
-          orders ( customer, pk_number )
-        `)
-        .order('changed_at', { ascending: false })
-        .limit(10),
-      supabase
-        .from('unit_history')
-        .select(`
-          id,
-          order_id,
-          action,
-          new_value,
-          changed_at,
-          orders ( customer, pk_number )
-        `)
-        .order('changed_at', { ascending: false })
-        .limit(10),
-    ])
 
   const recentActivity = [
     ...(orderHistoryRaw || []).map((item: any) => ({ ...item })),

@@ -318,8 +318,9 @@ export default async function ManagerDashboardPage() {
       )
     `)
     .eq('status', 'ready_to_depart')
+    .gte('departure_ready_at', todayStartIso)
     .order('departure_ready_at', { ascending: false })
-    .limit(8)
+    .limit(20)
 
   if (readyTrucksError) {
     console.error('MANAGER READY TRUCKS ERROR:', readyTrucksError)
@@ -473,13 +474,23 @@ export default async function ManagerDashboardPage() {
       {/* UNIT READY TO DEPART — COMPACT */}
       <div className="mb-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-            <Truck className="h-4 w-4 text-gray-400" />
-            Unit Ready to Depart
-          </h2>
-          <span className="text-xs font-semibold text-gray-400">
-            {readyTrucks?.length || 0} unit
-          </span>
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+              <Truck className="h-4 w-4 text-gray-400" />
+              Unit Ready to Depart Hari Ini
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-gray-400">
+              {readyTrucks?.length || 0} unit
+            </span>
+            <Link
+              href="/manager/orders"
+              className="text-xs font-bold text-blue-600 hover:underline"
+            >
+              Lihat riwayat →
+            </Link>
+          </div>
         </div>
 
         {readyTrucks?.length ? (

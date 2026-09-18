@@ -7,9 +7,9 @@ export default async function MarketingActivityPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Aktivitas</h1>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mb-5">
+        <h1 className="text-lg font-extrabold text-gray-900">Aktivitas</h1>
+        <p className="mt-0.5 text-[13px] text-gray-500">
           Semua kejadian penting dari semua order — unit Failed, dibatalkan,
           dialihkan ke Vendor, dan perubahan request.
         </p>

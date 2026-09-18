@@ -11,6 +11,9 @@ import {
   MinusCircle,
   PlusCircle,
   Truck,
+  CheckCircle2,
+  XCircle,
+  FilePlus2,
 } from 'lucide-react'
 
 type RecentActivityFeedProps = {
@@ -35,6 +38,13 @@ const actionLabels: Record<string, string> = {
   cancel_failed_unit: 'Unit Failed Dibatalkan',
   hse_inspection: 'Unit Gagal HSE',
   unit_allocation: 'Alokasi Unit',
+  create_order: 'Order Baru Dibuat',
+  ready_to_depart: 'Ready to Depart',
+  approve_add_unit: 'Approve Tambah Unit',
+  approve_cancel_order: 'Approve Pembatalan Order',
+  approve_change_request: 'Approve Perubahan',
+  approve_change_vehicle: 'Approve Ganti Jenis Unit',
+  reject_change_request: 'Tolak Perubahan',
 }
 
 type ActionStyle = {
@@ -66,8 +76,8 @@ const actionStyle: Record<string, ActionStyle> = {
   },
   replace_failed_unit: {
     icon: RefreshCw,
-    iconBg: 'bg-[#2563EB]/10',
-    iconColor: 'text-[#2563EB]',
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
   },
   reduce_unit: {
     icon: MinusCircle,
@@ -83,6 +93,71 @@ const actionStyle: Record<string, ActionStyle> = {
     icon: Truck,
     iconBg: 'bg-sky-100',
     iconColor: 'text-sky-700',
+  },
+  create_order: {
+    icon: FilePlus2,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
+  },
+  ready_to_depart: {
+    icon: Truck,
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-700',
+  },
+  approve_add_unit: {
+    icon: CheckCircle2,
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-700',
+  },
+  approve_change_vehicle: {
+    icon: CheckCircle2,
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-700',
+  },
+  approve_change_request: {
+    icon: CheckCircle2,
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-700',
+  },
+  approve_cancel_order: {
+    icon: Ban,
+    iconBg: 'bg-red-100',
+    iconColor: 'text-red-600',
+  },
+  reject_change_request: {
+    icon: XCircle,
+    iconBg: 'bg-red-100',
+    iconColor: 'text-red-600',
+  },
+  change_trip: {
+    icon: FileEdit,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
+  },
+  change_pk: {
+    icon: FileEdit,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
+  },
+  change_rft: {
+    icon: FileEdit,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
+  },
+  change_customer: {
+    icon: FileEdit,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
+  },
+  change_instruction: {
+    icon: FileEdit,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
+  },
+  change_note: {
+    icon: FileEdit,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-700',
   },
 }
 
@@ -205,22 +280,22 @@ export default async function RecentActivityFeed({
           <Link
             key={orderId}
             href={`${detailBasePath[role]}/${orderId}#riwayat`}
-            className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-[#2563EB]/20 hover:shadow-sm"
+            className="flex items-center gap-3.5 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-blue-300 hover:shadow-sm"
           >
             <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${style.iconBg}`}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${style.iconBg}`}
             >
-              <Icon className={`h-5 w-5 ${style.iconColor}`} />
+              <Icon className={`h-[18px] w-[18px] ${style.iconColor}`} />
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-bold text-gray-900">
+                <p className="text-[13.5px] font-bold text-gray-900">
                   {actionLabels[latest.action] || latest.action}
                 </p>
 
                 {count > 1 && (
-                  <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[11px] font-bold text-[#2563EB]">
+                  <span className="inline-flex items-center rounded-md bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">
                     +{count - 1} lainnya
                   </span>
                 )}
@@ -231,7 +306,7 @@ export default async function RecentActivityFeed({
               </p>
 
               {latest.reason && (
-                <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                <p className="mt-2 truncate rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
                   {latest.reason}
                 </p>
               )}
@@ -260,13 +335,13 @@ export default async function RecentActivityFeed({
   }
 
   return (
-    <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="mb-5">
-        <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
-          <Clock className="h-4.5 w-4.5 text-gray-400" />
+    <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="mb-4">
+        <h2 className="flex items-center gap-2 text-[15px] font-bold tracking-tight text-gray-900">
+          <Clock className="h-4 w-4 text-gray-400" />
           Aktivitas Terbaru
         </h2>
-        <p className="mt-0.5 text-sm text-gray-500">
+        <p className="mt-0.5 text-[13px] text-gray-500">
           Kejadian penting dari semua order — unit Failed, dibatalkan,
           dialihkan ke Vendor, dan perubahan request.
         </p>

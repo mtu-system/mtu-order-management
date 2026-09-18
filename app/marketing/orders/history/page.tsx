@@ -95,6 +95,11 @@ export default async function MarketingOrderHistoryPage() {
 
     const dateLabel = new Date(sortDate).toLocaleString('id-ID', {
       timeZone: 'Asia/Jakarta',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
 
     return {
@@ -117,10 +122,10 @@ export default async function MarketingOrderHistoryPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Order History</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-lg font-extrabold text-gray-900">Order History</h1>
+          <p className="mt-0.5 text-[13px] text-gray-500">
             Order yang sudah selesai, Ready to Depart, dibatalkan, atau Unit
             Tidak Tersedia.
           </p>

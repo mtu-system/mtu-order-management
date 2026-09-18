@@ -106,6 +106,11 @@ export default async function OperationalHistoryPage() {
       reasonLabel: getReasonLabel(order),
       dateLabel: new Date(sortDate).toLocaleString('id-ID', {
         timeZone: 'Asia/Jakarta',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       }),
       sortDateIso: sortDate,
       internalCount,
@@ -117,9 +122,9 @@ export default async function OperationalHistoryPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Order History</h1>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mb-5">
+        <h1 className="text-lg font-extrabold text-gray-900">Order History</h1>
+        <p className="mt-0.5 text-[13px] text-gray-500">
           Order yang sudah tidak butuh tindakan lagi dari Operational —
           selesai, Ready to Depart, dibatalkan, Unit Tidak Tersedia, atau
           full-VM.

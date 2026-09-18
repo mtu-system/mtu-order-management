@@ -340,28 +340,25 @@ export default function OrderHistoryTable({ orders }: OrderHistoryTableProps) {
         <table className="w-full text-left text-sm">
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <th className="w-[200px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Customer
               </th>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                PK
+              <th className="w-[140px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                PK / RFT
               </th>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                RFT / TR / Job
+              <th className="w-[90px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Qty
               </th>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Quantity
-              </th>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <th className="w-[160px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Kendaraan
               </th>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <th className="w-[150px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Trip
               </th>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <th className="w-[150px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Status
               </th>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <th className="w-[130px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Tanggal
               </th>
             </tr>
@@ -370,7 +367,7 @@ export default function OrderHistoryTable({ orders }: OrderHistoryTableProps) {
           <tbody className="divide-y divide-gray-50">
             {!filteredOrders.length ? (
               <tr>
-                <td colSpan={8} className="px-6 py-14 text-center">
+                <td colSpan={7} className="px-6 py-14 text-center">
                   <div className="flex flex-col items-center gap-3 text-gray-400">
                     <Inbox className="h-6 w-6" />
                     <span className="text-sm">
@@ -380,89 +377,88 @@ export default function OrderHistoryTable({ orders }: OrderHistoryTableProps) {
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="transition-colors hover:bg-gray-50/60"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${order.avatarClass}`}
-                      >
-                        {order.customer.charAt(0).toUpperCase()}
+              filteredOrders.map((order) => {
+                const [dateLabelDay, dateLabelTime] = order.dateLabel.split(', ')
+                return (
+                  <tr
+                    key={order.id}
+                    className="transition-colors hover:bg-gray-50/60"
+                  >
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${order.avatarClass}`}
+                        >
+                          {order.customer.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="truncate text-[13px] font-bold text-gray-900" title={order.customer}>
+                          {order.customer}
+                        </span>
                       </div>
-                      <span className="font-semibold text-gray-900">
-                        {order.customer}
+                    </td>
+
+                    <td className="px-5 py-3.5">
+                      <Link
+                        href={`/marketing/orders/${order.id}`}
+                        className={`text-[13px] font-semibold hover:underline ${
+                          order.pkNumber ? 'text-[#2563EB]' : 'text-gray-300'
+                        }`}
+                      >
+                        {order.pkNumber || '-'}
+                      </Link>
+                      {order.rftTrJob && (
+                        <Link
+                          href={`/marketing/orders/${order.id}`}
+                          className="block text-[11.5px] text-gray-400 hover:underline"
+                        >
+                          {order.rftTrJob}
+                        </Link>
+                      )}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-[13px] font-bold text-gray-900">
+                      {order.quantity} Unit
+                    </td>
+
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {order.internalCount > 0 && (
+                          <span className="inline-flex items-center rounded-md bg-[#2563EB]/10 px-2 py-0.5 text-[11px] font-bold text-[#2563EB]">
+                            Internal {order.internalCount}
+                          </span>
+                        )}
+                        {order.vmCount > 0 && (
+                          <span className="inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+                            VM {order.vmCount}
+                          </span>
+                        )}
+                        {order.internalCount === 0 && order.vmCount === 0 && (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-3.5 text-[13px] text-gray-600" title={order.trip || ''}>
+                      <span className="line-clamp-1">{order.trip || '-'}</span>
+                    </td>
+
+                    <td className="px-5 py-3.5">
+                      <span
+                        className={`inline-block rounded-md px-3 py-1 text-xs font-bold ${statusBadgeClass(
+                          order.status
+                        )}`}
+                      >
+                        {statusBadgeLabel(order.status)}
                       </span>
-                    </div>
-                  </td>
+                    </td>
 
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/marketing/orders/${order.id}`}
-                      className={`font-semibold hover:underline ${
-                        order.pkNumber ? 'text-[#2563EB]' : 'text-gray-300'
-                      }`}
-                    >
-                      {order.pkNumber || '-'}
-                    </Link>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/marketing/orders/${order.id}`}
-                      className={`hover:underline ${
-                        order.rftTrJob ? 'text-gray-700' : 'text-gray-300'
-                      }`}
-                    >
-                      {order.rftTrJob || '-'}
-                    </Link>
-                  </td>
-
-                  <td className="px-6 py-4 font-semibold text-gray-900">
-                    {order.quantity} Unit
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {order.internalCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[11px] font-bold text-[#2563EB]">
-                          Internal {order.internalCount}
-                        </span>
-                      )}
-                      {order.vmCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
-                          VM {order.vmCount}
-                        </span>
-                      )}
-                      {order.internalCount === 0 && order.vmCount === 0 && (
-                        <span className="text-gray-300">-</span>
-                      )}
-                    </div>
-                  </td>
-
-                  <td className="max-w-xs px-6 py-4">
-                    <p className="truncate text-gray-600">
-                      {order.trip || '-'}
-                    </p>
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-block rounded-md px-3 py-1 text-xs font-bold ${statusBadgeClass(
-                        order.status
-                      )}`}
-                    >
-                      {statusBadgeLabel(order.status)}
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4 text-gray-500">
-                    {order.dateLabel}
-                  </td>
-                </tr>
-              ))
+                    <td className="px-5 py-3.5">
+                      <div className="text-[13px] text-gray-700">{dateLabelDay}</div>
+                      <div className="text-[11.5px] text-gray-400">{dateLabelTime}</div>
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>

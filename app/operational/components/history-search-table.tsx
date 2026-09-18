@@ -315,23 +315,22 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
         <table className="w-full text-sm">
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Customer</th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">PK</th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">RFT / TR / Job</th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Quantity</th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Kendaraan</th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Trip</th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Status</th>
+              <th className="w-[220px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Customer</th>
+              <th className="w-[150px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">PK / RFT</th>
+              <th className="w-[90px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Qty</th>
+              <th className="w-[150px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Kendaraan</th>
+              <th className="w-[160px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Trip</th>
+              <th className="w-[130px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Status</th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Keterangan</th>
-              <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Tanggal</th>
-              <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500">Action</th>
+              <th className="w-[130px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Tanggal</th>
+              <th className="w-[110px] px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500">Action</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-50">
             {!filteredOrders.length ? (
               <tr>
-                <td colSpan={10} className="px-5 py-14 text-center">
+                <td colSpan={9} className="px-5 py-14 text-center">
                   <div className="flex flex-col items-center gap-3 text-gray-400">
                     <Inbox className="h-6 w-6" />
                     <span className="text-sm">Tidak ada order yang cocok dengan pencarian/filter ini.</span>
@@ -339,32 +338,42 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order) => (
+              filteredOrders.map((order) => {
+                const [dateLabelDay, dateLabelTime] = order.dateLabel.split(', ')
+
+                return (
                 <tr key={order.id} className="transition-colors hover:bg-gray-50/60">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${order.avatarClass}`}>
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${order.avatarClass}`}>
                         {order.customer.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-bold text-gray-900">{order.customer}</span>
+                      <span
+                        className="truncate text-[13px] font-bold text-gray-900"
+                        title={order.customer}
+                      >
+                        {order.customer}
+                      </span>
                     </div>
                   </td>
-                  <td className={`px-5 py-4 font-semibold ${order.pkNumber ? 'text-gray-900' : 'text-gray-300'}`}>
-                    {order.pkNumber || '-'}
+                  <td className="px-5 py-3.5">
+                    <div className={`text-[13px] font-semibold ${order.pkNumber ? 'text-gray-900' : 'text-gray-300'}`}>
+                      {order.pkNumber || '-'}
+                    </div>
+                    {order.rftTrJob && (
+                      <div className="text-[11.5px] text-gray-400">{order.rftTrJob}</div>
+                    )}
                   </td>
-                  <td className={`px-5 py-4 ${order.rftTrJob ? 'text-gray-700' : 'text-gray-300'}`}>
-                    {order.rftTrJob || '-'}
-                  </td>
-                  <td className="px-5 py-4 font-bold text-gray-900">{order.quantity} Unit</td>
-                  <td className="px-5 py-4">
-                    <div className="flex flex-wrap items-center gap-1.5">
+                  <td className="px-5 py-3.5 font-bold text-gray-900">{order.quantity} Unit</td>
+                  <td className="px-5 py-3.5">
+                    <div className="flex flex-wrap items-center gap-1">
                       {order.internalCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[11px] font-bold text-[#2563EB]">
+                        <span className="inline-flex items-center rounded-md bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">
                           Internal {order.internalCount}
                         </span>
                       )}
                       {order.vmCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+                        <span className="inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
                           VM {order.vmCount}
                         </span>
                       )}
@@ -373,11 +382,21 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
                       )}
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-gray-600">{order.trip || '-'}</td>
-                  <td className="px-5 py-4">{getStatusBadge(order.status)}</td>
-                  <td className="max-w-xs px-5 py-4 text-gray-600">{order.reasonLabel}</td>
-                  <td className="px-5 py-4 text-gray-500">{order.dateLabel}</td>
-                  <td className="px-5 py-4 text-right">
+                  <td className="px-5 py-3.5 text-[13px] text-gray-600" title={order.trip || ''}>
+                    <span className="line-clamp-1">{order.trip || '-'}</span>
+                  </td>
+                  <td className="px-5 py-3.5">{getStatusBadge(order.status)}</td>
+                  <td
+                    className="max-w-[260px] px-5 py-3.5 text-[13px] text-gray-600"
+                    title={order.reasonLabel}
+                  >
+                    <span className="line-clamp-1">{order.reasonLabel}</span>
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <div className="text-[13px] text-gray-700">{dateLabelDay}</div>
+                    <div className="text-[11.5px] text-gray-400">{dateLabelTime}</div>
+                  </td>
+                  <td className="px-5 py-3.5 text-right">
                     <OrderUnitsModal
                       orderId={order.id}
                       customer={order.customer}
@@ -386,7 +405,8 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
                     />
                   </td>
                 </tr>
-              ))
+                )
+              })
             )}
           </tbody>
         </table>

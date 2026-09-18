@@ -115,6 +115,11 @@ export default async function HSEHistoryPage() {
       resultClass,
       dateLabel: new Date(order.created_at).toLocaleString('id-ID', {
         timeZone: 'Asia/Jakarta',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       }),
       sortDateIso: order.created_at,
       avatarClass: getAvatarClass(order.customer),
@@ -123,11 +128,11 @@ export default async function HSEHistoryPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-5">
+        <h1 className="text-lg font-extrabold text-gray-900">
           Inspection History
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-0.5 text-[13px] text-gray-500">
           Order yang sudah tidak menunggu pemeriksaan HSE lagi — sudah
           selesai diperiksa, atau memang full-VM sehingga tidak pernah
           butuh pemeriksaan.

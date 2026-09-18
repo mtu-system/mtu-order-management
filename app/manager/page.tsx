@@ -33,6 +33,13 @@ function getJakartaDayLabel(dateKey: string) {
   }).format(new Date(`${dateKey}T00:00:00+07:00`))
 }
 
+function getJakartaDayStartIso(daysAgo: number) {
+  const now = new Date()
+  const todayKey = getJakartaDateKey(now.toISOString())
+  const base = new Date(`${todayKey}T00:00:00+07:00`)
+  base.setDate(base.getDate() - daysAgo)
+  return base.toISOString()
+}
 const actorLabel: Record<string, string> = {
   create_order: 'Marketing',
   reduce_unit: 'Operational',
@@ -119,6 +126,8 @@ export default async function ManagerDashboardPage() {
 
   const supabase = await createClient()
 
+   const todayStartIso = getJakartaDayStartIso(0)
+
   const { data: orders, error: ordersError } = await supabase
     .from('orders')
     .select(`
@@ -132,13 +141,29 @@ export default async function ManagerDashboardPage() {
       unit_decision,
       created_at
     `)
+    .or(
+      `updated_at.gte.${todayStartIso},status.not.in.(ready_to_depart,cancelled)`
+    )
     .order('created_at', { ascending: false })
+
+    
 
   if (ordersError) {
     console.error('MANAGER ORDERS ERROR:', ordersError)
   }
 
   const allOrders = orders || []
+
+  const { data: trendOrdersRaw, error: trendOrdersError } = await supabase
+    .from('orders')
+    .select('created_at')
+    .gte('created_at', getJakartaDayStartIso(29))
+
+  if (trendOrdersError) {
+    console.error('MANAGER TREND ORDERS ERROR:', trendOrdersError)
+  }
+
+  const trendOrders = trendOrdersRaw || []
 
   const newCount = allOrders.filter(
     (order) => order.status === 'waiting_unit'
@@ -210,7 +235,7 @@ export default async function ManagerDashboardPage() {
 
     const countByDay = new Map<string, number>()
 
-    for (const order of allOrders) {
+    for (const order of trendOrders) {
       const key = getJakartaDateKey(order.created_at)
       countByDay.set(key, (countByDay.get(key) || 0) + 1)
     }

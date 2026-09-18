@@ -13,6 +13,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { logOrderHistory, logUnitHistory } from '@/lib/history'
+import { syncOrderStatus } from '@/lib/sync-order-status'
 
 type FailedUnitResolutionProps = {
   truck: {
@@ -24,7 +25,6 @@ type FailedUnitResolutionProps = {
     driver_phone: string | null
   }
 }
-
 type Mode = null | 'replace'
 
 export default function FailedUnitResolution({
@@ -36,12 +36,12 @@ export default function FailedUnitResolution({
   const confirm = useConfirm()
 
   const [mode, setMode] = useState<Mode>(null)
-  const [plateNumber, setPlateNumber] = useState('')
+    const [plateNumber, setPlateNumber] = useState('')
   const [driverName, setDriverName] = useState('')
   const [driverPhone, setDriverPhone] = useState('')
   const [saving, setSaving] = useState(false)
 
-  async function getHseReason() {
+   async function getHseReason() {
     const { data: inspection } = await supabase
       .from('inspections')
       .select('notes')
@@ -55,10 +55,82 @@ export default function FailedUnitResolution({
       : 'Alasan HSE: tidak ada catatan.'
   }
 
+  // Tulis ulang snapshot alokasi terbaru dengan jumlah internal/vendor
+  // yang sudah disesuaikan -- supaya form "Detail Unit Internal" di
+  // halaman detail order tidak lagi minta isi unit yang sebenarnya
+  // sudah dialihkan ke Vendor atau dibatalkan.
+  async function adjustAllocationLog(
+    vehicleType: string,
+    delta: { internal?: number; vendor?: number }
+  ) {
+    const { data: latestLog } = await supabase
+      .from('activity_logs')
+      .select('new_value')
+      .eq('order_id', truck.order_id)
+      .eq('action', 'UNIT_ALLOCATION')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let allocations: {
+      vehicle_type: string
+      internal: number
+      vendor: number
+      unavailable: number
+    }[] = []
+
+    if (latestLog?.new_value) {
+      try {
+        const parsed =
+          typeof latestLog.new_value === 'string'
+            ? JSON.parse(latestLog.new_value)
+            : latestLog.new_value
+
+        if (Array.isArray(parsed)) {
+          allocations = parsed.map((item: any) => ({
+            vehicle_type: String(item.vehicle_type || ''),
+            internal: Number(item.internal || 0),
+            vendor: Number(item.vendor || 0),
+            unavailable: Number(item.unavailable || 0),
+          }))
+        }
+      } catch (error) {
+        console.error('PARSE ALLOCATION LOG ERROR:', error)
+      }
+    }
+
+    const index = allocations.findIndex(
+      (item) => item.vehicle_type === vehicleType
+    )
+
+    if (index >= 0) {
+      allocations[index] = {
+        ...allocations[index],
+        internal: Math.max(
+          0,
+          allocations[index].internal + (delta.internal || 0)
+        ),
+        vendor: Math.max(0, allocations[index].vendor + (delta.vendor || 0)),
+      }
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    await supabase.from('activity_logs').insert({
+      order_id: truck.order_id,
+      user_id: user?.id,
+      action: 'UNIT_ALLOCATION',
+      old_value: null,
+      new_value: JSON.stringify(allocations),
+    })
+  }
+
   async function handleReplace() {
     if (saving) return
 
-    if (!plateNumber.trim() || !driverName.trim() || !driverPhone.trim()) {
+       if (!plateNumber.trim() || !driverName.trim() || !driverPhone.trim()) {
       toast.error(
         'Data Belum Lengkap',
         'Plat nomor, nama driver, dan No. HP wajib diisi.'
@@ -82,7 +154,7 @@ export default function FailedUnitResolution({
 
       const { error } = await supabase
         .from('order_trucks')
-        .update({
+                      .update({
           plate_number: plateNumber.trim(),
           driver_name: driverName.trim(),
           driver_phone: driverPhone.trim(),
@@ -92,9 +164,15 @@ export default function FailedUnitResolution({
         .eq('id', truck.id)
         .eq('status', 'failed')
 
-      if (error) {
+            if (error) {
         console.error('REPLACE FAILED UNIT ERROR:', error)
         toast.error('Gagal Mengganti Detail Truk', error.message)
+        return
+      }
+      const { error: syncError } = await syncOrderStatus(truck.order_id)
+
+      if (syncError) {
+        toast.error('Gagal Memperbarui Status Order', syncError.message)
         return
       }
 
@@ -183,11 +261,23 @@ export default function FailedUnitResolution({
         .eq('id', truck.id)
         .eq('status', 'failed')
 
-      if (error) {
+            if (error) {
         console.error('USE VENDOR FOR FAILED UNIT ERROR:', error)
         toast.error('Gagal Mengalihkan ke Vendor', error.message)
         return
       }
+
+           const { error: syncError } = await syncOrderStatus(truck.order_id)
+
+      if (syncError) {
+        toast.error('Gagal Memperbarui Status Order', syncError.message)
+        return
+      }
+
+      await adjustAllocationLog(truck.vehicle_type, {
+        internal: -1,
+        vendor: 1,
+      })
 
       await supabase.from('activity_logs').insert({
         order_id: truck.order_id,
@@ -267,11 +357,20 @@ export default function FailedUnitResolution({
         .eq('id', truck.id)
         .eq('status', 'failed')
 
-      if (truckError) {
+           if (truckError) {
         console.error('CANCEL FAILED UNIT ERROR:', truckError)
         toast.error('Gagal Membatalkan Unit', truckError.message)
         return
       }
+
+          const { error: syncError } = await syncOrderStatus(truck.order_id)
+
+      if (syncError) {
+        toast.error('Gagal Memperbarui Status Order', syncError.message)
+        return
+      }
+
+      await adjustAllocationLog(truck.vehicle_type, { internal: -1 })
 
       const { data: requirement, error: requirementFetchError } =
         await supabase
@@ -438,7 +537,7 @@ export default function FailedUnitResolution({
             Detail Truk Pengganti
           </p>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+                   <div className="grid gap-3 sm:grid-cols-3">
             <input
               type="text"
               value={plateNumber}

@@ -32,7 +32,7 @@ export default function TruckDetailForm({
   const supabase = createClient()
   const toast = useToast()
 
-  const [trucks, setTrucks] = useState<Truck[]>(() =>
+    const [trucks, setTrucks] = useState<Truck[]>(() =>
     requirements.flatMap((requirement) =>
       Array.from({ length: requirement.quantity }, () => ({
         vehicle_type: requirement.vehicle_type,
@@ -79,7 +79,7 @@ export default function TruckDetailForm({
         return
       }
 
-      if (!truck.driver_phone.trim()) {
+              if (!truck.driver_phone.trim()) {
         toast.error(
           'Data Belum Lengkap',
           `No. HP Driver Unit ${i + 1} wajib diisi.`
@@ -94,7 +94,7 @@ export default function TruckDetailForm({
       const { error: truckError } = await supabase
         .from('order_trucks')
         .insert(
-          trucks.map((truck) => ({
+                             trucks.map((truck) => ({
             order_id: orderId,
             source: 'internal',
             vehicle_type: truck.vehicle_type,
@@ -229,7 +229,7 @@ export default function TruckDetailForm({
                 />
               </div>
 
-              <div>
+                          <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Plat Nomor <span className="text-red-500">*</span>
                 </label>

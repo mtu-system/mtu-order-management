@@ -7,6 +7,8 @@ import { useToast } from '@/app/components/toast-provider'
 import { useConfirm } from '@/app/components/confirm-dialog-provider'
 import { ShieldCheck, Send, Loader2, Hash, Clock } from 'lucide-react'
 import { logUnitHistory } from '@/lib/history'
+import { syncOrderStatus } from '@/lib/sync-order-status'
+import NoBuntutAutocomplete from './no-buntut-autocomplete'
 
 type UnitProcessingProps = {
   truck: {
@@ -26,9 +28,8 @@ type UnitProcessingProps = {
 const noBuntutTypes = ['Trailer', 'Lowbed', 'Dolly']
 
 function hasNoBuntut(vehicleType: string) {
-  return noBuntutTypes.some(
-    (type) => type.toLowerCase() === vehicleType.toLowerCase()
-  )
+  const normalized = vehicleType.toLowerCase()
+  return noBuntutTypes.some((type) => normalized.includes(type.toLowerCase()))
 }
 
 export default function UnitProcessing({ truck }: UnitProcessingProps) {
@@ -113,42 +114,11 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
         changedBy: user.id,
       })
 
-      const { data: trucks, error: trucksError } = await supabase
-        .from('order_trucks')
-        .select('status, source')
-        .eq('order_id', truck.order_id)
+           const { error: syncError } = await syncOrderStatus(truck.order_id)
 
-      if (trucksError) {
-        console.error('CHECK ORDER TRUCKS ERROR:', trucksError)
-        toast.error('Gagal Memeriksa Status Order', trucksError.message)
+      if (syncError) {
+        toast.error('Gagal Memperbarui Status Order', syncError.message)
         return
-      }
-
-      const activeInternalTrucks = (trucks || []).filter(
-        (item) =>
-          item.source === 'internal' &&
-          item.status !== 'cancelled' &&
-          item.status !== 'departed' &&
-          item.status !== 'finished'
-      )
-
-      const allReadyToDepart =
-        activeInternalTrucks.length > 0 &&
-        activeInternalTrucks.every(
-          (item) => item.status === 'ready_to_depart'
-        )
-
-      if (allReadyToDepart) {
-        const { error: orderStatusError } = await supabase
-          .from('orders')
-          .update({ status: 'ready_to_depart' })
-          .eq('id', truck.order_id)
-
-        if (orderStatusError) {
-          console.error('UPDATE ORDER STATUS ERROR:', orderStatusError)
-          toast.error('Gagal Memperbarui Status Order', orderStatusError.message)
-          return
-        }
       }
 
       toast.success(
@@ -223,13 +193,10 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
               <label className="mb-2 block text-sm font-bold text-gray-900">
                 No. Buntut
               </label>
-              <input
-                type="text"
+                            <NoBuntutAutocomplete
                 value={noBuntut}
-                onChange={(event) => setNoBuntut(event.target.value)}
-                placeholder="Contoh: 40-21"
+                onChange={setNoBuntut}
                 disabled={saving}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
               />
             </>
           ) : (

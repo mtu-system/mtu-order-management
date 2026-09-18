@@ -70,7 +70,7 @@ function getStatusClass(status: string) {
 function getTruckStatusLabel(status: string) {
   switch (status) {
     case 'vm':
-      return 'VM / Vendor (belum detail)'
+      return 'VM / Vendor '
     case 'waiting_hse':
       return 'Waiting HSE'
     case 'ready_loading':

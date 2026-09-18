@@ -130,9 +130,31 @@ export default function OrderChangeRequestForm({
       'change_note',
     ]
 
-    if (valueChangeTypes.includes(changeType) && !requestedValue.trim()) {
+        if (valueChangeTypes.includes(changeType) && !requestedValue.trim()) {
       toast.error('Data Belum Lengkap', 'Nilai perubahan wajib diisi.')
       return
+    }
+
+    if (changeType === 'change_pk' && requestedValue.trim()) {
+      const { data: existingOrderWithPk, error: pkCheckError } =
+        await supabase
+          .from('orders')
+          .select('id')
+          .eq('pk_number', requestedValue.trim())
+          .neq('id', orderId)
+          .maybeSingle()
+
+      if (pkCheckError) {
+        console.error('CHECK PK DUPLICATE ERROR:', pkCheckError)
+      }
+
+      if (existingOrderWithPk) {
+        toast.error(
+          'PK Sudah Digunakan',
+          `PK "${requestedValue.trim()}" sudah dipakai di order lain. Gunakan PK yang berbeda.`
+        )
+        return
+      }
     }
 
     if (!reason.trim()) {

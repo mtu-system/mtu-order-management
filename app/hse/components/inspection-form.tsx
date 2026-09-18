@@ -12,6 +12,7 @@ import {
   Clock3,
 } from 'lucide-react'
 import { logUnitHistory } from '@/lib/history'
+import { syncOrderStatus } from '@/lib/sync-order-status'
 
 type Inspection = {
   result: string
@@ -165,45 +166,11 @@ export default function InspectionForm({
         changedBy: user.id,
       })
 
-      if (result === 'passed') {
-        const { data: trucks, error: trucksError } = await supabase
-          .from('order_trucks')
-          .select('status, source')
-          .eq('order_id', orderId)
+                const { error: syncError } = await syncOrderStatus(orderId)
 
-        if (trucksError) {
-          console.error('CHECK ORDER TRUCKS ERROR:', trucksError)
-          toast.error('Gagal Memeriksa Status Order', trucksError.message)
-          return
-        }
-
-        const activeTrucks = (trucks || []).filter(
-          (truck) =>
-            truck.source === 'internal' &&
-            truck.status !== 'cancelled' &&
-            truck.status !== 'departed' &&
-            truck.status !== 'finished'
-        )
-
-        const allPassed =
-          activeTrucks.length > 0 &&
-          activeTrucks.every((truck) => truck.status === 'ready_loading')
-
-        if (allPassed) {
-          const { error: orderStatusError } = await supabase
-            .from('orders')
-            .update({ status: 'ready_loading' })
-            .eq('id', orderId)
-
-          if (orderStatusError) {
-            console.error('UPDATE ORDER STATUS ERROR:', orderStatusError)
-            toast.error(
-              'Gagal Memperbarui Status Order',
-              orderStatusError.message
-            )
-            return
-          }
-        }
+      if (syncError) {
+        toast.error('Gagal Memperbarui Status Order', syncError.message)
+        return
       }
 
       const resultLabel = formatResultLabel(result)

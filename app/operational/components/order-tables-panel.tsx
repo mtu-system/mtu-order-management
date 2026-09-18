@@ -7,6 +7,8 @@ import {
   Inbox,
   MinusCircle,
   PlusCircle,
+  RefreshCw,
+  Info,
   History as HistoryIcon,
   ClipboardList,
   ShieldCheck,
@@ -31,8 +33,10 @@ type ActiveOrderRow = {
   statusLabel: string
   statusClass: string
   historyCount: number
-  reduceRequests: { id: string; quantity: number }[]
+   reduceRequests: { id: string; quantity: number }[]
   addRequests: { id: string; quantity: number }[]
+  changeVehicleRequests: { id: string; quantity: number }[]
+  otherRequests: { id: string; label: string }[]
 }
 
 type ReadyUnitRow = {
@@ -287,7 +291,7 @@ export default function OrderTablesPanel({
 
                         <tbody className="divide-y divide-gray-50">
               {filteredActiveOrders.map((order) => (
-                <tr
+                               <tr
                   key={order.id}
                   className="transition-colors hover:bg-gray-50/60"
                 >
@@ -374,7 +378,7 @@ export default function OrderTablesPanel({
                     </div>
                   </td>
 
-                  <td className="px-6 py-4">
+                                  <td className="px-6 py-4">
                     <div className="flex flex-col gap-1.5">
                       {order.reduceRequests.map((request) => (
                         <span
@@ -396,8 +400,30 @@ export default function OrderTablesPanel({
                         </span>
                       ))}
 
+                      {order.changeVehicleRequests.map((request) => (
+                        <span
+                          key={request.id}
+                          className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-700"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          Ganti {request.quantity} Unit
+                        </span>
+                      ))}
+
+                      {order.otherRequests.map((request) => (
+                        <span
+                          key={request.id}
+                          className="inline-flex w-fit items-center gap-1 rounded-full bg-violet-100 px-2 py-1 text-xs font-bold text-violet-700"
+                        >
+                          <Info className="h-3 w-3" />
+                          {request.label}
+                        </span>
+                      ))}
+
                       {!order.reduceRequests.length &&
-                        !order.addRequests.length && (
+                        !order.addRequests.length &&
+                        !order.changeVehicleRequests.length &&
+                        !order.otherRequests.length && (
                           <span className="text-gray-300">-</span>
                         )}
                     </div>

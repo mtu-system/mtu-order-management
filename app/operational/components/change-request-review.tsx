@@ -95,7 +95,10 @@ export default function ChangeRequestReview({
     request.change_type === 'add_unit'
       ? Array.from(
           { length: request.requested_quantity || 0 },
-          () => createEmptyUnit()
+          () => ({
+            ...createEmptyUnit(),
+            vehicle_type: request.requested_vehicle_type || '',
+          })
         )
       : []
   )
@@ -687,36 +690,38 @@ export default function ChangeRequestReview({
         return
       }
 
-      if (!unit.plate_number.trim()) {
-        toast.error(
-          'Data Belum Lengkap',
-          `Plat nomor Unit Pengganti ${index + 1} wajib diisi.`
-        )
-        return
-      }
+                if (unit.source === 'vendor') {
+        if (!unit.vendor_name.trim()) {
+          toast.error(
+            'Data Belum Lengkap',
+            `Nama vendor Unit Pengganti ${index + 1} wajib diisi.`
+          )
+          return
+        }
+      } else {
+        if (!unit.plate_number.trim()) {
+          toast.error(
+            'Data Belum Lengkap',
+            `Plat nomor Unit Pengganti ${index + 1} wajib diisi.`
+          )
+          return
+        }
 
-      if (!unit.driver_name.trim()) {
-        toast.error(
-          'Data Belum Lengkap',
-          `Nama driver Unit Pengganti ${index + 1} wajib diisi.`
-        )
-        return
-      }
+        if (!unit.driver_name.trim()) {
+          toast.error(
+            'Data Belum Lengkap',
+            `Nama driver Unit Pengganti ${index + 1} wajib diisi.`
+          )
+          return
+        }
 
-      if (!unit.driver_phone.trim()) {
-        toast.error(
-          'Data Belum Lengkap',
-          `No. HP driver Unit Pengganti ${index + 1} wajib diisi.`
-        )
-        return
-      }
-
-      if (unit.source === 'vendor' && !unit.vendor_name.trim()) {
-        toast.error(
-          'Data Belum Lengkap',
-          `Nama vendor Unit Pengganti ${index + 1} wajib diisi.`
-        )
-        return
+        if (!unit.driver_phone.trim()) {
+          toast.error(
+            'Data Belum Lengkap',
+            `No. HP driver Unit Pengganti ${index + 1} wajib diisi.`
+          )
+          return
+        }
       }
     }
 
@@ -1667,86 +1672,69 @@ export default function ChangeRequestReview({
                                 />
                               </div>
                             )}
+                                                        {unit.source !== 'vendor' && (
+                              <>
+                                <div>
+                                  <label className="mb-1.5 block text-xs font-semibold text-gray-500">
+                                    Plat Nomor
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={unit.plate_number}
+                                    onChange={(event) =>
+                                      updateReplacementUnit(
+                                        index,
+                                        'plate_number',
+                                        event.target.value
+                                      )
+                                    }
+                                    disabled={loading}
+                                    placeholder="Contoh: B 1234 XYZ"
+                                    className={inputClass}
+                                  />
+                                </div>
 
-                            <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-                                Plat Nomor
-                              </label>
-                              <input
-                                type="text"
-                                value={unit.plate_number}
-                                onChange={(event) =>
-                                  updateReplacementUnit(
-                                    index,
-                                    'plate_number',
-                                    event.target.value
-                                  )
-                                }
-                                disabled={loading}
-                                placeholder="Contoh: B 1234 XYZ"
-                                className={inputClass}
-                              />
-                            </div>
+                                <div>
+                                  <label className="mb-1.5 block text-xs font-semibold text-gray-500">
+                                    Nama Driver
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={unit.driver_name}
+                                    onChange={(event) =>
+                                      updateReplacementUnit(
+                                        index,
+                                        'driver_name',
+                                        event.target.value
+                                      )
+                                    }
+                                    disabled={loading}
+                                    placeholder="Nama driver"
+                                    className={inputClass}
+                                  />
+                                </div>
 
-                            <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-                                No. Buntut
-                              </label>
-                              <input
-                                type="text"
-                                value={unit.no_buntut}
-                                onChange={(event) =>
-                                  updateReplacementUnit(
-                                    index,
-                                    'no_buntut',
-                                    event.target.value
-                                  )
-                                }
-                                disabled={loading}
-                                placeholder="Contoh: 40-22"
-                                className={inputClass}
-                              />
-                            </div>
-
-                            <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-                                Nama Driver
-                              </label>
-                              <input
-                                type="text"
-                                value={unit.driver_name}
-                                onChange={(event) =>
-                                  updateReplacementUnit(
-                                    index,
-                                    'driver_name',
-                                    event.target.value
-                                  )
-                                }
-                                disabled={loading}
-                                placeholder="Nama driver"
-                                className={inputClass}
-                              />
-                            </div>
-
-                            <div>
-                              <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-                                No. HP Driver
-                              </label>
-                              <input
-                                type="text"
-                                value={unit.driver_phone}
-                                onChange={(event) =>
-                                  updateReplacementUnit(
-                                    index,
-                                    'driver_phone',
-                                    event.target.value
-                                  )
-                                }
-                                disabled={loading}
-                                placeholder="08xxxxxxxxxx"
-                                className={inputClass}
-                              />
-                            </div>
+                                <div>
+                                  <label className="mb-1.5 block text-xs font-semibold text-gray-500">
+                                    No. HP Driver
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={unit.driver_phone}
+                                    onChange={(event) =>
+                                      updateReplacementUnit(
+                                        index,
+                                        'driver_phone',
+                                        event.target.value
+                                      )
+                                    }
+                                    disabled={loading}
+                                    placeholder="08xxxxxxxxxx"
+                                    className={inputClass}
+                                  />
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1754,13 +1742,15 @@ export default function ChangeRequestReview({
                   </div>
                 )}
 
-                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
                   <p className="text-sm font-bold text-amber-900">
                     Perhatian
                   </p>
                   <p className="mt-1 text-xs text-amber-700">
                     Unit lama yang dipilih akan berstatus Cancelled. Unit
-                    pengganti baru masuk Waiting HSE.
+                    pengganti internal baru masuk Waiting HSE, sedangkan
+                    unit pengganti Vendor langsung dianggap siap (VM) tanpa
+                    perlu inspeksi HSE.
                   </p>
                 </div>
               </>
@@ -1832,36 +1822,17 @@ export default function ChangeRequestReview({
                       </p>
 
                       <div className="grid gap-4 md:grid-cols-2">
-                        <div>
+                                                <div>
                           <label className="mb-1.5 block text-xs font-semibold text-gray-500">
                             Jenis Kendaraan
                           </label>
-                          <select
-                            value={unit.vehicle_type}
-                            onChange={(event) =>
-                              updateNewUnit(
-                                index,
-                                'vehicle_type',
-                                event.target.value
-                              )
-                            }
-                            disabled={loading}
-                            className={inputClass}
-                          >
-                            <option value="">Pilih kendaraan</option>
-                            <option value="Trailer">Trailer</option>
-                            <option value="Lowbed">Lowbed</option>
-                            <option value="Tronton">Tronton</option>
-                            <option value="Fuso">Fuso</option>
-                            <option value="Colt Diesel">Colt Diesel</option>
-                            <option value="Double Cabin">
-                              Double Cabin
-                            </option>
-                            <option value="Pickup">Pickup</option>
-                            <option value="Dolly">Dolly</option>
-                          </select>
+                          <div className="flex h-[42px] items-center rounded-lg border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-700">
+                            {request.requested_vehicle_type || '-'}
+                          </div>
+                          <p className="mt-1 text-xs text-gray-400">
+                            Mengikuti jenis kendaraan yang diminta Marketing.
+                          </p>
                         </div>
-
                         <div>
                           <label className="mb-1.5 block text-xs font-semibold text-gray-500">
                             Sumber Unit
@@ -1924,27 +1895,6 @@ export default function ChangeRequestReview({
                             className={inputClass}
                           />
                         </div>
-
-                        <div>
-                          <label className="mb-1.5 block text-xs font-semibold text-gray-500">
-                            No. Buntut
-                          </label>
-                          <input
-                            type="text"
-                            value={unit.no_buntut}
-                            onChange={(event) =>
-                              updateNewUnit(
-                                index,
-                                'no_buntut',
-                                event.target.value
-                              )
-                            }
-                            disabled={loading}
-                            placeholder="Contoh: 40-22"
-                            className={inputClass}
-                          />
-                        </div>
-
                         <div>
                           <label className="mb-1.5 block text-xs font-semibold text-gray-500">
                             Nama Driver

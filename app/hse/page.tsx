@@ -3,10 +3,23 @@ import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
 import HseDashboardPanel from '@/app/hse/components/hse-dashboard-panel'
 
+function getJakartaTodayStartIso() {
+  const now = new Date()
+  const todayKey = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+  return new Date(`${todayKey}T00:00:00+07:00`).toISOString()
+}
+
 export default async function HSEPage() {
   const user = await requireRole(['hse'])
 
   const supabase = await createClient()
+
+  const todayStartIso = getJakartaTodayStartIso()
 
   const { data: orders, error } = await supabase
     .from('orders')
@@ -19,6 +32,7 @@ export default async function HSEPage() {
       trip,
       status,
       created_at,
+      updated_at,
       order_requirements (
         id,
         vehicle_type,
@@ -32,6 +46,9 @@ export default async function HSEPage() {
         status
       )
     `)
+    .or(
+      `updated_at.gte.${todayStartIso},status.not.in.(ready_to_depart,cancelled)`
+    )
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -88,6 +105,9 @@ export default async function HSEPage() {
         .map(([vehicleType, count]) => `${vehicleType} (${count})`)
         .join(', ')
 
+      const needsHseAction = waiting > 0 || failed > 0
+      const updatedToday = order.updated_at >= todayStartIso
+
       return {
         id: order.id,
         customer: order.customer,
@@ -100,9 +120,11 @@ export default async function HSEPage() {
         passed,
         waiting,
         failed,
+        needsHseAction,
+        updatedToday,
       }
     })
-    .filter((row) => row.total > 0)
+    .filter((row) => row.total > 0 && (row.needsHseAction || row.updatedToday))
 
   return (
     <DashboardShell user={user}>

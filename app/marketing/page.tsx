@@ -59,16 +59,24 @@ export default async function MarketingPage() {
   }).format(now)
 
   const startOfDay = new Date(`${jakartaDate}T00:00:00+07:00`)
-  const startOfNextDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+
+  const isMarketingIndividual = user.role === 'marketing'
+
+  // ==========================================
+  // ORDER HARI INI + YANG MASIH BELUM KELAR
+  // ==========================================
 
   let todayOrdersQuery = supabase
     .from('orders')
-    .select('id, customer, pk_number, rft_tr_job, quantity, trip, status, created_at')
-    .gte('created_at', startOfDay.toISOString())
-    .lt('created_at', startOfNextDay.toISOString())
+    .select(
+      'id, customer, pk_number, rft_tr_job, quantity, trip, status, created_at'
+    )
+    .or(
+      `updated_at.gte.${startOfDay.toISOString()},status.not.in.(ready_to_depart,cancelled)`
+    )
     .order('created_at', { ascending: false })
 
-  if (user.role === 'marketing') {
+  if (isMarketingIndividual) {
     todayOrdersQuery = todayOrdersQuery.eq('created_by', user.id)
   }
 
@@ -77,6 +85,10 @@ export default async function MarketingPage() {
   if (todayError) {
     console.error('MARKETING TODAY ORDERS ERROR:', todayError)
   }
+
+  // ==========================================
+  // UNIT PER STATUS — HARUS DIBATASI KE ORDER MILIK SENDIRI
+  // ==========================================
 
   const truckSelect = `
     id,
@@ -87,13 +99,21 @@ export default async function MarketingPage() {
     driver_name,
     driver_phone,
     status,
-    orders (
+    orders!inner (
       customer,
       pk_number,
       rft_tr_job,
-      trip
+      trip,
+      created_by
     )
   `
+
+  function scopeToOwner(query: any) {
+    if (isMarketingIndividual) {
+      return query.eq('orders.created_by', user.id)
+    }
+    return query
+  }
 
   const [
     { data: waitingHseTrucks, error: waitingHseError },
@@ -101,14 +121,23 @@ export default async function MarketingPage() {
     { data: readyDepartureUnits, error: readyDepartError },
     { data: failedTrucks, error: failedError },
   ] = await Promise.all([
-    supabase.from('order_trucks').select(truckSelect).eq('status', 'waiting_hse'),
-    supabase.from('order_trucks').select(truckSelect).eq('status', 'ready_loading'),
-    supabase
-      .from('order_trucks')
-      .select(truckSelect)
-      .eq('status', 'ready_to_depart')
-      .order('departure_ready_at', { ascending: false }),
-    supabase.from('order_trucks').select(truckSelect).eq('status', 'failed'),
+    scopeToOwner(
+      supabase.from('order_trucks').select(truckSelect).eq('status', 'waiting_hse')
+    ),
+    scopeToOwner(
+      supabase.from('order_trucks').select(truckSelect).eq('status', 'ready_loading')
+    ),
+    scopeToOwner(
+      supabase
+        .from('order_trucks')
+        .select(truckSelect)
+        .eq('status', 'ready_to_depart')
+        .gte('departure_ready_at', startOfDay.toISOString())
+        .order('departure_ready_at', { ascending: false })
+    ),
+    scopeToOwner(
+      supabase.from('order_trucks').select(truckSelect).eq('status', 'failed')
+    ),
   ])
 
   if (waitingHseError) console.error('MARKETING WAITING HSE ERROR:', waitingHseError)

@@ -74,10 +74,23 @@ const changeTypeLabels: Record<string, string> = {
   cancel_order: 'Batalkan Order',
 }
 
+function getJakartaTodayStartIso() {
+  const now = new Date()
+  const todayKey = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+  return new Date(`${todayKey}T00:00:00+07:00`).toISOString()
+}
+
 export default async function OperationalPage() {
   const user = await requireRole(['operational'])
 
   const supabase = await createClient()
+
+  const todayStartIso = getJakartaTodayStartIso()
 
   const { data: orders, error: ordersError } = await supabase
     .from('orders')
@@ -112,14 +125,9 @@ export default async function OperationalPage() {
         source
       )
     `)
-    .in('status', [
-      'waiting_unit',
-      'waiting_hse',
-      'inspection',
-      'ready_loading',
-      'ready_to_depart',
-      'failed',
-    ])
+    .or(
+      `updated_at.gte.${todayStartIso},status.in.(waiting_unit,waiting_hse,inspection,ready_loading,failed)`
+    )
     .order('created_at', { ascending: false })
 
   if (ordersError) {

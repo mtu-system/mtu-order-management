@@ -319,7 +319,7 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
               <th className="w-[150px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">PK / RFT</th>
               <th className="w-[90px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Qty</th>
               <th className="w-[150px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Kendaraan</th>
-              <th className="w-[160px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Trip</th>
+              <th className="w-[190px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Trip</th>
               <th className="w-[130px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Status</th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Keterangan</th>
               <th className="w-[130px] px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500">Tanggal</th>
@@ -382,15 +382,10 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
                       )}
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 text-[13px] text-gray-600" title={order.trip || ''}>
-                    <span className="line-clamp-1">{order.trip || '-'}</span>
-                  </td>
+                  <td className="px-5 py-3.5 text-[13px] leading-snug text-gray-600">{order.trip || '-'}</td>
                   <td className="px-5 py-3.5">{getStatusBadge(order.status)}</td>
-                  <td
-                    className="max-w-[260px] px-5 py-3.5 text-[13px] text-gray-600"
-                    title={order.reasonLabel}
-                  >
-                    <span className="line-clamp-1">{order.reasonLabel}</span>
+                  <td className="max-w-[260px] px-5 py-3.5 text-[13px] leading-snug text-gray-600">
+                    {order.reasonLabel}
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="text-[13px] text-gray-700">{dateLabelDay}</div>

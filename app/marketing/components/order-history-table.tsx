@@ -352,7 +352,7 @@ export default function OrderHistoryTable({ orders }: OrderHistoryTableProps) {
               <th className="w-[160px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Kendaraan
               </th>
-              <th className="w-[150px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <th className="w-[190px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Trip
               </th>
               <th className="w-[150px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -438,9 +438,7 @@ export default function OrderHistoryTable({ orders }: OrderHistoryTableProps) {
                       </div>
                     </td>
 
-                    <td className="px-5 py-3.5 text-[13px] text-gray-600" title={order.trip || ''}>
-                      <span className="line-clamp-1">{order.trip || '-'}</span>
-                    </td>
+                    <td className="px-5 py-3.5 text-[13px] leading-snug text-gray-600">{order.trip || '-'}</td>
 
                     <td className="px-5 py-3.5">
                       <span

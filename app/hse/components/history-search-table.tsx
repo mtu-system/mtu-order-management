@@ -279,9 +279,9 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
             <tr>
               <th className="w-[220px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Customer</th>
               <th className="w-[160px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">PK / RFT</th>
-              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Kendaraan Internal</th>
+              <th className="w-[200px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Kendaraan Internal</th>
               <th className="w-[80px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">VM</th>
-              <th className="w-[160px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Trip</th>
+              <th className="w-[190px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Trip</th>
               <th className="w-[160px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Hasil</th>
               <th className="w-[130px] px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Tanggal</th>
             </tr>
@@ -320,9 +320,7 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
                         <div className="text-[11.5px] text-gray-400">{order.rftTrJob}</div>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-[13px] text-gray-600" title={order.vehicleSummary}>
-                      <span className="line-clamp-1">{order.vehicleSummary}</span>
-                    </td>
+                    <td className="px-5 py-3.5 text-[13px] leading-snug text-gray-600">{order.vehicleSummary}</td>
                     <td className="px-5 py-3.5">
                       {order.vmCount > 0 ? (
                         <span className="inline-flex items-center rounded-md bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700">
@@ -332,9 +330,7 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
                         <span className="text-gray-300">-</span>
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-[13px] text-gray-600" title={order.trip || ''}>
-                      <span className="line-clamp-1">{order.trip || '-'}</span>
-                    </td>
+                    <td className="px-5 py-3.5 text-[13px] leading-snug text-gray-600">{order.trip || '-'}</td>
                     <td className="px-5 py-3.5">
                       <span className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-bold ${order.resultClass}`}>
                         {order.resultLabel}

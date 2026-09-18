@@ -388,7 +388,7 @@ export default async function ManagerDashboardPage() {
       key: 'all',
       label: 'Total Order',
       value: totalCount,
-      color: 'text-[#01236A]',
+      color: 'text-[#2563EB]',
     },
     {
       key: 'waiting_unit',
@@ -436,7 +436,7 @@ export default async function ManagerDashboardPage() {
           </p>
         </div>
 
-        <span className="rounded-full bg-[#01236A]/10 px-3.5 py-1.5 text-xs font-bold text-[#01236A]">
+        <span className="rounded-full bg-[#2563EB]/10 px-3.5 py-1.5 text-xs font-bold text-[#2563EB]">
           {new Date().toLocaleDateString('id-ID', {
             timeZone: 'Asia/Jakarta',
             weekday: 'long',
@@ -455,14 +455,14 @@ export default async function ManagerDashboardPage() {
 
       {/* TREND + STATUS */}
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-3">
           <h2 className="mb-3 text-sm font-bold text-gray-900">
             Order History
           </h2>
           <OrderTrendChart data7={trend7} data30={trend30} />
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
           <h2 className="mb-4 text-sm font-bold text-gray-900">
             Order Status
           </h2>
@@ -471,8 +471,8 @@ export default async function ManagerDashboardPage() {
       </div>
 
       {/* UNIT READY TO DEPART — COMPACT */}
-      <div className="mb-5 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
+      <div className="mb-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
           <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
             <Truck className="h-4 w-4 text-gray-400" />
             Unit Ready to Depart
@@ -560,9 +560,9 @@ export default async function ManagerDashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div
           id="needs-attention"
-          className="rounded-2xl border border-gray-100 bg-white shadow-sm"
+          className="rounded-xl border border-gray-200 bg-white shadow-sm"
         >
-          <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
+          <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-3">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <h2 className="text-sm font-bold text-gray-900">
               Needs Attention
@@ -601,8 +601,8 @@ export default async function ManagerDashboardPage() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-3">
             <Clock className="h-4 w-4 text-gray-400" />
             <h2 className="text-sm font-bold text-gray-900">
               Recent Activity
@@ -635,7 +635,7 @@ export default async function ManagerDashboardPage() {
                     className="flex gap-2.5 rounded-lg py-1.5 transition-colors hover:bg-gray-50/60"
                   >
                     <div className="flex flex-col items-center pt-1.5">
-                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#01236A]" />
+                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2563EB]" />
                       {index < recentActivity.length - 1 && (
                         <div className="mt-0.5 w-px flex-1 bg-gray-100" />
                       )}

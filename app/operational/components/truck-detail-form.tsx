@@ -145,12 +145,12 @@ export default function TruckDetailForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+      className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
     >
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#01236A]/10">
-            <TruckIcon className="h-5 w-5 text-[#01236A]" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2563EB]/10">
+            <TruckIcon className="h-5 w-5 text-[#2563EB]" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900">
@@ -163,7 +163,7 @@ export default function TruckDetailForm({
           </div>
         </div>
 
-        <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-3 py-1.5 text-xs font-bold text-[#01236A]">
+        <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-3 py-1.5 text-xs font-bold text-[#2563EB]">
           {trucks.length} Unit
         </span>
       </div>
@@ -184,11 +184,11 @@ export default function TruckDetailForm({
         {trucks.map((truck, index) => (
           <div
             key={index}
-            className="rounded-xl border border-gray-100 bg-gray-50/60 p-4"
+            className="rounded-xl border border-gray-200 bg-gray-50/60 p-4"
           >
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#01236A] text-xs font-bold text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-bold text-white">
                   {index + 1}
                 </span>
                 <div>
@@ -242,7 +242,7 @@ export default function TruckDetailForm({
                   placeholder="Contoh: B 1234 XYZ"
                   required
                   disabled={saving}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
 
@@ -259,7 +259,7 @@ export default function TruckDetailForm({
                   placeholder="Nama driver"
                   required
                   disabled={saving}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
 
@@ -276,7 +276,7 @@ export default function TruckDetailForm({
                   placeholder="08xxxxxxxxxx"
                   required
                   disabled={saving}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function TruckDetailForm({
         ))}
       </div>
 
-      <div className="mt-5 flex items-end justify-between border-t border-gray-100 pt-5">
+      <div className="mt-5 flex items-end justify-between border-t border-gray-200 pt-5">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-gray-400">
             Total unit Internal
@@ -297,7 +297,7 @@ export default function TruckDetailForm({
         <button
           type="submit"
           disabled={saving || trucks.length === 0}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />

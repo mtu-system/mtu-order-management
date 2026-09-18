@@ -78,16 +78,16 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
   ]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex items-center gap-1 border-b border-gray-100 px-6 py-3">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center gap-1 border-b border-gray-200 px-6 py-3">
         {filters.map((item) => (
           <button
             key={item.key}
             type="button"
             onClick={() => setFilter(item.key)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-bold transition ${
               filter === item.key
-                ? 'bg-[#01236A] text-white'
+                ? 'bg-[#2563EB] text-white'
                 : 'text-gray-500 hover:bg-gray-100'
             }`}
           >
@@ -107,7 +107,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50">
+          <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
               <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Customer
@@ -170,7 +170,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                       href={`/marketing/orders/${order.id}`}
                       className="block hover:underline"
                     >
-                      <div className="font-semibold text-[#01236A]">
+                      <div className="font-semibold text-[#2563EB]">
                         {order.pkNumber || '-'}
                       </div>
                       <div className="text-xs text-gray-400">
@@ -186,26 +186,26 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap items-center gap-1.5">
                       {order.internalCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                        <span className="inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
                           {order.readyToDepartCount}/{order.internalCount}{' '}
                           Ready to Depart
                         </span>
                       )}
 
                       {order.readyLoadingCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                        <span className="inline-flex items-center rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                           {order.readyLoadingCount} Menunggu SJ/UJ
                         </span>
                       )}
 
                       {order.waitingHseCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                        <span className="inline-flex items-center rounded-md bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                           {order.waitingHseCount} Waiting HSE
                         </span>
                       )}
 
                       {order.vmCount > 0 && (
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
+                        <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
                           VM {order.vmCount}
                         </span>
                       )}
@@ -238,7 +238,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
 
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${statusStyle(
+                      className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-bold ${statusStyle(
                         order.status
                       )}`}
                     >
@@ -249,7 +249,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                   <td className="px-6 py-4 text-right">
                     <Link
                       href={`/marketing/orders/${order.id}`}
-                      className="text-sm font-semibold text-[#01236A] hover:underline"
+                      className="text-sm font-semibold text-[#2563EB] hover:underline"
                     >
                       Detail
                     </Link>

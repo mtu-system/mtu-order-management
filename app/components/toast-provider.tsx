@@ -80,7 +80,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={toast.id}
-              className={`pointer-events-auto flex items-start gap-3 rounded-2xl border bg-white p-4 shadow-lg ${style.border} animate-[toast-in_0.2s_ease-out]`}
+              className={`pointer-events-auto flex items-start gap-3 rounded-xl border bg-white p-4 shadow-lg ${style.border} animate-[toast-in_0.2s_ease-out]`}
             >
               <div
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${style.iconBg}`}

@@ -27,20 +27,19 @@ function getStatusLabel(status: string) {
 function getStatusClass(status: string) {
   switch (status) {
     case 'waiting_unit':
-      return 'bg-amber-100 text-amber-800'
+      return 'bg-gray-100 text-gray-600'
     case 'waiting_hse':
     case 'inspection':
-      return 'bg-blue-100 text-blue-800'
     case 'ready_loading':
-      return 'bg-emerald-100 text-emerald-800'
+      return 'bg-blue-100 text-blue-700'
     case 'ready_to_depart':
-      return 'bg-violet-100 text-violet-800'
+      return 'bg-emerald-100 text-emerald-700'
     case 'pending':
-      return 'bg-gray-200 text-gray-700'
+      return 'bg-amber-100 text-amber-800'
     case 'cancelled':
       return 'bg-red-100 text-red-700'
     default:
-      return 'bg-gray-100 text-gray-700'
+      return 'bg-gray-100 text-gray-600'
   }
 }
 
@@ -179,11 +178,11 @@ export default async function MarketingPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-5">
+        <h1 className="text-lg font-extrabold text-gray-900">
           Dashboard Marketing
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-0.5 text-[13px] text-gray-500">
           Kelola dan monitor permintaan kendaraan.
         </p>
       </div>

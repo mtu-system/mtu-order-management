@@ -150,7 +150,7 @@ export default async function MarketingOrdersPage() {
         <div className="flex gap-3">
           <Link
             href="/marketing/orders/history"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#01236A]/20 bg-white px-5 py-2.5 text-sm font-semibold text-[#01236A] shadow-sm transition hover:bg-[#01236A]/5"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#2563EB]/20 bg-white px-5 py-2.5 text-sm font-semibold text-[#2563EB] shadow-sm transition hover:bg-[#2563EB]/5"
           >
             <HistoryIcon className="h-4 w-4" />
             Order History
@@ -158,7 +158,7 @@ export default async function MarketingOrdersPage() {
 
           <Link
             href="/marketing/orders/create"
-            className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#01236A]/85"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2563EB]/85"
           >
             <PlusCircle className="h-4 w-4" />
             Create Order

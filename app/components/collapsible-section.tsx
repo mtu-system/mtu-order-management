@@ -33,7 +33,7 @@ export default function CollapsibleSection({
   return (
     <div
       id={id}
-      className="mb-6 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+      className="mb-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
     >
       <button
         type="button"
@@ -67,7 +67,7 @@ export default function CollapsibleSection({
       </button>
 
       {open && (
-        <div className="border-t border-gray-100 px-6 py-5">{children}</div>
+        <div className="border-t border-gray-200 px-6 py-5">{children}</div>
       )}
     </div>
   )

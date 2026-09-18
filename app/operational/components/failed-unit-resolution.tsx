@@ -497,7 +497,7 @@ export default function FailedUnitResolution({
             type="button"
             disabled={saving}
             onClick={() => setMode('replace')}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#01236A]/20 bg-white px-3 py-2 text-xs font-bold text-[#01236A] transition hover:bg-[#01236A]/5 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#2563EB]/20 bg-white px-3 py-2 text-xs font-bold text-[#2563EB] transition hover:bg-[#2563EB]/5 disabled:opacity-50"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Ganti Detail Truk
@@ -532,7 +532,7 @@ export default function FailedUnitResolution({
           </button>
         </div>
       ) : (
-        <div className="rounded-lg border border-[#01236A]/20 bg-white p-4">
+        <div className="rounded-lg border border-[#2563EB]/20 bg-white p-4">
           <p className="mb-3 text-sm font-bold text-gray-900">
             Detail Truk Pengganti
           </p>
@@ -544,7 +544,7 @@ export default function FailedUnitResolution({
               onChange={(event) => setPlateNumber(event.target.value)}
               placeholder="Plat Nomor"
               disabled={saving}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
             />
             <input
               type="text"
@@ -552,7 +552,7 @@ export default function FailedUnitResolution({
               onChange={(event) => setDriverName(event.target.value)}
               placeholder="Nama Driver"
               disabled={saving}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
             />
             <input
               type="text"
@@ -560,7 +560,7 @@ export default function FailedUnitResolution({
               onChange={(event) => setDriverPhone(event.target.value)}
               placeholder="No. HP Driver"
               disabled={saving}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
             />
           </div>
 
@@ -577,7 +577,7 @@ export default function FailedUnitResolution({
               type="button"
               disabled={saving}
               onClick={handleReplace}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#01236A]/85 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#2563EB]/85 disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

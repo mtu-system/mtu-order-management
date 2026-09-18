@@ -491,16 +491,16 @@ export default async function OperationalPage() {
 
           <Link
             href="/operational/history"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#01236A]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#01236A] shadow-sm transition hover:bg-[#01236A]/5"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#2563EB]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#2563EB] shadow-sm transition hover:bg-[#2563EB]/5"
           >
-            <HistoryIcon className="h-4 w-4 text-[#01236A]" />
+            <HistoryIcon className="h-4 w-4 text-[#2563EB]" />
             History
           </Link>
         </div>
       </div>
 
             {pendingChangeRequestAlerts.length > 0 && (
-        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-5">
           <p className="mb-3 text-sm font-bold text-amber-900">
             {pendingChangeRequestAlerts.length} Permintaan Perubahan Menunggu
             Persetujuan
@@ -529,7 +529,7 @@ export default async function OperationalPage() {
                     </span>
                   )}
                 </div>
-                <span className="text-xs font-bold text-[#01236A]">
+                <span className="text-xs font-bold text-[#2563EB]">
                   Proses →
                 </span>
               </Link>

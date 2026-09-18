@@ -71,8 +71,8 @@ export default async function ManagerActivityLogsPage() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-3">
           <Clock className="h-4 w-4 text-gray-400" />
           <h2 className="text-sm font-bold text-gray-900">
             Aktivitas Terbaru

@@ -139,8 +139,8 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/60 px-6 py-4">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50/60 px-6 py-4">
         <div>
           <h3 className="text-lg font-bold tracking-tight text-gray-900">
             {truck.vehicle_type}
@@ -187,7 +187,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
           </div>
         </div>
 
-        <div className="mt-6 border-t border-gray-100 pt-5">
+        <div className="mt-6 border-t border-gray-200 pt-5">
           {needNoBuntut ? (
             <>
               <label className="mb-2 block text-sm font-bold text-gray-900">
@@ -209,7 +209,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
           )}
         </div>
 
-        <div className="mt-6 border-t border-gray-100 pt-5">
+        <div className="mt-6 border-t border-gray-200 pt-5">
           <h4 className="mb-2 font-bold text-gray-900">
             Persiapan Keberangkatan
           </h4>
@@ -219,7 +219,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
           </p>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
               <div>
                 <p className="text-sm font-bold text-gray-900">
                   Surat Jalan
@@ -234,7 +234,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
               </span>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-gray-100 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
               <div>
                 <p className="text-sm font-bold text-gray-900">
                   Uang Jalan
@@ -254,7 +254,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
             type="button"
             onClick={handleReadyToDepart}
             disabled={saving}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#01236A] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />

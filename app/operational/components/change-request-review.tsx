@@ -77,7 +77,7 @@ const changeTypeLabels: Record<string, string> = {
 }
 
 const inputClass =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10'
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10'
 
 export default function ChangeRequestReview({
   orderId,
@@ -1283,7 +1283,7 @@ export default function ChangeRequestReview({
     changeTypeLabels[request.change_type] || request.change_type
 
   return (
-    <div className="mb-6 overflow-hidden rounded-2xl border border-amber-200 bg-white shadow-sm">
+    <div className="mb-6 overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm">
       <div className="border-b border-amber-100 bg-amber-50/60 px-6 py-4">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
@@ -1303,7 +1303,7 @@ export default function ChangeRequestReview({
       </div>
 
       <div className="p-6">
-        <div className="mb-5 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+        <div className="mb-5 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
             Jenis Perubahan
           </p>
@@ -1342,7 +1342,7 @@ export default function ChangeRequestReview({
             request.requested_vehicle_type && (
               <p className="mt-2 text-sm text-gray-700">
                 Kendaraan baru:{' '}
-                <span className="font-bold text-[#01236A]">
+                <span className="font-bold text-[#2563EB]">
                   {request.requested_vehicle_type}
                 </span>
               </p>
@@ -1410,7 +1410,7 @@ export default function ChangeRequestReview({
                           onClick={() => toggleTruck(truck.id)}
                           className={`w-full rounded-xl border p-4 text-left transition ${
                             selected
-                              ? 'border-[#01236A]/40 bg-[#01236A]/5 ring-1 ring-inset ring-[#01236A]/20'
+                              ? 'border-[#2563EB]/40 bg-[#2563EB]/5 ring-1 ring-inset ring-[#2563EB]/20'
                               : 'border-gray-200 bg-white hover:bg-gray-50'
                           }`}
                         >
@@ -1418,7 +1418,7 @@ export default function ChangeRequestReview({
                             <div
                               className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                                 selected
-                                  ? 'border-[#01236A] bg-[#01236A] text-white'
+                                  ? 'border-[#2563EB] bg-[#2563EB] text-white'
                                   : 'border-gray-300'
                               }`}
                             >
@@ -1483,7 +1483,7 @@ export default function ChangeRequestReview({
                   (hasTruckDetails &&
                     selectedTruckIds.length !== requestedQuantity)
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1551,7 +1551,7 @@ export default function ChangeRequestReview({
                           onClick={() => toggleTruck(truck.id)}
                           className={`w-full rounded-xl border p-4 text-left transition ${
                             selected
-                              ? 'border-[#01236A]/40 bg-[#01236A]/5 ring-1 ring-inset ring-[#01236A]/20'
+                              ? 'border-[#2563EB]/40 bg-[#2563EB]/5 ring-1 ring-inset ring-[#2563EB]/20'
                               : 'border-gray-200 bg-white hover:bg-gray-50'
                           }`}
                         >
@@ -1559,7 +1559,7 @@ export default function ChangeRequestReview({
                             <div
                               className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                                 selected
-                                  ? 'border-[#01236A] bg-[#01236A] text-white'
+                                  ? 'border-[#2563EB] bg-[#2563EB] text-white'
                                   : 'border-gray-300'
                               }`}
                             >
@@ -1786,7 +1786,7 @@ export default function ChangeRequestReview({
                       replacementUnits.length !== requestedQuantity)) ||
                   !request.requested_vehicle_type
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1818,7 +1818,7 @@ export default function ChangeRequestReview({
                   {newUnits.map((unit, index) => (
                     <div
                       key={index}
-                      className="rounded-xl border border-gray-100 bg-gray-50/60 p-5"
+                      className="rounded-xl border border-gray-200 bg-gray-50/60 p-5"
                     >
                       <p className="mb-4 font-bold text-gray-900">
                         Unit {index + 1}
@@ -1970,7 +1970,7 @@ export default function ChangeRequestReview({
                 type="button"
                 onClick={handleApproveAdd}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -2028,7 +2028,7 @@ export default function ChangeRequestReview({
                 type="button"
                 onClick={handleApproveValueChange}
                 disabled={loading || !request.requested_value?.trim()}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

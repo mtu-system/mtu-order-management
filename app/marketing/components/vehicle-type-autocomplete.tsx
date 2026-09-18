@@ -121,11 +121,11 @@ export default function VehicleTypeAutocomplete({
         placeholder={placeholder}
         autoComplete="off"
         disabled={disabled}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+        className="w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
       />
 
       {open && suggestions.length > 0 && (
-        <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-gray-100 bg-white shadow-lg">
+        <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
           {suggestions.map((item, index) => (
             <button
               key={item.id}
@@ -134,7 +134,7 @@ export default function VehicleTypeAutocomplete({
               onClick={() => handleSelect(item.name)}
               className={`block w-full px-3.5 py-2.5 text-left text-sm transition ${
                 index === highlightedIndex
-                  ? 'bg-[#01236A]/5 text-[#01236A]'
+                  ? 'bg-blue-50 text-blue-700'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >

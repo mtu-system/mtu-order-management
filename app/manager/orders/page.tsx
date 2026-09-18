@@ -120,7 +120,7 @@ export default async function ManagerOrdersPage({
           </p>
         </div>
 
-        <span className="rounded-full bg-[#01236A]/10 px-3.5 py-1.5 text-xs font-bold text-[#01236A]">
+        <span className="rounded-full bg-[#2563EB]/10 px-3.5 py-1.5 text-xs font-bold text-[#2563EB]">
           {orderRows.length} Order
         </span>
       </div>

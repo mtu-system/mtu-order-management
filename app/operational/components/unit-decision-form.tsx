@@ -207,14 +207,14 @@ export default function UnitDecisionForm({
           rows={4}
           disabled={loading}
           placeholder="Contoh: Trailer tersedia 2 dari 3 unit. 1 unit masih dicari."
-          className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+          className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
         />
       </div>
 
       <button
         type="submit"
         disabled={!decision || loading}
-        className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" />

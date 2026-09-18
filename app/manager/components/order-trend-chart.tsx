@@ -29,7 +29,7 @@ export default function OrderTrendChart({
           onClick={() => setRange('7')}
           className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
             range === '7'
-              ? 'bg-white text-[#01236A] shadow-sm'
+              ? 'bg-white text-[#2563EB] shadow-sm'
               : 'text-gray-500'
           }`}
         >
@@ -40,7 +40,7 @@ export default function OrderTrendChart({
           onClick={() => setRange('30')}
           className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
             range === '30'
-              ? 'bg-white text-[#01236A] shadow-sm'
+              ? 'bg-white text-[#2563EB] shadow-sm'
               : 'text-gray-500'
           }`}
         >
@@ -58,7 +58,7 @@ export default function OrderTrendChart({
               {point.count}
             </span>
             <div
-              className="w-full rounded-t-sm bg-[#01236A] transition-all"
+              className="w-full rounded-t-sm bg-[#2563EB] transition-all"
               style={{
                 height: `${Math.max(4, (point.count / maxCount) * 100)}%`,
                 opacity: point.count === 0 ? 0.15 : 1,

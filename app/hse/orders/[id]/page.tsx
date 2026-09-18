@@ -79,7 +79,7 @@ export default async function HSEOrderDetailPage({
         <div className="mb-8">
           <Link
             href="/hse"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#01236A] hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2563EB] hover:underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Kembali ke HSE Orders
@@ -94,7 +94,7 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* INFORMASI ORDER */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-5 text-lg font-bold text-gray-900">
             Informasi Order
           </h2>
@@ -157,7 +157,7 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* KEBUTUHAN KENDARAAN */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">
               Kebutuhan Kendaraan
@@ -167,7 +167,7 @@ export default async function HSEOrderDetailPage({
             </span>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-gray-100">
+          <div className="overflow-hidden rounded-xl border border-gray-200">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
@@ -210,7 +210,7 @@ export default async function HSEOrderDetailPage({
 
         {/* INSTRUKSI & CATATAN */}
         <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-3 text-lg font-bold text-gray-900">
               Instruksi
             </h2>
@@ -219,7 +219,7 @@ export default async function HSEOrderDetailPage({
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-3 text-lg font-bold text-gray-900">
               Catatan
             </h2>
@@ -230,7 +230,7 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* KEPUTUSAN OPERATIONAL */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-bold text-gray-900">
             Keputusan Operational
           </h2>
@@ -257,7 +257,7 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* DETAIL UNIT */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-5">
             <h2 className="text-lg font-bold text-gray-900">
               Detail Unit
@@ -300,7 +300,7 @@ export default async function HSEOrderDetailPage({
               ) => (
                 <div
                   key={truck.id}
-                  className="rounded-xl border border-gray-100 bg-gray-50/60 p-4"
+                  className="rounded-xl border border-gray-200 bg-gray-50/60 p-4"
                 >
                   <div className="mb-4 flex items-center justify-between">
                     <div className="font-bold text-gray-900">
@@ -380,7 +380,7 @@ export default async function HSEOrderDetailPage({
                     )}
                   </div>
 
-                  <div className="mt-5 border-t border-gray-100 pt-5">
+                  <div className="mt-5 border-t border-gray-200 pt-5">
                     <h3 className="mb-3 text-sm font-bold text-gray-900">
                       Pemeriksaan HSE
                     </h3>

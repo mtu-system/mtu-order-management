@@ -92,7 +92,7 @@ export default async function OrderHistoryTimeline({
         {combined.map((item) => (
           <div
             key={`${item.scope}-${item.id}`}
-            className="rounded-xl border border-gray-100 bg-gray-50/60 p-4"
+            className="rounded-xl border border-gray-200 bg-gray-50/60 p-4"
           >
             <div className="flex items-start justify-between gap-4">
               <div>

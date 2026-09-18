@@ -46,8 +46,8 @@ function RankingPanel({
   const maxCount = items.length > 0 ? items[0].count : 0
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-3">
         <span className={accentClass}>{icon}</span>
         <h2 className="text-sm font-bold text-gray-900">{title}</h2>
       </div>
@@ -202,7 +202,7 @@ export default function CustomerRankingTable({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-wrap items-center gap-2 px-6 py-4">
           <span className="text-xs font-semibold text-gray-400">
             Tanggal:
@@ -216,7 +216,7 @@ export default function CustomerRankingTable({
                 onClick={() => applyPreset(preset.key)}
                 className={`rounded-full px-3 py-1 text-xs font-bold transition ${
                   activePreset === preset.key
-                    ? 'bg-[#01236A] text-white'
+                    ? 'bg-[#2563EB] text-white'
                     : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
@@ -233,7 +233,7 @@ export default function CustomerRankingTable({
                 setDateFrom(event.target.value)
                 setActivePreset('custom')
               }}
-              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
             />
             <span className="text-xs text-gray-400">s/d</span>
             <input
@@ -243,12 +243,12 @@ export default function CustomerRankingTable({
                 setDateTo(event.target.value)
                 setActivePreset('custom')
               }}
-              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
             />
           </div>
         </div>
 
-        <div className="border-t border-gray-100 px-6 py-2 text-xs text-gray-400">
+        <div className="border-t border-gray-200 px-6 py-2 text-xs text-gray-400">
           {totalOrders} order dalam rentang ini, {totalRejected} di antaranya
           pernah reject (sebagian/seluruhnya).
         </div>
@@ -259,7 +259,7 @@ export default function CustomerRankingTable({
           title="Top 5 Customer"
           icon={<Trophy className="h-4 w-4" />}
           accentClass="text-amber-500"
-          barClass="bg-[#01236A]"
+          barClass="bg-[#2563EB]"
           items={topCustomers}
           emptyLabel="Belum ada order pada rentang tanggal ini."
           countLabel="order"

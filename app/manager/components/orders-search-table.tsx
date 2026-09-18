@@ -183,8 +183,8 @@ useEffect(() => {
   ]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -192,7 +192,7 @@ useEffect(() => {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Cari customer, PK, RFT, trip..."
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
           />
         </div>
 
@@ -200,9 +200,9 @@ useEffect(() => {
           <button
             type="button"
             onClick={() => setShowPk((current) => !current)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold transition ${
               showPk
-                ? 'border-[#01236A] bg-[#01236A] text-white'
+                ? 'border-[#2563EB] bg-[#2563EB] text-white'
                 : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
             }`}
           >
@@ -219,9 +219,9 @@ useEffect(() => {
           <button
             type="button"
             onClick={() => setShowRft((current) => !current)}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-bold transition ${
               showRft
-                ? 'border-[#01236A] bg-[#01236A] text-white'
+                ? 'border-[#2563EB] bg-[#2563EB] text-white'
                 : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
             }`}
           >
@@ -238,7 +238,7 @@ useEffect(() => {
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
           >
             <option value="all">Semua Status</option>
             {statusOptions.map((option) => (
@@ -252,7 +252,7 @@ useEffect(() => {
             type="button"
             onClick={handleExport}
             disabled={!filteredOrders.length}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Download className="h-3.5 w-3.5" />
             Export Excel
@@ -260,7 +260,7 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 bg-gray-50/60 px-6 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50/60 px-6 py-3">
         <span className="text-xs font-semibold text-gray-400">Tanggal:</span>
 
         <div className="flex items-center gap-1 rounded-full bg-white p-1 ring-1 ring-inset ring-gray-200">
@@ -269,9 +269,9 @@ useEffect(() => {
               key={preset.key}
               type="button"
               onClick={() => applyPreset(preset.key)}
-              className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+              className={`rounded-md px-3 py-1 text-xs font-bold transition ${
                 activePreset === preset.key
-                  ? 'bg-[#01236A] text-white'
+                  ? 'bg-[#2563EB] text-white'
                   : 'text-gray-500 hover:bg-gray-100'
               }`}
             >
@@ -288,7 +288,7 @@ useEffect(() => {
               setDateFrom(event.target.value)
               setActivePreset('custom')
             }}
-            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
           />
           <span className="text-xs text-gray-400">s/d</span>
           <input
@@ -298,18 +298,18 @@ useEffect(() => {
               setDateTo(event.target.value)
               setActivePreset('custom')
             }}
-            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
           />
         </div>
       </div>
 
-      <div className="border-b border-gray-100 px-6 py-2 text-xs text-gray-400">
+      <div className="border-b border-gray-200 px-6 py-2 text-xs text-gray-400">
         Menampilkan {filteredOrders.length} dari {orders.length} order
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50">
+          <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 Customer

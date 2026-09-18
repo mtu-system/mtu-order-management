@@ -48,7 +48,7 @@ export function ConfirmDialogProvider({
           onClick={() => handleClose(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+            className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-start gap-3">
@@ -85,7 +85,7 @@ export function ConfirmDialogProvider({
                 className={`rounded-lg px-4 py-2 text-sm font-bold text-white transition ${
                   state.options.danger
                     ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-[#01236A] hover:bg-[#01236A]/85'
+                    : 'bg-[#2563EB] hover:bg-[#2563EB]/85'
                 }`}
               >
                 {state.options.confirmLabel || 'Konfirmasi'}

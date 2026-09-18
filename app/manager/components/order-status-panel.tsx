@@ -73,7 +73,7 @@ export default function OrderStatusPanel({
 
   return (
     <div className="mb-5 space-y-4">
-      <div className="grid grid-cols-2 divide-x divide-gray-100 rounded-2xl border border-gray-100 bg-white shadow-sm sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 divide-x divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm sm:grid-cols-3 lg:grid-cols-6">
              {kpiItems.map((item) => {
           const Icon = iconMap[item.key as keyof typeof iconMap] || ClipboardList
           const isActive = activeKey === item.key
@@ -84,7 +84,7 @@ export default function OrderStatusPanel({
               type="button"
               onClick={() => setActiveKey(item.key)}
               className={`flex items-center gap-3 px-5 py-4 text-left transition-colors ${
-                isActive ? 'bg-[#01236A]/5' : 'hover:bg-gray-50/60'
+                isActive ? 'bg-[#2563EB]/5' : 'hover:bg-gray-50/60'
               }`}
             >
               <Icon className={`h-4.5 w-4.5 shrink-0 ${item.color}`} />
@@ -123,8 +123,8 @@ export default function OrderStatusPanel({
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="border-b border-gray-100 px-5 py-3">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 px-5 py-3">
           <h2 className="text-sm font-bold text-gray-900">{activeLabel}</h2>
         </div>
 
@@ -187,7 +187,7 @@ export default function OrderStatusPanel({
                   <td className="px-5 py-2.5 text-right">
                     <Link
                       href={`/manager/orders/${order.id}`}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#01236A] hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-[#2563EB] hover:underline"
                     >
                       Detail
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -211,10 +211,10 @@ export default function OrderStatusPanel({
         </div>
 
         {filteredOrders.length > 20 && (
-          <div className="border-t border-gray-100 px-5 py-2.5 text-center">
+          <div className="border-t border-gray-200 px-5 py-2.5 text-center">
             <Link
               href="/manager/orders"
-              className="text-xs font-bold text-[#01236A] hover:underline"
+              className="text-xs font-bold text-[#2563EB] hover:underline"
             >
               Lihat semua {filteredOrders.length} order di halaman Orders
             </Link>

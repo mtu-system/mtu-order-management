@@ -24,7 +24,7 @@ const PAGE_SIZE = 40
 
 const actorBadgeClass: Record<string, string> = {
   Marketing: 'bg-emerald-100 text-emerald-700',
-  Operational: 'bg-[#01236A]/10 text-[#01236A]',
+  Operational: 'bg-[#2563EB]/10 text-[#2563EB]',
   HSE: 'bg-amber-100 text-amber-800',
   System: 'bg-gray-100 text-gray-600',
 }
@@ -97,7 +97,7 @@ export default function ActivityLogsFeed({ items }: ActivityLogsFeedProps) {
 
   return (
     <div>
-      <div className="flex items-center gap-1 border-b border-gray-100 px-5 py-3">
+      <div className="flex items-center gap-1 border-b border-gray-200 px-5 py-3">
         {filters.map((item) => (
           <button
             key={item.key}
@@ -105,7 +105,7 @@ export default function ActivityLogsFeed({ items }: ActivityLogsFeedProps) {
             onClick={() => handleFilterChange(item.key)}
             className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
               filter === item.key
-                ? 'bg-[#01236A] text-white'
+                ? 'bg-[#2563EB] text-white'
                 : 'text-gray-500 hover:bg-gray-100'
             }`}
           >
@@ -122,7 +122,7 @@ export default function ActivityLogsFeed({ items }: ActivityLogsFeedProps) {
         <>
           {groupedByDate.map(([dateKey, dateItems]) => (
             <div key={dateKey}>
-              <div className="sticky top-0 z-10 border-b border-gray-100 bg-gray-50/90 px-5 py-2 backdrop-blur">
+              <div className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50/90 px-5 py-2 backdrop-blur">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">
                   {getDateHeaderLabel(dateKey)}
                 </p>
@@ -185,7 +185,7 @@ export default function ActivityLogsFeed({ items }: ActivityLogsFeedProps) {
           ))}
 
           {hasMore && (
-            <div className="border-t border-gray-100 p-3 text-center">
+            <div className="border-t border-gray-200 p-3 text-center">
               <button
                 type="button"
                 onClick={() =>

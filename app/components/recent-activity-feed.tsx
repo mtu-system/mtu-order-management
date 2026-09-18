@@ -66,8 +66,8 @@ const actionStyle: Record<string, ActionStyle> = {
   },
   replace_failed_unit: {
     icon: RefreshCw,
-    iconBg: 'bg-[#01236A]/10',
-    iconColor: 'text-[#01236A]',
+    iconBg: 'bg-[#2563EB]/10',
+    iconColor: 'text-[#2563EB]',
   },
   reduce_unit: {
     icon: MinusCircle,
@@ -162,7 +162,7 @@ export default async function RecentActivityFeed({
   if (!combined.length) {
     if (!showHeader) {
       return (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-white p-14 text-center shadow-sm">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-gray-200 bg-white p-14 text-center shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
             <Clock className="h-6 w-6" />
           </div>
@@ -205,7 +205,7 @@ export default async function RecentActivityFeed({
           <Link
             key={orderId}
             href={`${detailBasePath[role]}/${orderId}#riwayat`}
-            className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 transition hover:border-[#01236A]/20 hover:shadow-sm"
+            className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-[#2563EB]/20 hover:shadow-sm"
           >
             <div
               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${style.iconBg}`}
@@ -220,7 +220,7 @@ export default async function RecentActivityFeed({
                 </p>
 
                 {count > 1 && (
-                  <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-2 py-0.5 text-[11px] font-bold text-[#01236A]">
+                  <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[11px] font-bold text-[#2563EB]">
                     +{count - 1} lainnya
                   </span>
                 )}
@@ -260,7 +260,7 @@ export default async function RecentActivityFeed({
   }
 
   return (
-    <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="mb-5">
         <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
           <Clock className="h-4.5 w-4.5 text-gray-400" />

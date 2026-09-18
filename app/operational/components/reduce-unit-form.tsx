@@ -278,7 +278,7 @@ export default function ReduceUnitForm({
   }
 
   return (
-    <div className="mb-6 overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-sm">
+    <div className="mb-6 overflow-hidden rounded-xl border border-orange-200 bg-white shadow-sm">
       <div className="border-b border-orange-100 bg-orange-50/60 px-6 py-4">
         <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-orange-900">
           <MinusCircle className="h-5 w-5 text-orange-600" />
@@ -291,7 +291,7 @@ export default function ReduceUnitForm({
       </div>
 
       <div className="p-6">
-        <div className="mb-5 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+        <div className="mb-5 rounded-xl border border-gray-200 bg-gray-50/60 p-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -334,7 +334,7 @@ export default function ReduceUnitForm({
               </p>
             </div>
 
-            <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-3 py-1.5 text-xs font-bold text-[#01236A]">
+            <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-3 py-1.5 text-xs font-bold text-[#2563EB]">
               {selectedTruckIds.length}/{requestedQuantity}
             </span>
           </div>
@@ -351,7 +351,7 @@ export default function ReduceUnitForm({
                   disabled={saving}
                   className={`w-full rounded-xl border p-4 text-left transition ${
                     selected
-                      ? 'border-[#01236A]/40 bg-[#01236A]/5 ring-1 ring-inset ring-[#01236A]/20'
+                      ? 'border-[#2563EB]/40 bg-[#2563EB]/5 ring-1 ring-inset ring-[#2563EB]/20'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                 >
@@ -372,7 +372,7 @@ export default function ReduceUnitForm({
                       <div
                         className={`mb-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
                           selected
-                            ? 'bg-[#01236A] text-white'
+                            ? 'bg-[#2563EB] text-white'
                             : 'bg-gray-100 text-gray-600'
                         }`}
                       >
@@ -393,7 +393,7 @@ export default function ReduceUnitForm({
           </div>
 
           {!selectableTrucks.length && (
-            <div className="rounded-xl border border-gray-100 bg-white p-6 text-center text-sm text-gray-400">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
               Tidak ada unit {requestedVehicleType} yang dapat dipilih.
             </div>
           )}
@@ -409,7 +409,7 @@ export default function ReduceUnitForm({
             type="button"
             onClick={handleConfirm}
             disabled={saving || selectedTruckIds.length !== requestedQuantity}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />

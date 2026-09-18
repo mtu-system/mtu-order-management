@@ -177,7 +177,7 @@ export default async function ManagerOrderDetailPage({
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:col-span-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
             <FileText className="h-4 w-4 text-gray-400" />
             Info Order
@@ -267,7 +267,7 @@ export default async function ManagerOrderDetailPage({
           </dl>
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-bold text-gray-900">
             Kebutuhan Unit
           </h2>
@@ -294,8 +294,8 @@ export default async function ManagerOrderDetailPage({
         </div>
       </div>
 
-      <div className="mb-5 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
+      <div className="mb-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
           <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
             <TruckIcon className="h-4 w-4 text-gray-400" />
             Unit

@@ -64,10 +64,10 @@ export default async function OperationalOrdersPage() {
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-gray-100 bg-gray-50">
+            <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Customer
@@ -144,7 +144,7 @@ export default async function OperationalOrdersPage() {
                   <td className="px-6 py-4 text-right">
                     <Link
                       href={`/operational/orders/${order.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#01236A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#01236A]/85"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#2563EB] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#2563EB]/85"
                     >
                       Detail
                       <ArrowRight className="h-3.5 w-3.5" />

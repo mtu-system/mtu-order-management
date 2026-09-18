@@ -61,7 +61,7 @@ function TruckTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="border-b border-gray-100 bg-gray-50">
+        <thead className="border-b border-gray-200 bg-gray-50">
           <tr>
             <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               Customer
@@ -125,7 +125,7 @@ function TruckTable({
               <td className="px-6 py-4 text-gray-600">{truck.trip || '-'}</td>
               <td className="px-6 py-4">
                 <span
-                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${statusClass}`}
+                  className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ${statusClass}`}
                 >
                   {statusLabel}
                 </span>
@@ -212,20 +212,20 @@ export default function MarketingDashboardPanel({
               key={item.key}
               type="button"
               onClick={() => setTab(item.key)}
-              className={`rounded-2xl border bg-white p-5 text-left shadow-sm transition hover:shadow-md ${
+              className={`rounded-xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md ${
                 isActive
-                  ? 'border-[#01236A] ring-1 ring-[#01236A]/20'
-                  : 'border-gray-100 hover:border-[#01236A]/30'
+                  ? 'border-blue-500 ring-1 ring-blue-500/20'
+                  : 'border-gray-200 hover:border-blue-300'
               }`}
             >
               <div
-                className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg} ${item.iconColor}`}
+                className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ${item.iconBg} ${item.iconColor}`}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-4.5 w-4.5" />
               </div>
-              <p className="text-sm font-medium text-gray-500">{item.label}</p>
+              <p className="text-[11.5px] font-semibold uppercase tracking-wide text-gray-500">{item.label}</p>
               <p
-                className={`mt-1 text-3xl font-bold ${
+                className={`mt-1.5 text-2xl font-extrabold ${
                   item.valueColor || 'text-gray-900'
                 }`}
               >
@@ -236,8 +236,8 @@ export default function MarketingDashboardPanel({
         })}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="border-b border-gray-100 px-6 py-4">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 px-6 py-4">
           <h2 className="text-sm font-bold text-gray-900">
             {kpiItems.find((item) => item.key === tab)?.label}
           </h2>
@@ -246,7 +246,7 @@ export default function MarketingDashboardPanel({
         {tab === 'today' && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50">
+              <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Customer
@@ -294,7 +294,7 @@ export default function MarketingDashboardPanel({
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${order.statusClass}`}
+                        className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ${order.statusClass}`}
                       >
                         {order.statusLabel}
                       </span>
@@ -302,7 +302,7 @@ export default function MarketingDashboardPanel({
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/marketing/orders/${order.id}`}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-[#01236A] hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
                       >
                         Detail
                         <ArrowRight className="h-3.5 w-3.5" />
@@ -330,7 +330,7 @@ export default function MarketingDashboardPanel({
           <TruckTable
             rows={waitingHseUnits}
             statusLabel="Waiting HSE"
-            statusClass="bg-amber-100 text-amber-800"
+            statusClass="bg-blue-100 text-blue-700"
             emptyLabel="Tidak ada unit yang menunggu pemeriksaan HSE."
           />
         )}
@@ -339,7 +339,7 @@ export default function MarketingDashboardPanel({
           <TruckTable
             rows={readyLoadingUnits}
             statusLabel="Menunggu SJ/UJ"
-            statusClass="bg-emerald-100 text-emerald-800"
+            statusClass="bg-blue-100 text-blue-700"
             emptyLabel="Tidak ada unit yang menunggu SJ/UJ."
           />
         )}
@@ -348,7 +348,7 @@ export default function MarketingDashboardPanel({
           <TruckTable
             rows={readyDepartUnits}
             statusLabel="Ready to Depart"
-            statusClass="bg-violet-100 text-violet-800"
+            statusClass="bg-emerald-100 text-emerald-700"
             emptyLabel="Belum ada unit yang Ready to Depart."
           />
         )}

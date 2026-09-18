@@ -60,7 +60,7 @@ export default function OrderUnitsModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[#01236A] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#01236A]/85"
+        className="inline-flex items-center gap-1.5 rounded-md bg-[#2563EB] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#2563EB]/85"
       >
         <Eye className="h-3.5 w-3.5" />
         Lihat Detail
@@ -72,10 +72,10 @@ export default function OrderUnitsModal({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl"
+            className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <div>
                 <h3 className="text-base font-bold text-gray-900">
                   {customer}
@@ -96,7 +96,7 @@ export default function OrderUnitsModal({
 
             <div className="max-h-[60vh] overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="border-b border-gray-100 bg-gray-50">
+                <thead className="border-b border-gray-200 bg-gray-50">
                   <tr>
                     <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                       Unit
@@ -153,10 +153,10 @@ export default function OrderUnitsModal({
               )}
             </div>
 
-            <div className="border-t border-gray-100 px-6 py-4">
+            <div className="border-t border-gray-200 px-6 py-4">
               <Link
                 href={`/operational/orders/${orderId}`}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#01236A] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:underline"
               >
                 Buka Detail Order Lengkap
                 <ArrowUpRight className="h-3.5 w-3.5" />

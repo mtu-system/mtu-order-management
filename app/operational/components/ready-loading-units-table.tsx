@@ -103,7 +103,7 @@ export default function ReadyLoadingUnitsTable({
       </div>
 
       {/* SUMMARY */}
-      <div className="mb-4 flex flex-wrap items-center gap-4 rounded-2xl border border-gray-100 bg-white px-5 py-3 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-3 shadow-sm">
         <span className="text-sm font-bold text-gray-900">
           {total} Total Unit
         </span>
@@ -123,9 +123,9 @@ export default function ReadyLoadingUnitsTable({
             key={item.key}
             type="button"
             onClick={() => setFilter(item.key)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-bold transition ${
               filter === item.key
-                ? 'bg-[#01236A] text-white'
+                ? 'bg-[#2563EB] text-white'
                 : 'bg-white text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -144,10 +144,10 @@ export default function ReadyLoadingUnitsTable({
       </div>
 
       {/* COMPACT TABLE */}
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-gray-100 bg-gray-50">
+            <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
                 <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Unit
@@ -210,7 +210,7 @@ export default function ReadyLoadingUnitsTable({
 
                     <td className="px-5 py-3.5">
                       <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${rowStatus.className}`}
+                        className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-bold ${rowStatus.className}`}
                       >
                         {rowStatus.label}
                       </span>
@@ -220,7 +220,7 @@ export default function ReadyLoadingUnitsTable({
                       <button
                         type="button"
                         onClick={() => setSelectedId(unit.id)}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-[#01236A] hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#2563EB] hover:underline"
                       >
                         Detail
                       </button>
@@ -246,7 +246,7 @@ export default function ReadyLoadingUnitsTable({
           onClick={() => setSelectedId(null)}
         >
           <div
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-transparent"
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-transparent"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3 flex justify-end">

@@ -117,7 +117,7 @@ export default async function OrderDetailPage({
 
                 <div className="space-y-6">
           {isPendingReject && (
-            <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-6 shadow-sm">
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 p-6 shadow-sm">
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
                   !
@@ -163,7 +163,7 @@ export default async function OrderDetailPage({
           )}
 
           {/* INFORMASI ORDER */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-5 text-lg font-bold text-gray-900">
               Informasi Order
             </h2>
@@ -226,7 +226,7 @@ export default async function OrderDetailPage({
           </div>
 
           {/* KEBUTUHAN KENDARAAN */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">
                 Kebutuhan Kendaraan
@@ -236,7 +236,7 @@ export default async function OrderDetailPage({
               </span>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-gray-100">
+            <div className="overflow-hidden rounded-xl border border-gray-200">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
@@ -283,7 +283,7 @@ export default async function OrderDetailPage({
           </div>
 
           {/* UNIT AKTUAL */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">
@@ -293,12 +293,12 @@ export default async function OrderDetailPage({
                   Perkembangan setiap unit dalam order.
                 </p>
               </div>
-              <span className="rounded-full bg-[#01236A]/10 px-3 py-1 text-xs font-bold text-[#01236A]">
+              <span className="rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
                 Total {activeTrucks.length} Unit Aktif
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-100">
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full min-w-[900px] text-sm">
                 <thead className="bg-gray-50">
                   <tr>
@@ -425,7 +425,7 @@ export default async function OrderDetailPage({
           <VMUnitsPanel orderId={order.id} />
 
           {/* PERUBAHAN ORDER */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -438,7 +438,7 @@ export default async function OrderDetailPage({
                     tindakan.
                   </p>
                 </div>
-                <span className="rounded-full bg-[#01236A]/10 px-3 py-1 text-xs font-bold text-[#01236A]">
+                <span className="rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
                   Editable
                 </span>
               </div>
@@ -466,7 +466,7 @@ export default async function OrderDetailPage({
                   return (
                     <div
                       key={request.id}
-                      className="rounded-xl border border-gray-100 bg-gray-50/60 p-4"
+                      className="rounded-xl border border-gray-200 bg-gray-50/60 p-4"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
@@ -520,7 +520,7 @@ export default async function OrderDetailPage({
               </div>
             )}
 
-                       <div className="border-t border-gray-100 pt-5">
+                       <div className="border-t border-gray-200 pt-5">
               <h3 className="font-bold text-gray-900">
                 {isPendingReject ? 'Respon Reject' : 'Ajukan Perubahan'}
               </h3>
@@ -540,7 +540,7 @@ export default async function OrderDetailPage({
 
           {/* INSTRUKSI & CATATAN */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h2 className="mb-3 text-lg font-bold text-gray-900">
                 Instruksi
               </h2>
@@ -549,7 +549,7 @@ export default async function OrderDetailPage({
               </p>
             </div>
 
-            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <h2 className="mb-3 text-lg font-bold text-gray-900">
                 Catatan
               </h2>

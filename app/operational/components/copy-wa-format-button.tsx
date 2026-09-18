@@ -242,7 +242,7 @@ export default function CopyWaFormatButton() {
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 rounded-lg border border-[#01236A]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#01236A] shadow-sm transition hover:bg-[#01236A]/5"
+        className="inline-flex items-center gap-2 rounded-lg border border-[#2563EB]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#2563EB] shadow-sm transition hover:bg-[#2563EB]/5"
       >
         <ClipboardCopy className="h-4 w-4" />
         Salin Format WA
@@ -254,10 +254,10 @@ export default function CopyWaFormatButton() {
           onClick={() => setOpen(false)}
         >
           <div
-            className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+            className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h3 className="text-base font-bold text-gray-900">
                 Permintaan Kendaraan — Format WA
               </h3>
@@ -270,7 +270,7 @@ export default function CopyWaFormatButton() {
               </button>
             </div>
 
-            <div className="flex items-center gap-3 border-b border-gray-100 px-6 py-3">
+            <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-3">
               <label className="text-xs font-semibold text-gray-500">
                 Tanggal
               </label>
@@ -278,13 +278,13 @@ export default function CopyWaFormatButton() {
                 type="date"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
               />
               <button
                 type="button"
                 onClick={handleGenerate}
                 disabled={loading}
-                className="ml-auto rounded-lg bg-[#01236A] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#01236A]/85 disabled:opacity-50"
+                className="ml-auto rounded-lg bg-[#2563EB] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#2563EB]/85 disabled:opacity-50"
               >
                 {loading ? 'Memuat...' : 'Muat Ulang'}
               </button>
@@ -301,17 +301,17 @@ export default function CopyWaFormatButton() {
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
                   rows={16}
-                  className="w-full resize-none whitespace-pre-wrap rounded-lg border border-gray-200 px-4 py-3 font-mono text-xs text-gray-800 outline-none focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                  className="w-full resize-none whitespace-pre-wrap rounded-lg border border-gray-200 px-4 py-3 font-mono text-xs text-gray-800 outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                 />
               )}
             </div>
 
-            <div className="border-t border-gray-100 px-6 py-4">
+            <div className="border-t border-gray-200 px-6 py-4">
               <button
                 type="button"
                 onClick={handleCopy}
                 disabled={loading || !message}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Copy className="h-4 w-4" />
                 Salin ke Clipboard

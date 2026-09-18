@@ -283,11 +283,11 @@ export default function UnitAllocationForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+      className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
     >
       <div className="mb-6 flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#01236A]/10">
-          <Truck className="h-5 w-5 text-[#01236A]" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2563EB]/10">
+          <Truck className="h-5 w-5 text-[#2563EB]" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-gray-900">Alokasi Unit</h2>
@@ -298,7 +298,7 @@ export default function UnitAllocationForm({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-100">
+      <div className="overflow-hidden rounded-xl border border-gray-200">
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
@@ -359,7 +359,7 @@ export default function UnitAllocationForm({
                         )
                       }
                       disabled={saving}
-                      className="w-20 rounded-lg border border-gray-200 px-2 py-2 text-center text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                      className="w-20 rounded-lg border border-gray-200 px-2 py-2 text-center text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                     />
                   </td>
 
@@ -372,7 +372,7 @@ export default function UnitAllocationForm({
                         updateAllocation(index, 'vendor', event.target.value)
                       }
                       disabled={saving}
-                      className="w-20 rounded-lg border border-gray-200 px-2 py-2 text-center text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                      className="w-20 rounded-lg border border-gray-200 px-2 py-2 text-center text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                     />
                   </td>
 
@@ -389,7 +389,7 @@ export default function UnitAllocationForm({
                         )
                       }
                       disabled={saving}
-                      className="w-20 rounded-lg border border-gray-200 px-2 py-2 text-center text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+                      className="w-20 rounded-lg border border-gray-200 px-2 py-2 text-center text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
                     />
                   </td>
 
@@ -430,7 +430,7 @@ export default function UnitAllocationForm({
             saving ||
             allocations.some((allocation) => !isValidAllocation(allocation))
           }
-          className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#2563EB]/85 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />

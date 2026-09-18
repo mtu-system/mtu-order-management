@@ -316,23 +316,23 @@ export default function CreateOrderForm() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10'
+    'w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'
 
   const labelClass =
-    'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500'
+    'mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500'
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Create New Order
+      <div className="mb-5">
+        <h1 className="text-lg font-extrabold text-gray-900">
+          Buat Order Baru
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Buat permintaan kendaraan baru.
+        <p className="mt-0.5 text-[13px] text-gray-500">
+          Isi detail permintaan kendaraan untuk customer.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
@@ -394,7 +394,7 @@ export default function CreateOrderForm() {
             Isi minimal salah satu: Nomor PK atau RFT/TR/Job.
           </p>
 
-          <div className="border-t border-gray-100 pt-5">
+          <div className="border-t border-gray-200 pt-5">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <label className={labelClass}>
@@ -405,7 +405,7 @@ export default function CreateOrderForm() {
                 </p>
               </div>
 
-              <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-3 py-1.5 text-xs font-bold text-[#01236A]">
+              <span className="inline-flex items-center rounded-md bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700">
                 Total: {totalQuantity} Unit
               </span>
             </div>
@@ -414,7 +414,7 @@ export default function CreateOrderForm() {
               {requirements.map((requirement, index) => (
                 <div
                   key={requirement.id}
-                  className="flex items-end gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 p-3.5"
+                  className="flex items-end gap-2.5 rounded-xl border border-gray-200 bg-gray-50 p-3.5"
                 >
                   <div className="flex-1">
                     <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">
@@ -464,14 +464,14 @@ export default function CreateOrderForm() {
               type="button"
               onClick={addRequirement}
               disabled={saving}
-              className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3.5 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+              className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
             >
               <PlusCircle className="h-3.5 w-3.5" />
               Tambah Jenis Kendaraan
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 border-t border-gray-100 pt-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 border-t border-gray-200 pt-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label htmlFor="instruction" className={labelClass}>
                 Instruksi
@@ -517,12 +517,12 @@ export default function CreateOrderForm() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-gray-100 pt-5">
+          <div className="flex items-center justify-between border-t border-gray-200 pt-5">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">
                 Total kebutuhan
               </p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-lg font-extrabold text-gray-900">
                 {totalQuantity} Unit
               </p>
             </div>
@@ -530,7 +530,7 @@ export default function CreateOrderForm() {
             <div className="flex gap-3">
               <Link
                 href="/marketing/orders"
-                className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
                 Batal
               </Link>
@@ -538,7 +538,7 @@ export default function CreateOrderForm() {
               <button
                 type="submit"
                                                disabled={hasInvalidRequirement || saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#01236A] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#01236A]/85 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

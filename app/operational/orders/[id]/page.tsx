@@ -305,7 +305,7 @@ export default async function OperationalOrderDetailPage({
             <ArrowLeft className="h-4 w-4" />
           </Link>
 
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#01236A] text-white">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2563EB] text-white">
             <FileText className="h-5 w-5" />
           </div>
 
@@ -320,7 +320,7 @@ export default async function OperationalOrderDetailPage({
         </div>
 
         {/* INFO + KEBUTUHAN — 1 KARTU RINGKAS */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
@@ -357,7 +357,7 @@ export default async function OperationalOrderDetailPage({
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-4">
             <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
               Kebutuhan:
             </span>
@@ -373,7 +373,7 @@ export default async function OperationalOrderDetailPage({
               )
             )}
 
-            <span className="ml-auto inline-flex items-center rounded-full bg-[#01236A]/10 px-3 py-1 text-xs font-bold text-[#01236A]">
+            <span className="ml-auto inline-flex items-center rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
               Total {totalRequiredUnits} Unit
             </span>
           </div>
@@ -406,7 +406,7 @@ export default async function OperationalOrderDetailPage({
 
                {/* KEPUTUSAN UNIT */}
         {!order.unit_decision && (
-          <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold tracking-tight text-gray-900">
               Keputusan Unit
             </h2>
@@ -419,7 +419,7 @@ export default async function OperationalOrderDetailPage({
 
         {(order.unit_decision === 'partial' ||
           order.unit_decision === 'unavailable') && (
-          <div className="mb-6 rounded-2xl border-2 border-amber-200 bg-amber-50 p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border-2 border-amber-200 bg-amber-50 p-6 shadow-sm">
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
               <div>
@@ -473,7 +473,7 @@ export default async function OperationalOrderDetailPage({
 
         {/* RINGKASAN ALOKASI */}
         {hasSavedAllocation && (
-          <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
                 <Truck className="h-4.5 w-4.5 text-gray-400" />
@@ -484,7 +484,7 @@ export default async function OperationalOrderDetailPage({
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-gray-100">
+            <div className="overflow-hidden rounded-xl border border-gray-200">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
@@ -517,7 +517,7 @@ export default async function OperationalOrderDetailPage({
                           allocation.vehicle_type
                         )}
                       </td>
-                      <td className="px-4 py-4 text-center font-bold text-[#01236A]">
+                      <td className="px-4 py-4 text-center font-bold text-[#2563EB]">
                         {allocation.internal}
                       </td>
                       <td className="px-4 py-4 text-center font-bold text-violet-600">
@@ -541,7 +541,7 @@ export default async function OperationalOrderDetailPage({
             subtitle="Unit internal yang sudah diinformasikan oleh Operational."
             icon={<History className="h-4.5 w-4.5" />}
             badge={
-              <span className="inline-flex items-center rounded-full bg-[#01236A]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#01236A]">
+              <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#2563EB]">
                 {historyInternalTrucks.length} Unit
               </span>
             }
@@ -550,11 +550,11 @@ export default async function OperationalOrderDetailPage({
               {historyInternalTrucks.map((truck, index) => (
                 <div
                   key={truck.id}
-                  className="rounded-xl border border-gray-100 bg-gray-50/60 p-4"
+                  className="rounded-xl border border-gray-200 bg-gray-50/60 p-4"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#01236A]/10 text-xs font-bold text-[#01236A]">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2563EB]/10 text-xs font-bold text-[#2563EB]">
                         {index + 1}
                       </div>
                       <div>
@@ -572,7 +572,7 @@ export default async function OperationalOrderDetailPage({
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#01236A]/10 px-3 py-1 text-xs font-bold text-[#01236A]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
                       <ShieldCheck className="h-3 w-3" />
                       {truck.status}
                     </span>
@@ -593,7 +593,7 @@ export default async function OperationalOrderDetailPage({
 
         {/* SEMUA INTERNAL SUDAH LENGKAP */}
         {hasAllInternalDetails && (
-          <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
                 <ShieldCheck className="h-5 w-5" />
@@ -629,7 +629,7 @@ export default async function OperationalOrderDetailPage({
 
         {/* STATUS INTERNAL */}
         {hasSavedAllocation && totalInternalRequired > 0 && (
-          <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
                 <Gauge className="h-4.5 w-4.5 text-gray-400" />
@@ -642,7 +642,7 @@ export default async function OperationalOrderDetailPage({
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-              <div className="rounded-xl border border-gray-100 p-4">
+              <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Internal
                 </p>
@@ -651,16 +651,16 @@ export default async function OperationalOrderDetailPage({
                 </p>
               </div>
 
-              <div className="rounded-xl border border-gray-100 p-4">
+              <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Lengkap
                 </p>
-                <p className="mt-2 text-2xl font-bold tracking-tight text-[#01236A]">
+                <p className="mt-2 text-2xl font-bold tracking-tight text-[#2563EB]">
                   {totalInternalCompleted}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-gray-100 p-4">
+              <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Menunggu SJ/UJ
                 </p>
@@ -669,7 +669,7 @@ export default async function OperationalOrderDetailPage({
                 </p>
               </div>
 
-              <div className="rounded-xl border border-gray-100 p-4">
+              <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Ready to Depart
                 </p>
@@ -678,7 +678,7 @@ export default async function OperationalOrderDetailPage({
                 </p>
               </div>
 
-              <div className="rounded-xl border border-gray-100 p-4">
+              <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Failed
                 </p>
@@ -692,7 +692,7 @@ export default async function OperationalOrderDetailPage({
 
         {/* UNIT GAGAL HSE */}
         {failedTrucks.length > 0 && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border border-red-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
                 <AlertTriangle className="h-4.5 w-4.5 text-red-500" />
@@ -755,7 +755,7 @@ export default async function OperationalOrderDetailPage({
               {readyToDepartTrucks.map((truck, index) => (
                 <div
                   key={truck.id}
-                  className="flex items-center justify-between rounded-xl border border-gray-100 p-4"
+                  className="flex items-center justify-between rounded-xl border border-gray-200 p-4"
                 >
                   <div>
                     <p className="font-bold text-gray-900">
@@ -782,7 +782,7 @@ export default async function OperationalOrderDetailPage({
           readyLoadingTrucks.length === 0 &&
           readyToDepartTrucks.length === 0 &&
           failedTrucks.length === 0 && (
-            <div className="mb-6 flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-white p-14 text-center">
+            <div className="mb-6 flex flex-col items-center gap-3 rounded-xl border border-gray-200 bg-white p-14 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <PackageSearch className="h-6 w-6" />
               </div>

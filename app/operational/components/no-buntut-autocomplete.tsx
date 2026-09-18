@@ -111,11 +111,11 @@ export default function NoBuntutAutocomplete({
         placeholder="Contoh: 40-33"
         autoComplete="off"
         disabled={disabled}
-        className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-[#01236A] focus:ring-2 focus:ring-[#01236A]/10"
+        className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
       />
 
       {open && suggestions.length > 0 && (
-        <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-gray-100 bg-white shadow-lg">
+        <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
           {suggestions.map((item, index) => (
             <button
               key={item.id}
@@ -124,7 +124,7 @@ export default function NoBuntutAutocomplete({
               onClick={() => handleSelect(item.code)}
               className={`block w-full px-3.5 py-2.5 text-left text-sm transition ${
                 index === highlightedIndex
-                  ? 'bg-[#01236A]/5 text-[#01236A]'
+                  ? 'bg-[#2563EB]/5 text-[#2563EB]'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >

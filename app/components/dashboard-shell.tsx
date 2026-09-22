@@ -15,6 +15,7 @@ import {
   Users,
   Activity,
   XCircle,
+  Truck,
 } from 'lucide-react'
 
 type DashboardShellProps = {
@@ -38,6 +39,7 @@ const ROLE_LABEL: Record<UserRole, string> = {
   marketing_admin: 'Marketing Admin',
   operational: 'Operational',
   hse: 'HSE',
+  vm: 'Vendor Management',
   pending: 'Pending',
 }
 
@@ -190,6 +192,11 @@ function getMenus(role: UserRole): MenuItem[] {
         { label: 'Waiting Inspection', href: '/hse', icon: ShieldCheck },
         { label: 'Aktivitas', href: '/hse/activity', icon: Activity },
         { label: 'Inspection History', href: '/hse/history', icon: History },
+      ]
+
+    case 'vm':
+      return [
+        { label: 'Unit Vendor', href: '/vm', icon: Truck },
       ]
 
     default:

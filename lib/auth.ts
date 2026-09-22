@@ -7,6 +7,7 @@ export type UserRole =
   | 'marketing_admin'
   | 'operational'
   | 'hse'
+  | 'vm'
   | 'pending'
 
 export async function getCurrentUser() {
@@ -69,6 +70,9 @@ export function getRoleHome(role: UserRole) {
 
     case 'hse':
       return '/hse'
+
+    case 'vm':
+      return '/vm'
 
     case 'pending':
       return '/pending'

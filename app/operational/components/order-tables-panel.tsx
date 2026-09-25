@@ -15,6 +15,7 @@ import {
   PackageCheck,
   Truck,
   AlertTriangle,
+  CalendarClock,
 } from 'lucide-react'
 
 type ActiveOrderRow = {
@@ -62,10 +63,22 @@ type ReadyToDepartRow = {
   driverName: string | null
 }
 
+type BookingRow = {
+  id: string
+  customer: string
+  pkNumber: string | null
+  rftTrJob: string | null
+  bookingDate: string | null
+  vehicleText: string
+  totalQuantity: number
+  status: string
+}
+
 type OrderTablesPanelProps = {
   activeOrders: ActiveOrderRow[]
   readyUnits: ReadyUnitRow[]
   readyToDepartUnits: ReadyToDepartRow[]
+  bookingOrders: BookingRow[]
   waitingUnitCount: number
   waitingHSECount: number
   readyLoadingCount: number
@@ -73,12 +86,42 @@ type OrderTablesPanelProps = {
   failedCount: number
 }
 
-type Tab = 'active' | 'ready' | 'depart'
+type Tab = 'active' | 'ready' | 'depart' | 'booking'
+
+function getBookingStatusBadge(status: string) {
+  switch (status) {
+    case 'booking_review':
+      return (
+        <span className="inline-flex items-center rounded-md bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+          Menunggu Cek Kapasitas
+        </span>
+      )
+    case 'booking_confirmed':
+      return (
+        <span className="inline-flex items-center rounded-md bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+          Mumpuni · Menunggu Marketing
+        </span>
+      )
+    case 'booking_rejected':
+      return (
+        <span className="inline-flex items-center rounded-md bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+          Tidak Mumpuni
+        </span>
+      )
+    default:
+      return (
+        <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">
+          {status}
+        </span>
+      )
+  }
+}
 
 export default function OrderTablesPanel({
   activeOrders,
   readyUnits,
   readyToDepartUnits,
+  bookingOrders,
   waitingUnitCount,
   waitingHSECount,
   readyLoadingCount,
@@ -90,7 +133,19 @@ export default function OrderTablesPanel({
     'all' as 'all' | 'waiting_unit' | 'waiting_hse' | 'failed'
   )
 
+  const bookingReviewCount = bookingOrders.filter(
+    (row) => row.status === 'booking_review'
+  ).length
+
   const kpiItems = [
+    {
+      label: 'Booking Menunggu',
+      value: bookingReviewCount,
+      icon: CalendarClock,
+      iconBg: 'bg-violet-50',
+      iconColor: 'text-violet-600',
+      onClick: () => setTab('booking'),
+    },
     {
       label: 'Waiting Unit',
       value: waitingUnitCount,
@@ -173,6 +228,7 @@ export default function OrderTablesPanel({
       label: 'Ready to Depart',
       count: readyToDepartUnits.length,
     },
+    { key: 'booking', label: 'Booking', count: bookingOrders.length },
   ]
 
   return (
@@ -626,6 +682,92 @@ export default function OrderTablesPanel({
               <p className="text-sm text-gray-400">
                 Belum ada unit yang Ready to Depart.
               </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* BOOKING */}
+      {tab === 'booking' && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-gray-200 bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Customer
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  PK / RFT
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Tanggal Kebutuhan
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Kendaraan
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Action
+                </th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-gray-50">
+              {bookingOrders.map((row) => (
+                <tr key={row.id} className="transition-colors hover:bg-gray-50/60">
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    {row.customer}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-gray-900">{row.pkNumber || '-'}</div>
+                    <div className="text-xs text-gray-400">
+                      {row.rftTrJob || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 font-semibold text-gray-900">
+                    {row.bookingDate
+                      ? new Date(row.bookingDate).toLocaleDateString(
+                          'id-ID',
+                          {
+                            timeZone: 'Asia/Jakarta',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          }
+                        )
+                      : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {row.vehicleText}
+                    <span className="ml-1 text-xs text-gray-400">
+                      ({row.totalQuantity} Unit)
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {getBookingStatusBadge(row.status)}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <Link
+                      href={`/operational/orders/${row.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-violet-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-violet-700"
+                    >
+                      Proses
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {!bookingOrders.length && (
+            <div className="flex flex-col items-center gap-3 p-14 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                <Inbox className="h-6 w-6" />
+              </div>
+              <p className="text-sm text-gray-400">Belum ada booking.</p>
             </div>
           )}
         </div>

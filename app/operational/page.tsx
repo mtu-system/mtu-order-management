@@ -97,6 +97,7 @@ export default async function OperationalPage() {
   const [
     { data: orders, error: ordersError },
     { data: pendingChangeRequestRows, error: pendingChangeRequestsError },
+    { data: bookingOrders, error: bookingOrdersError },
   ] = await Promise.all([
     supabase
       .from('orders')
@@ -154,6 +155,24 @@ export default async function OperationalPage() {
       `)
       .eq('status', 'pending')
       .order('created_at', { ascending: false }),
+    supabase
+      .from('orders')
+      .select(`
+        id,
+        customer,
+        pk_number,
+        rft_tr_job,
+        booking_date,
+        status,
+        created_at,
+        order_requirements (
+          vehicle_type,
+          quantity
+        )
+      `)
+      .eq('is_booking', true)
+      .in('status', ['booking_review', 'booking_confirmed', 'booking_rejected'])
+      .order('booking_date', { ascending: true }),
   ])
 
   if (ordersError) {
@@ -162,6 +181,38 @@ export default async function OperationalPage() {
   if (pendingChangeRequestsError) {
     console.error('GET PENDING CHANGE REQUESTS ERROR:', pendingChangeRequestsError)
   }
+  if (bookingOrdersError) {
+    console.error('GET BOOKING ORDERS ERROR:', bookingOrdersError)
+  }
+
+  const bookingRows = (bookingOrders || []).map((order) => {
+    const requirements = order.order_requirements || []
+
+    const vehicleText =
+      requirements
+        .map(
+          (requirement: { vehicle_type: string; quantity: number }) =>
+            `${requirement.vehicle_type} (${requirement.quantity})`
+        )
+        .join(', ') || '-'
+
+    const totalQuantity = requirements.reduce(
+      (total: number, requirement: { quantity: number }) =>
+        total + Number(requirement.quantity || 0),
+      0
+    )
+
+    return {
+      id: order.id,
+      customer: order.customer,
+      pkNumber: order.pk_number,
+      rftTrJob: order.rft_tr_job,
+      bookingDate: order.booking_date,
+      vehicleText,
+      totalQuantity,
+      status: order.status,
+    }
+  })
 
   const activeOrders = (orders || []).filter((order) => {
     if (order.status === 'ready_to_depart') {
@@ -549,6 +600,7 @@ export default async function OperationalPage() {
         activeOrders={activeOrderRows}
         readyUnits={readyUnits}
         readyToDepartUnits={readyToDepartUnits}
+        bookingOrders={bookingRows}
         waitingUnitCount={waitingUnitCount}
         waitingHSECount={waitingHSECount}
         readyLoadingCount={readyLoadingCount}

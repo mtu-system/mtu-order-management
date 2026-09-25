@@ -242,6 +242,40 @@ export default async function ManagerOrderDetailPage({
               </div>
             )}
 
+                        {order.is_booking && (
+              <div className="sm:col-span-2 rounded-lg bg-violet-50 p-3">
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-violet-500">
+                  Booking · Tanggal Kebutuhan
+                </dt>
+                <dd className="mt-0.5 text-sm font-semibold text-violet-900">
+                  {order.booking_date
+                    ? new Date(order.booking_date).toLocaleDateString(
+                        'id-ID',
+                        { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric' }
+                      )
+                    : '-'}
+                </dd>
+
+                {order.booking_decision && (
+                  <>
+                    <dt className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-violet-500">
+                      Hasil Cek Kapasitas Terakhir
+                    </dt>
+                    <dd className="mt-0.5 text-sm text-violet-900">
+                      {order.booking_decision === 'available'
+                        ? 'Mumpuni'
+                        : order.booking_decision === 'partial'
+                        ? 'Sebagian Mumpuni'
+                        : 'Tidak Mumpuni'}
+                      {order.booking_decision_note
+                        ? ` — ${order.booking_decision_note}`
+                        : ''}
+                    </dd>
+                  </>
+                )}
+              </div>
+            )}
+
             {order.unit_decision && (
               <div className="sm:col-span-2">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">

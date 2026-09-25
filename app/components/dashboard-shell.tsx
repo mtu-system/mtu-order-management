@@ -16,6 +16,7 @@ import {
   Activity,
   XCircle,
   Truck,
+  CalendarClock,
 } from 'lucide-react'
 
 type DashboardShellProps = {
@@ -149,6 +150,11 @@ function getMenus(role: UserRole): MenuItem[] {
           label: 'Reject Report',
           href: '/manager/reject-report',
           icon: XCircle,
+        },
+        {
+          label: 'Booking Report',
+          href: '/manager/booking-report',
+          icon: CalendarClock,
         },
         {
           label: 'Customer Overview',

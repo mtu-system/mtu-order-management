@@ -41,6 +41,12 @@ function statusStyle(status: string | null) {
       return 'bg-emerald-100 text-emerald-800'
     case 'failed':
       return 'bg-red-100 text-red-800'
+    case 'booking_review':
+      return 'bg-violet-100 text-violet-700'
+    case 'booking_confirmed':
+      return 'bg-emerald-100 text-emerald-700'
+    case 'booking_rejected':
+      return 'bg-red-100 text-red-700'
     default:
       return 'bg-gray-100 text-gray-700'
   }

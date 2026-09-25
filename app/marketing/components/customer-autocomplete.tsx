@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { PlusCircle } from 'lucide-react'
 
 type CustomerSuggestion = {
   id: string
@@ -91,10 +92,17 @@ export default function CustomerAutocomplete({
         event.preventDefault()
         handleSelect(suggestions[highlightedIndex].name)
       }
-    } else if (event.key === 'Escape') {
+       } else if (event.key === 'Escape') {
       setOpen(false)
     }
   }
+
+  const isExactMatch = suggestions.some(
+    (item) => item.name.toLowerCase() === value.trim().toLowerCase()
+  )
+
+  const showNewIndicator =
+    value.trim().length > 1 && !isExactMatch && suggestions.length === 0
 
   return (
     <div ref={containerRef} className="relative">
@@ -114,7 +122,7 @@ export default function CustomerAutocomplete({
         className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
       />
 
-      {open && suggestions.length > 0 && (
+       {open && suggestions.length > 0 && (
         <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
           {suggestions.map((item, index) => (
             <button
@@ -131,6 +139,15 @@ export default function CustomerAutocomplete({
               {item.name}
             </button>
           ))}
+        </div>
+      )}
+
+      {open && showNewIndicator && (
+        <div className="absolute z-20 mt-1.5 w-full rounded-lg border border-amber-100 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-700">
+          <span className="inline-flex items-center gap-1.5 font-semibold">
+            <PlusCircle className="h-3.5 w-3.5" />
+            Customer baru — akan ditambahkan ke master
+          </span>
         </div>
       )}
     </div>

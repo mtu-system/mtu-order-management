@@ -8,6 +8,7 @@ import UnitAllocationForm from '@/app/operational/components/unit-allocation-for
 import UnitDecisionForm from '@/app/operational/components/unit-decision-form'
 import RedecideButton from '@/app/operational/components/redecide-button'
 import TruckDetailForm from '@/app/operational/components/truck-detail-form'
+import BookingCapacityForm from '@/app/operational/components/booking-capacity-form'
 import ReadyLoadingUnitsTable from '@/app/operational/components/ready-loading-units-table'
 import FailedUnitResolution from '@/app/operational/components/failed-unit-resolution'
 import VMUnitsPanel from '@/app/components/vm-units-panel'
@@ -288,6 +289,12 @@ export default async function OperationalOrderDetailPage({
     (truck) => truck.status === 'failed'
   )
 
+  const isBookingPending =
+    Boolean(order.is_booking) &&
+    ['booking_review', 'booking_confirmed', 'booking_rejected'].includes(
+      order.status
+    )
+
   const hasAllInternalDetails =
     hasSavedAllocation &&
     totalInternalRequired > 0 &&
@@ -318,6 +325,60 @@ export default async function OperationalOrderDetailPage({
             </p>
           </div>
         </div>
+
+        {/* BOOKING — CEK KAPASITAS / STATUS */}
+        {order.is_booking && (
+          <div className="mb-6 flex items-center gap-2 rounded-full bg-violet-100 px-4 py-2 text-xs font-bold text-violet-700 w-fit">
+            <Truck className="h-3.5 w-3.5" />
+            Booking · Kebutuhan{' '}
+            {order.booking_date
+              ? new Date(order.booking_date).toLocaleDateString('id-ID', {
+                  timeZone: 'Asia/Jakarta',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })
+              : '-'}
+          </div>
+        )}
+
+        {order.status === 'booking_review' && (
+          <BookingCapacityForm orderId={order.id} requirements={requirements} />
+        )}
+
+        {order.status === 'booking_confirmed' && (
+          <div className="mb-6 rounded-xl border-2 border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-emerald-900">
+              Mumpuni — Menunggu Approval Marketing
+            </h2>
+            <p className="mt-1 text-sm text-emerald-800">
+              Keputusan kapasitas sudah dikirim. Booking ini akan mulai
+              diproses seperti order biasa setelah Marketing approve.
+            </p>
+            {order.booking_decision_note && (
+              <p className="mt-3 text-sm font-medium text-emerald-900">
+                Catatan: {order.booking_decision_note}
+              </p>
+            )}
+          </div>
+        )}
+
+        {order.status === 'booking_rejected' && (
+          <div className="mb-6 rounded-xl border-2 border-red-200 bg-red-50 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-red-900">
+              Tidak Mumpuni — Menunggu Respon Marketing
+            </h2>
+            <p className="mt-1 text-sm text-red-800">
+              Booking ini ditandai tidak mumpuni. Menunggu Marketing merevisi
+              atau membatalkan booking.
+            </p>
+            {order.booking_decision_note && (
+              <p className="mt-3 text-sm font-medium text-red-900">
+                Catatan: {order.booking_decision_note}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* INFO + KEBUTUHAN — 1 KARTU RINGKAS */}
         <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -405,7 +466,7 @@ export default async function OperationalOrderDetailPage({
         </CollapsibleSection>
 
                {/* KEPUTUSAN UNIT */}
-        {!order.unit_decision && (
+        {!isBookingPending && !order.unit_decision && (
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold tracking-tight text-gray-900">
               Keputusan Unit

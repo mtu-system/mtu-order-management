@@ -19,6 +19,12 @@ function getStatusLabel(status: string) {
       return 'Unit Tidak Tersedia'
     case 'cancelled':
       return 'Cancelled'
+    case 'booking_review':
+      return 'Booking · Cek Kapasitas'
+    case 'booking_confirmed':
+      return 'Booking · Mumpuni'
+    case 'booking_rejected':
+      return 'Booking · Tidak Mumpuni'
     default:
       return status
   }
@@ -37,6 +43,12 @@ function getStatusClass(status: string) {
     case 'pending':
       return 'bg-amber-100 text-amber-800'
     case 'cancelled':
+      return 'bg-red-100 text-red-700'
+    case 'booking_review':
+      return 'bg-violet-100 text-violet-700'
+    case 'booking_confirmed':
+      return 'bg-emerald-100 text-emerald-700'
+    case 'booking_rejected':
       return 'bg-red-100 text-red-700'
     default:
       return 'bg-gray-100 text-gray-600'

@@ -22,6 +22,8 @@ export default function CreateOrderForm() {
 
   const [saving, setSaving] = useState(false)
   const [customer, setCustomer] = useState('')
+  const [isBooking, setIsBooking] = useState(false)
+  const [bookingDate, setBookingDate] = useState('')
 
   const [requirements, setRequirements] = useState<VehicleRequirement[]>([
     {
@@ -89,6 +91,11 @@ export default function CreateOrderForm() {
       return
     }
 
+    if (isBooking && !bookingDate) {
+      toast.error('Data Belum Lengkap', 'Tanggal kebutuhan booking wajib diisi.')
+      return
+    }
+
     setSaving(true)
 
     const supabase = createClient()
@@ -102,16 +109,16 @@ export default function CreateOrderForm() {
     const trimmedPk = pk_number?.trim() || ''
     const trimmedRft = rft_tr_job?.trim() || ''
 
-    if (!trimmedPk && !trimmedRft) {
-      toast.error(
-        'Data Belum Lengkap',
-        'Isi minimal salah satu: Nomor PK atau RFT/TR/Job.'
-      )
-      setSaving(false)
-      return
-    }
+if (!isBooking && !trimmedPk && !trimmedRft) {
+  toast.error(
+    'Data Belum Lengkap',
+    'Isi minimal salah satu: Nomor PK atau RFT/TR/Job.'
+  )
+  setSaving(false)
+  return
+}
 
-    const orderType = trimmedPk ? 'PK' : 'RFT'
+const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
     const instruction = formData.get('instruction') as string
     const bawa_ra = formData.get('bawa_ra') as string
     const notes = formData.get('notes') as string
@@ -228,7 +235,9 @@ export default function CreateOrderForm() {
         vehicle_type: vehicleSummary,
         quantity: totalQuantity,
         trip,
-        status: 'waiting_unit',
+        status: isBooking ? 'booking_review' : 'waiting_unit',
+        is_booking: isBooking,
+        booking_date: isBooking ? bookingDate : null,
         instruction,
         bawa_ra,
         notes,
@@ -301,14 +310,18 @@ export default function CreateOrderForm() {
       action: 'create_order',
       fieldName: 'status',
       oldValue: null,
-      newValue: 'waiting_unit',
-      reason: `Order baru untuk ${canonicalCustomer}, ${totalQuantity} unit.`,
+      newValue: isBooking ? 'booking_review' : 'waiting_unit',
+      reason: isBooking
+        ? `Booking baru untuk ${canonicalCustomer}, ${totalQuantity} unit, kebutuhan tanggal ${bookingDate}.`
+        : `Order baru untuk ${canonicalCustomer}, ${totalQuantity} unit.`,
       changedBy: user.id,
     })
 
     toast.success(
-      'Order Berhasil Dibuat',
-      `Order untuk ${canonicalCustomer} berhasil disimpan.`
+      isBooking ? 'Booking Berhasil Dibuat' : 'Order Berhasil Dibuat',
+      isBooking
+        ? `Booking untuk ${canonicalCustomer} berhasil disimpan, menunggu cek kapasitas Operational.`
+        : `Order untuk ${canonicalCustomer} berhasil disimpan.`
     )
 
     router.push('/marketing/orders')
@@ -334,6 +347,45 @@ export default function CreateOrderForm() {
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-5">
+          <label className="flex items-start gap-3 rounded-xl border-2 border-violet-200 bg-violet-50/60 p-4 cursor-pointer transition hover:border-violet-300">
+            <input
+              type="checkbox"
+              checked={isBooking}
+              onChange={(event) => setIsBooking(event.target.checked)}
+              disabled={saving}
+              className="mt-0.5 h-4 w-4 accent-violet-600"
+            />
+            <div>
+              <p className="text-sm font-bold text-violet-900">
+                Ini Booking (kebutuhan di masa depan)
+              </p>
+              <p className="mt-0.5 text-xs text-violet-700">
+                Order belum langsung jalan. Operational akan cek dulu apakah
+                MTU mumpuni untuk tanggal kebutuhan ini, sebelum diproses
+                seperti order biasa.
+              </p>
+            </div>
+          </label>
+
+          {isBooking && (
+            <div>
+              <label htmlFor="booking_date" className={labelClass}>
+                Tanggal Kebutuhan <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="booking_date"
+                name="booking_date"
+                type="date"
+                value={bookingDate}
+                onChange={(event) => setBookingDate(event.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                required={isBooking}
+                disabled={saving}
+                className={`sm:w-64 ${inputClass}`}
+              />
+            </div>
+          )}
+
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="customer" className={labelClass}>
@@ -390,8 +442,10 @@ export default function CreateOrderForm() {
             </div>
           </div>
 
-          <p className="-mt-2 text-xs text-gray-400">
-            Isi minimal salah satu: Nomor PK atau RFT/TR/Job.
+                  <p className="-mt-2 text-xs text-gray-400">
+            {isBooking
+              ? 'Nomor PK / RFT boleh dikosongkan dulu untuk booking, bisa diisi belakangan saat sudah final.'
+              : 'Isi minimal salah satu: Nomor PK atau RFT/TR/Job.'}
           </p>
 
           <div className="border-t border-gray-200 pt-5">
@@ -537,7 +591,11 @@ export default function CreateOrderForm() {
 
               <button
                 type="submit"
-                                               disabled={hasInvalidRequirement || saving}
+                                               disabled={
+                  hasInvalidRequirement ||
+                  saving ||
+                  (isBooking && !bookingDate)
+                }
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? (
@@ -545,7 +603,11 @@ export default function CreateOrderForm() {
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                {saving ? 'Menyimpan...' : 'Simpan Order'}
+                {saving
+                  ? 'Menyimpan...'
+                  : isBooking
+                  ? 'Simpan Booking'
+                  : 'Simpan Order'}
               </button>
             </div>
           </div>

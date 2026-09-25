@@ -22,6 +22,11 @@ const actionLabels: Record<string, string> = {
   cancel_failed_unit: 'Unit Failed Dibatalkan',
   hse_inspection: 'Pemeriksaan HSE',
   unit_allocation: 'Alokasi Unit',
+  create_order: 'Order/Booking Dibuat',
+  booking_capacity_check: 'Cek Kapasitas oleh Operational',
+  booking_revised: 'Booking Direvisi oleh Marketing',
+  booking_approved: 'Booking Di-approve, Mulai Diproses',
+  booking_cancelled: 'Booking Dibatalkan',
 }
 
 export default async function OrderHistoryTimeline({

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import OrderChangeRequestForm from '@/app/marketing/components/order-change-request-form'
+import BookingResponseForm from '@/app/marketing/components/booking-response-form'
 import VMUnitsPanel from '@/app/components/vm-units-panel'
 import OrderHistoryTimeline from '@/app/components/order-history-timeline'
 
@@ -93,6 +94,12 @@ export default async function OrderDetailPage({
 
   const isPendingReject = order.status === 'pending'
 
+  const isBookingPending =
+    Boolean(order.is_booking) &&
+    ['booking_review', 'booking_confirmed', 'booking_rejected'].includes(
+      order.status
+    )
+
   let decidedByName: string | null = null
 
   if (order.decided_by) {
@@ -116,6 +123,42 @@ export default async function OrderDetailPage({
         </div>
 
                 <div className="space-y-6">
+          {order.is_booking && (
+            <div className="rounded-full bg-violet-100 px-4 py-2 text-xs font-bold text-violet-700 w-fit">
+              Booking · Kebutuhan{' '}
+              {order.booking_date
+                ? new Date(order.booking_date).toLocaleDateString('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                : '-'}
+            </div>
+          )}
+
+          {order.status === 'booking_review' && (
+            <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-6 shadow-sm">
+              <h2 className="text-lg font-bold text-amber-900">
+                Menunggu Cek Kapasitas Operational
+              </h2>
+              <p className="mt-1 text-sm text-amber-800">
+                Booking sudah dikirim ke Operational untuk dicek
+                kapasitasnya. Belum ada aksi yang perlu dilakukan.
+              </p>
+            </div>
+          )}
+
+          {(order.status === 'booking_confirmed' ||
+            order.status === 'booking_rejected') && (
+              <BookingResponseForm
+              orderId={order.id}
+              status={order.status}
+              requirements={order.order_requirements || []}
+              decisionNote={order.booking_decision_note}
+            />
+          )}
+
           {isPendingReject && (
             <div className="rounded-xl border-2 border-red-200 bg-red-50 p-6 shadow-sm">
               <div className="flex items-start gap-3">
@@ -425,6 +468,7 @@ export default async function OrderDetailPage({
           <VMUnitsPanel orderId={order.id} />
 
           {/* PERUBAHAN ORDER */}
+          {!isBookingPending && (
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <div className="flex items-center justify-between">
@@ -537,6 +581,7 @@ export default async function OrderDetailPage({
               />
             </div>
           </div>
+          )}
 
           {/* INSTRUKSI & CATATAN */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -583,6 +628,12 @@ function formatOrderStatus(status: string | null) {
       return 'Cancelled'
     case 'pending':
       return 'Pending'
+    case 'booking_review':
+      return 'Booking · Menunggu Cek Kapasitas'
+    case 'booking_confirmed':
+      return 'Booking · Mumpuni'
+    case 'booking_rejected':
+      return 'Booking · Tidak Mumpuni'
     default:
       return status || '-'
   }

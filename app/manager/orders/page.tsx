@@ -1,8 +1,11 @@
+import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
 import OrdersSearchTable from '@/app/manager/components/orders-search-table'
 export const dynamic = 'force-dynamic'
+
+const HISTORY_WINDOW_DAYS = 90
 
 function getStatusLabel(status: string) {
   switch (status) {
@@ -63,14 +66,15 @@ function getAvatarClass(name: string) {
 export default async function ManagerOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; all?: string }>
 }) {
   const user = await requireRole(['manager'])
-  const { status } = await searchParams
+  const { status, all } = await searchParams
+  const showAllHistory = all === '1'
 
   const supabase = await createClient()
 
-  const { data: orders, error } = await supabase
+  let query = supabase
     .from('orders')
     .select(`
       id,
@@ -83,6 +87,14 @@ export default async function ManagerOrdersPage({
       created_at
     `)
     .order('created_at', { ascending: false })
+
+  if (!showAllHistory) {
+    const windowStart = new Date()
+    windowStart.setDate(windowStart.getDate() - HISTORY_WINDOW_DAYS)
+    query = query.gte('created_at', windowStart.toISOString())
+  }
+
+  const { data: orders, error } = await query
 
   if (error) {
     console.error('MANAGER ORDERS LIST ERROR:', error)
@@ -124,6 +136,34 @@ export default async function ManagerOrdersPage({
           {orderRows.length} Order
         </span>
       </div>
+
+      <p className="mb-4 text-xs text-gray-500">
+        {showAllHistory ? (
+          <>
+            Menampilkan seluruh riwayat order.{' '}
+            <Link
+              href={status ? `/manager/orders?status=${status}` : '/manager/orders'}
+              className="font-semibold text-[#2563EB] hover:underline"
+            >
+              Kembali ke {HISTORY_WINDOW_DAYS} hari terakhir
+            </Link>
+          </>
+        ) : (
+          <>
+            Menampilkan order {HISTORY_WINDOW_DAYS} hari terakhir.{' '}
+            <Link
+              href={
+                status
+                  ? `/manager/orders?status=${status}&all=1`
+                  : '/manager/orders?all=1'
+              }
+              className="font-semibold text-[#2563EB] hover:underline"
+            >
+              Tampilkan semua riwayat
+            </Link>
+          </>
+        )}
+      </p>
 
       <OrdersSearchTable orders={orderRows} initialStatus={status} />
     </DashboardShell>

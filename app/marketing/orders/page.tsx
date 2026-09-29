@@ -25,6 +25,10 @@ export default async function MarketingOrdersPage() {
 
   const supabase = await createClient()
 
+  // Halaman ini cuma nampilin order yang masih aktif (cancelled/
+  // ready_to_depart dibuang di bawah), jadi buang keduanya langsung di
+  // query -- gak perlu tarik+kirim seluruh order yang udah kelar dari
+  // sepanjang waktu, cuma buat dibuang lagi di JS.
   let query = supabase
     .from('orders')
     .select(`
@@ -48,6 +52,7 @@ export default async function MarketingOrdersPage() {
         status
       )
     `)
+    .not('status', 'in', '(cancelled,ready_to_depart)')
     .order('created_at', { ascending: false })
 
   if (user.role === 'marketing') {

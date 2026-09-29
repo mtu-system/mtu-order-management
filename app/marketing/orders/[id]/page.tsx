@@ -156,6 +156,12 @@ export default async function OrderDetailPage({
               status={order.status}
               requirements={order.order_requirements || []}
               decisionNote={order.booking_decision_note}
+              pkNumber={order.pk_number}
+              rftTrJob={order.rft_tr_job}
+              trip={order.trip}
+              instruction={order.instruction}
+              notes={order.notes}
+              bawaRa={order.bawa_ra}
             />
           )}
 

@@ -21,6 +21,9 @@ export default async function BookingReportPage() {
       booking_decision_note,
       booking_decided_by,
       booking_decided_at,
+      cancel_reason,
+      cancelled_by,
+      cancelled_at,
       created_at,
       order_requirements (
         vehicle_type,
@@ -36,22 +39,36 @@ export default async function BookingReportPage() {
 
   const rows = orders || []
 
-  const deciderIds = Array.from(
-    new Set(rows.map((row) => row.booking_decided_by).filter(Boolean))
-  ) as string[]
+  const peopleIds = Array.from(
+    new Set(
+      rows.flatMap((row) => [row.booking_decided_by, row.cancelled_by])
+    ).values()
+  ).filter(Boolean) as string[]
 
-  let deciderNames: Record<string, string> = {}
+  let peopleNames: Record<string, { name: string; role: string }> = {}
 
-  if (deciderIds.length) {
+  if (peopleIds.length) {
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, full_name')
-      .in('id', deciderIds)
+      .select('id, full_name, role')
+      .in('id', peopleIds)
 
-    deciderNames = Object.fromEntries(
+    const roleLabels: Record<string, string> = {
+      manager: 'Manager',
+      marketing: 'Marketing',
+      marketing_admin: 'Marketing',
+      operational: 'Operational',
+      hse: 'HSE',
+      vm: 'VM',
+    }
+
+    peopleNames = Object.fromEntries(
       (profiles || []).map((profile) => [
         profile.id,
-        profile.full_name || 'User',
+        {
+          name: profile.full_name || 'User',
+          role: roleLabels[profile.role] || profile.role,
+        },
       ])
     )
   }
@@ -91,14 +108,26 @@ export default async function BookingReportPage() {
     }
   }
 
-  function resultOf(status: string) {
+  function resultOf(
+    status: string,
+    bookingDecision: string | null
+  ) {
     if (status === 'waiting_unit' || status === 'waiting_hse' ||
         status === 'inspection' || status === 'ready_loading' ||
         status === 'ready_to_depart' || status === 'driver_started') {
       return 'activated' as const
     }
     if (status === 'booking_rejected') return 'rejected' as const
-    if (status === 'cancelled') return 'cancelled' as const
+    if (status === 'cancelled') {
+      // Dibatalkan setelah Operational bilang tidak/sebagian mumpuni --
+      // akar masalahnya di kapasitas, Marketing cuma menutup booking-nya.
+      if (bookingDecision === 'unavailable' || bookingDecision === 'partial') {
+        return 'cancelled_ops' as const
+      }
+      // Ops sudah bilang mumpuni (atau belum pernah dicek), tapi Marketing
+      // tetap memilih membatalkan -- ini murni keputusan Marketing.
+      return 'cancelled_marketing' as const
+    }
     if (status === 'booking_confirmed') return 'confirmed' as const
     return 'review' as const
   }
@@ -123,7 +152,7 @@ export default async function BookingReportPage() {
       totalQuantity: totalQuantity || row.quantity || 0,
       requirements,
       status: row.status,
-      result: resultOf(row.status),
+      result: resultOf(row.status, row.booking_decision),
       decision: row.booking_decision as
         | 'available'
         | 'partial'
@@ -131,9 +160,17 @@ export default async function BookingReportPage() {
         | null,
       decisionNote: row.booking_decision_note,
       decidedByName: row.booking_decided_by
-        ? deciderNames[row.booking_decided_by] || 'User'
+        ? peopleNames[row.booking_decided_by]?.name || 'User'
         : '-',
       decidedAt: row.booking_decided_at,
+      cancelReason: row.cancel_reason,
+      cancelledByName: row.cancelled_by
+        ? peopleNames[row.cancelled_by]?.name || 'User'
+        : null,
+      cancelledByRole: row.cancelled_by
+        ? peopleNames[row.cancelled_by]?.role || null
+        : null,
+      cancelledAt: row.cancelled_at,
       breakdown: breakdownByOrder[row.id] || [],
     }
   })
@@ -141,8 +178,8 @@ export default async function BookingReportPage() {
   const activatedCount = reportRows.filter(
     (row) => row.result === 'activated'
   ).length
-  const rejectedCount = reportRows.filter(
-    (row) => row.result === 'rejected' || row.result === 'cancelled'
+  const rejectedCount = reportRows.filter((row) =>
+    ['rejected', 'cancelled_ops', 'cancelled_marketing'].includes(row.result)
   ).length
   const reviewCount = reportRows.filter(
     (row) => row.result === 'review' || row.result === 'confirmed'

@@ -14,11 +14,21 @@ type ReportRow = {
   totalQuantity: number
   requirements: { vehicle_type: string; quantity: number }[]
   status: string
-  result: 'activated' | 'rejected' | 'cancelled' | 'confirmed' | 'review'
+  result:
+    | 'activated'
+    | 'rejected'
+    | 'cancelled_ops'
+    | 'cancelled_marketing'
+    | 'confirmed'
+    | 'review'
   decision: 'available' | 'partial' | 'unavailable' | null
   decisionNote: string | null
   decidedByName: string
   decidedAt: string | null
+  cancelReason: string | null
+  cancelledByName: string | null
+  cancelledByRole: string | null
+  cancelledAt: string | null
   breakdown: {
     vehicle_type: string
     internal: number
@@ -35,7 +45,8 @@ const resultBadge: Record<string, string> = {
   activated: 'bg-emerald-100 text-emerald-700',
   confirmed: 'bg-emerald-50 text-emerald-600',
   rejected: 'bg-red-100 text-red-700',
-  cancelled: 'bg-gray-200 text-gray-600',
+  cancelled_ops: 'bg-orange-100 text-orange-700',
+  cancelled_marketing: 'bg-gray-200 text-gray-600',
   review: 'bg-amber-100 text-amber-800',
 }
 
@@ -43,7 +54,8 @@ const resultLabel: Record<string, string> = {
   activated: 'Diambil & Dijalankan',
   confirmed: 'Mumpuni · Menunggu Marketing',
   rejected: 'Ditolak Operational',
-  cancelled: 'Dibatalkan Marketing',
+  cancelled_ops: 'Dibatalkan (Ops Tidak Mumpuni)',
+  cancelled_marketing: 'Dibatalkan Marketing (Padahal Mumpuni)',
   review: 'Menunggu Cek Kapasitas',
 }
 
@@ -89,6 +101,7 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
           row.pkNumber || '',
           row.rftTrJob || '',
           row.decisionNote || '',
+          row.cancelReason || '',
         ]
           .join(' ')
           .toLowerCase()
@@ -120,9 +133,14 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
             )
             .join('; ')
         : '-',
-      Catatan: row.decisionNote || '-',
+      'Catatan Operational': row.decisionNote || '-',
       'Dicek Oleh': row.decidedByName,
       'Tanggal Dicek': formatDateTimeLabel(row.decidedAt),
+      'Alasan Pembatalan (Marketing)': row.cancelReason || '-',
+      'Dibatalkan Oleh': row.cancelledByName
+        ? `${row.cancelledByName} (${row.cancelledByRole || '-'})`
+        : '-',
+      'Tanggal Dibatalkan': formatDateTimeLabel(row.cancelledAt),
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(exportRows)
@@ -159,7 +177,10 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
             <option value="activated">Diambil & Dijalankan</option>
             <option value="confirmed">Mumpuni · Menunggu Marketing</option>
             <option value="rejected">Ditolak Operational</option>
-            <option value="cancelled">Dibatalkan Marketing</option>
+            <option value="cancelled_ops">Dibatalkan (Ops Tidak Mumpuni)</option>
+            <option value="cancelled_marketing">
+              Dibatalkan Marketing (Padahal Mumpuni)
+            </option>
             <option value="review">Menunggu Cek Kapasitas</option>
           </select>
 
@@ -205,7 +226,7 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
                 Catatan
               </th>
               <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                Dicek Oleh
+                Dicek / Dibatalkan Oleh
               </th>
             </tr>
           </thead>
@@ -282,17 +303,59 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
                     </span>
                   </td>
 
-                  <td className="max-w-[220px] px-5 py-3.5 text-gray-600">
-                    <span className="line-clamp-2">
-                      {row.decisionNote || '-'}
-                    </span>
+                  <td className="max-w-[240px] px-5 py-3.5 text-gray-600">
+                    <div className="space-y-1">
+                      {row.decisionNote && (
+                        <p className="line-clamp-2">
+                          <span className="font-semibold text-gray-700">
+                            Ops:
+                          </span>{' '}
+                          {row.decisionNote}
+                        </p>
+                      )}
+                      {row.cancelReason && (
+                        <p className="line-clamp-2">
+                          <span className="font-semibold text-red-700">
+                            Marketing:
+                          </span>{' '}
+                          {row.cancelReason}
+                        </p>
+                      )}
+                      {!row.decisionNote && !row.cancelReason && '-'}
+                    </div>
                   </td>
 
                   <td className="px-5 py-3.5 text-gray-700">
-                    <p>{row.decidedByName}</p>
-                    <p className="text-[11px] text-gray-400">
-                      {formatDateTimeLabel(row.decidedAt)}
-                    </p>
+                    {row.decidedByName !== '-' && (
+                      <div>
+                        <p className="font-semibold">{row.decidedByName}</p>
+                        <p className="text-[11px] text-gray-400">
+                          Cek: {formatDateTimeLabel(row.decidedAt)}
+                        </p>
+                      </div>
+                    )}
+
+                    {row.cancelledByName && (
+                      <div
+                        className={
+                          row.decidedByName !== '-'
+                            ? 'mt-2 border-t border-gray-100 pt-2'
+                            : ''
+                        }
+                      >
+                        <p className="font-semibold text-red-700">
+                          {row.cancelledByName}
+                          {row.cancelledByRole
+                            ? ` · ${row.cancelledByRole}`
+                            : ''}
+                        </p>
+                        <p className="text-[11px] text-gray-400">
+                          Batal: {formatDateTimeLabel(row.cancelledAt)}
+                        </p>
+                      </div>
+                    )}
+
+                    {row.decidedByName === '-' && !row.cancelledByName && '-'}
                   </td>
                 </tr>
               ))

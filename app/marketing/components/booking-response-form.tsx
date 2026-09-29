@@ -20,6 +20,12 @@ type BookingResponseFormProps = {
   status: 'booking_confirmed' | 'booking_rejected'
   requirements: Requirement[]
   decisionNote?: string | null
+  pkNumber?: string | null
+  rftTrJob?: string | null
+  trip?: string | null
+  instruction?: string | null
+  notes?: string | null
+  bawaRa?: string | null
 }
 
 export default function BookingResponseForm({
@@ -27,6 +33,12 @@ export default function BookingResponseForm({
   decisionNote,
   status,
   requirements,
+  pkNumber,
+  rftTrJob,
+  trip,
+  instruction,
+  notes,
+  bawaRa,
 }: BookingResponseFormProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -37,11 +49,23 @@ export default function BookingResponseForm({
   const [cancelling, setCancelling] = useState(false)
   const [revising, setRevising] = useState(false)
 
-  const [mode, setMode] = useState<'idle' | 'revise'>('idle')
+  const [mode, setMode] = useState<'idle' | 'revise' | 'activate' | 'cancel'>(
+    'idle'
+  )
   const [reason, setReason] = useState('')
+  const [cancelReason, setCancelReason] = useState('')
   const [rows, setRows] = useState<Requirement[]>(
     requirements.map((item) => ({ ...item }))
   )
+
+  const [activatePk, setActivatePk] = useState(pkNumber || '')
+  const [activateRft, setActivateRft] = useState(rftTrJob || '')
+  const [activateTrip, setActivateTrip] = useState(trip || '')
+  const [activateInstruction, setActivateInstruction] = useState(
+    instruction || ''
+  )
+  const [activateNotes, setActivateNotes] = useState(notes || '')
+  const [activateBawaRa, setActivateBawaRa] = useState(bawaRa || 'Tidak')
 
   function updateVehicleType(id: number | string, vehicle_type: string) {
     setRows((current) =>
@@ -72,11 +96,52 @@ export default function BookingResponseForm({
     setRows((current) => current.filter((item) => item.id !== id))
   }
 
-  async function handleApprove() {
+  async function handleActivate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
     if (approving) return
 
+    const trimmedPk = activatePk.trim()
+    const trimmedRft = activateRft.trim()
+    const trimmedTrip = activateTrip.trim()
+
+    if (!trimmedPk && !trimmedRft) {
+      toast.error(
+        'Data Belum Lengkap',
+        'Isi minimal salah satu: Nomor PK atau RFT/TR/Job.'
+      )
+      return
+    }
+
+    if (!trimmedTrip) {
+      toast.error('Data Belum Lengkap', 'Trip wajib diisi.')
+      return
+    }
+
+    if (trimmedPk && trimmedPk !== (pkNumber || '').trim()) {
+      const { data: existingOrderWithPk, error: pkCheckError } =
+        await supabase
+          .from('orders')
+          .select('id')
+          .eq('pk_number', trimmedPk)
+          .neq('id', orderId)
+          .maybeSingle()
+
+      if (pkCheckError) {
+        console.error('CHECK PK DUPLICATE ERROR:', pkCheckError)
+      }
+
+      if (existingOrderWithPk) {
+        toast.error(
+          'PK Sudah Digunakan',
+          `PK "${trimmedPk}" sudah dipakai di order lain. Gunakan PK yang berbeda.`
+        )
+        return
+      }
+    }
+
     const confirmed = await confirm({
-      title: 'Approve & Jalankan Booking?',
+      title: 'Jalankan Order Ini?',
       message:
         'Booking ini akan masuk ke flow order biasa (Operational akan alokasi unit & isi detail truk mendekati hari-H). Lanjutkan?',
       confirmLabel: 'Ya, Jalankan',
@@ -91,16 +156,35 @@ export default function BookingResponseForm({
         data: { user },
       } = await supabase.auth.getUser()
 
+      const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
+
       const { error, data } = await supabase
         .from('orders')
-        .update({ status: 'waiting_unit' })
+        .update({
+          pk_number: trimmedPk || null,
+          rft_tr_job: trimmedRft || null,
+          order_type: orderType,
+          trip: trimmedTrip,
+          instruction: activateInstruction.trim() || null,
+          bawa_ra: activateBawaRa,
+          notes: activateNotes.trim() || null,
+          status: 'waiting_unit',
+        })
         .eq('id', orderId)
         .eq('status', 'booking_confirmed')
         .select('id')
 
       if (error) {
         console.error('APPROVE BOOKING ERROR:', error)
-        toast.error('Gagal Approve Booking', error.message)
+
+        if (error.code === '23505') {
+          toast.error(
+            'Nomor PK Sudah Dipakai',
+            'Nomor PK ini sudah digunakan order lain. Cek kembali nomor PK-nya.'
+          )
+        } else {
+          toast.error('Gagal Approve Booking', error.message)
+        }
         return
       }
 
@@ -119,14 +203,51 @@ export default function BookingResponseForm({
         fieldName: 'status',
         oldValue: 'booking_confirmed',
         newValue: 'waiting_unit',
-        reason: 'Marketing approve booking, order mulai diproses.',
+        reason: 'Marketing approve booking, order mulai diproses seperti order biasa.',
         changedBy: user?.id || null,
       })
+
+      if (trimmedPk !== (pkNumber || '').trim()) {
+        await logOrderHistory({
+          orderId,
+          action: 'change_pk',
+          fieldName: 'pk_number',
+          oldValue: pkNumber || '-',
+          newValue: trimmedPk || '-',
+          reason: 'Diisi saat approve & jalankan booking.',
+          changedBy: user?.id || null,
+        })
+      }
+
+      if (trimmedRft !== (rftTrJob || '').trim()) {
+        await logOrderHistory({
+          orderId,
+          action: 'change_rft',
+          fieldName: 'rft_tr_job',
+          oldValue: rftTrJob || '-',
+          newValue: trimmedRft || '-',
+          reason: 'Diisi saat approve & jalankan booking.',
+          changedBy: user?.id || null,
+        })
+      }
+
+      if (trimmedTrip !== (trip || '').trim()) {
+        await logOrderHistory({
+          orderId,
+          action: 'change_trip',
+          fieldName: 'trip',
+          oldValue: trip || '-',
+          newValue: trimmedTrip || '-',
+          reason: 'Diisi/diubah saat approve & jalankan booking.',
+          changedBy: user?.id || null,
+        })
+      }
 
       toast.success(
         'Booking Dijalankan',
         'Order sekarang masuk flow biasa di Operational.'
       )
+      setMode('idle')
       router.refresh()
     } catch (error) {
       console.error('APPROVE BOOKING ERROR:', error)
@@ -136,13 +257,26 @@ export default function BookingResponseForm({
     }
   }
 
-  async function handleCancel() {
+  async function handleCancel(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
     if (cancelling) return
+
+    const trimmedReason = cancelReason.trim()
+
+    if (!trimmedReason) {
+      toast.error('Data Belum Lengkap', 'Alasan pembatalan wajib diisi.')
+      return
+    }
 
     const confirmed = await confirm({
       title: 'Batalkan Booking?',
-      message: 'Booking ini akan ditutup dan dicatat sebagai dibatalkan.',
+      message:
+        status === 'booking_confirmed'
+          ? 'Operational menyatakan booking ini mumpuni, tapi booking akan ditutup dan dicatat sebagai dibatalkan. Lanjutkan?'
+          : 'Booking ini akan ditutup dan dicatat sebagai dibatalkan.',
       confirmLabel: 'Ya, Batalkan',
+      danger: true,
     })
 
     if (!confirmed) return
@@ -156,7 +290,12 @@ export default function BookingResponseForm({
 
       const { error } = await supabase
         .from('orders')
-        .update({ status: 'cancelled' })
+        .update({
+          status: 'cancelled',
+          cancel_reason: trimmedReason,
+          cancelled_at: new Date().toISOString(),
+          cancelled_by: user?.id || null,
+        })
         .eq('id', orderId)
 
       if (error) {
@@ -171,11 +310,13 @@ export default function BookingResponseForm({
         fieldName: 'status',
         oldValue: status,
         newValue: 'cancelled',
-        reason: 'Marketing membatalkan booking setelah Operational menyatakan tidak mumpuni.',
+        reason: trimmedReason,
         changedBy: user?.id || null,
       })
 
       toast.success('Booking Dibatalkan', 'Booking ini sudah ditutup.')
+      setMode('idle')
+      setCancelReason('')
       router.refresh()
     } catch (error) {
       console.error('CANCEL BOOKING ERROR:', error)
@@ -335,6 +476,53 @@ export default function BookingResponseForm({
   const inputClass =
     'w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'
 
+  function renderCancelForm() {
+    return (
+      <form onSubmit={handleCancel} className="mt-4 space-y-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Alasan Pembatalan
+          </label>
+          <textarea
+            value={cancelReason}
+            onChange={(event) => setCancelReason(event.target.value)}
+            disabled={cancelling}
+            rows={3}
+            placeholder="Contoh: Customer batal, tidak jadi kirim unit."
+            className={`resize-none bg-white ${inputClass}`}
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={cancelling}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {cancelling ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            {cancelling ? 'Membatalkan...' : 'Ya, Batalkan Booking'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setMode('idle')
+              setCancelReason('')
+            }}
+            disabled={cancelling}
+            className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Batal
+          </button>
+        </div>
+      </form>
+    )
+  }
+
   if (status === 'booking_confirmed') {
     return (
       <div className="mb-6 rounded-xl border-2 border-emerald-200 bg-emerald-50 p-6 shadow-sm">
@@ -342,9 +530,9 @@ export default function BookingResponseForm({
           <CheckCircle2 className="h-5 w-5" />
           Operational Menyatakan Mumpuni
         </h2>
-               <p className="mt-1 text-sm text-emerald-800">
+        <p className="mt-1 text-sm text-emerald-800">
           Booking ini bisa dicover MTU. Approve untuk mulai diproses seperti
-          order biasa.
+          order biasa, atau batalkan kalau ternyata tidak jadi jalan.
         </p>
 
         {decisionNote && (
@@ -353,19 +541,158 @@ export default function BookingResponseForm({
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={handleApprove}
-          disabled={approving}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {approving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <CheckCircle2 className="h-4 w-4" />
-          )}
-          {approving ? 'Memproses...' : 'Approve & Jalankan Booking'}
-        </button>
+        {mode === 'idle' && (
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setMode('activate')}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Approve & Jalankan Booking
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode('cancel')}
+              disabled={cancelling}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-5 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Batalkan Booking
+            </button>
+          </div>
+        )}
+
+        {mode === 'cancel' && renderCancelForm()}
+
+        {mode === 'activate' && (
+          <form onSubmit={handleActivate} className="mt-4 space-y-4">
+            <div className="rounded-lg bg-white/70 p-3 text-xs text-emerald-900">
+              <strong>Kebutuhan:</strong>{' '}
+              {requirements.length
+                ? requirements
+                    .map((item) => `${item.vehicle_type} x${item.quantity}`)
+                    .join(', ')
+                : '-'}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-emerald-800">
+                  Nomor PK
+                </label>
+                <input
+                  type="text"
+                  value={activatePk}
+                  onChange={(event) => setActivatePk(event.target.value)}
+                  placeholder="Contoh: PK/HI/26/1096"
+                  disabled={approving}
+                  className={`bg-white ${inputClass}`}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-emerald-800">
+                  RFT / TR / Job
+                </label>
+                <input
+                  type="text"
+                  value={activateRft}
+                  onChange={(event) => setActivateRft(event.target.value)}
+                  placeholder="Contoh: RFT-001"
+                  disabled={approving}
+                  className={`bg-white ${inputClass}`}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-emerald-800">
+                  Trip
+                </label>
+                <input
+                  type="text"
+                  value={activateTrip}
+                  onChange={(event) => setActivateTrip(event.target.value)}
+                  placeholder="Contoh: BSD - ONWJ"
+                  disabled={approving}
+                  className={`bg-white ${inputClass}`}
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-emerald-800">
+                  Instruksi
+                </label>
+                <textarea
+                  value={activateInstruction}
+                  onChange={(event) =>
+                    setActivateInstruction(event.target.value)
+                  }
+                  rows={2}
+                  disabled={approving}
+                  className={`resize-none bg-white ${inputClass}`}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-emerald-800">
+                  Bawa RA
+                </label>
+                <select
+                  value={activateBawaRa}
+                  onChange={(event) => setActivateBawaRa(event.target.value)}
+                  disabled={approving}
+                  className={`bg-white ${inputClass}`}
+                >
+                  <option value="Tidak">Tidak</option>
+                  <option value="Ya">Ya</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-emerald-800">
+                  Catatan Tambahan
+                </label>
+                <textarea
+                  value={activateNotes}
+                  onChange={(event) => setActivateNotes(event.target.value)}
+                  rows={2}
+                  disabled={approving}
+                  className={`resize-none bg-white ${inputClass}`}
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-emerald-800">
+              Isi minimal salah satu: Nomor PK atau RFT/TR/Job.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="submit"
+                disabled={approving}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {approving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                {approving ? 'Memproses...' : 'Jalankan Order Sekarang'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode('idle')}
+                disabled={approving}
+                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Batal
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     )
   }
@@ -375,7 +702,7 @@ export default function BookingResponseForm({
       <h2 className="text-lg font-bold text-red-900">
         Operational Menyatakan Tidak Mumpuni
       </h2>
-           <p className="mt-1 text-sm text-red-800">
+      <p className="mt-1 text-sm text-red-800">
         Pilih tindak lanjut: revisi kebutuhan lalu ajukan ulang ke
         Operational, atau batalkan booking ini.
       </p>
@@ -399,19 +726,17 @@ export default function BookingResponseForm({
 
           <button
             type="button"
-            onClick={handleCancel}
+            onClick={() => setMode('cancel')}
             disabled={cancelling}
             className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-5 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {cancelling ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-            {cancelling ? 'Membatalkan...' : 'Batalkan Booking'}
+            <Trash2 className="h-4 w-4" />
+            Batalkan Booking
           </button>
         </div>
       )}
+
+      {mode === 'cancel' && renderCancelForm()}
 
       {mode === 'revise' && (
         <form onSubmit={handleRevise} className="mt-4 space-y-4">

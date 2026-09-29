@@ -29,6 +29,15 @@ const actionLabels: Record<string, string> = {
   booking_cancelled: 'Booking Dibatalkan',
 }
 
+const roleLabels: Record<string, string> = {
+  manager: 'Manager',
+  marketing: 'Marketing',
+  marketing_admin: 'Marketing',
+  operational: 'Operational',
+  hse: 'HSE',
+  vm: 'VM',
+}
+
 export default async function OrderHistoryTimeline({
   orderId,
 }: OrderHistoryTimelineProps) {
@@ -44,7 +53,8 @@ export default async function OrderHistoryTimeline({
         old_value,
         new_value,
         reason,
-        changed_at
+        changed_at,
+        changed_by
       `)
       .eq('order_id', orderId)
       .order('changed_at', { ascending: false }),
@@ -57,7 +67,8 @@ export default async function OrderHistoryTimeline({
         old_value,
         new_value,
         reason,
-        changed_at
+        changed_at,
+        changed_by
       `)
       .eq('order_id', orderId)
       .order('changed_at', { ascending: false }),
@@ -79,6 +90,29 @@ export default async function OrderHistoryTimeline({
 
   if (!combined.length) {
     return null
+  }
+
+  const actorIds = Array.from(
+    new Set(combined.map((item) => item.changed_by).filter(Boolean))
+  ) as string[]
+
+  let actorById: Record<string, { name: string; role: string }> = {}
+
+  if (actorIds.length) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .in('id', actorIds)
+
+    actorById = Object.fromEntries(
+      (profiles || []).map((profile) => [
+        profile.id,
+        {
+          name: profile.full_name || 'User',
+          role: roleLabels[profile.role] || profile.role,
+        },
+      ])
+    )
   }
 
   return (
@@ -116,10 +150,18 @@ export default async function OrderHistoryTimeline({
                 )}
               </div>
 
-              <span className="shrink-0 text-xs text-gray-400">
-                {new Date(item.changed_at).toLocaleString('id-ID', {
-                  timeZone: 'Asia/Jakarta',
-                })}
+              <span className="shrink-0 text-right text-xs text-gray-400">
+                <span className="block">
+                  {new Date(item.changed_at).toLocaleString('id-ID', {
+                    timeZone: 'Asia/Jakarta',
+                  })}
+                </span>
+                {item.changed_by && actorById[item.changed_by] && (
+                  <span className="mt-0.5 block font-semibold text-gray-500">
+                    {actorById[item.changed_by].name} ·{' '}
+                    {actorById[item.changed_by].role}
+                  </span>
+                )}
               </span>
             </div>
           </div>

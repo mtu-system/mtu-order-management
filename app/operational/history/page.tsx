@@ -1,7 +1,10 @@
+import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
 import HistorySearchTable from '@/app/operational/components/history-search-table'
+
+const HISTORY_WINDOW_DAYS = 90
 
 const avatarColors = [
   'bg-blue-100 text-blue-700',
@@ -18,12 +21,18 @@ function getAvatarClass(name: string) {
   return avatarColors[index]
 }
 
-export default async function OperationalHistoryPage() {
+export default async function OperationalHistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>
+}) {
   const user = await requireRole(['operational'])
+  const { all } = await searchParams
+  const showAllHistory = all === '1'
 
   const supabase = await createClient()
 
-  const { data: orders, error } = await supabase
+  let query = supabase
     .from('orders')
     .select(`
       id,
@@ -49,6 +58,14 @@ export default async function OperationalHistoryPage() {
     `)
     .in('status', ['cancelled', 'ready_to_depart', 'ready_loading', 'pending'])
     .order('created_at', { ascending: false })
+
+  if (!showAllHistory) {
+    const windowStart = new Date()
+    windowStart.setDate(windowStart.getDate() - HISTORY_WINDOW_DAYS)
+    query = query.gte('created_at', windowStart.toISOString())
+  }
+
+  const { data: orders, error } = await query
 
   if (error) {
     console.error('GET OPERATIONAL HISTORY ERROR:', error)
@@ -128,6 +145,30 @@ export default async function OperationalHistoryPage() {
           Order yang sudah tidak butuh tindakan lagi dari Operational —
           selesai, Ready to Depart, dibatalkan, Unit Tidak Tersedia, atau
           full-VM.
+        </p>
+
+        <p className="mt-2 text-xs text-gray-500">
+          {showAllHistory ? (
+            <>
+              Menampilkan seluruh riwayat.{' '}
+              <Link
+                href="/operational/history"
+                className="font-semibold text-[#2563EB] hover:underline"
+              >
+                Kembali ke {HISTORY_WINDOW_DAYS} hari terakhir
+              </Link>
+            </>
+          ) : (
+            <>
+              Menampilkan history {HISTORY_WINDOW_DAYS} hari terakhir.{' '}
+              <Link
+                href="/operational/history?all=1"
+                className="font-semibold text-[#2563EB] hover:underline"
+              >
+                Tampilkan semua riwayat
+              </Link>
+            </>
+          )}
         </p>
       </div>
 

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Inbox, Search, Download } from 'lucide-react'
-import * as XLSX from 'xlsx'
+import { downloadExcel } from '@/lib/export-excel'
 
 type ReportRow = {
   id: string
@@ -149,12 +149,7 @@ export default function RejectReportTable({ rows }: RejectReportTableProps) {
       'Diputuskan Oleh': row.decidedByName,
     }))
 
-    const worksheet = XLSX.utils.json_to_sheet(exportRows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reject Report')
-
-    const today = new Date().toISOString().slice(0, 10)
-    XLSX.writeFile(workbook, `reject-report-${today}.xlsx`)
+    downloadExcel(exportRows, 'Reject Report', 'reject-report')
   }
 
   const presets: { key: DatePreset; label: string }[] = [

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Inbox, Search, Download } from 'lucide-react'
-import * as XLSX from 'xlsx'
+import { downloadExcel } from '@/lib/export-excel'
 
 type HistoryRow = {
   id: string
@@ -193,12 +193,7 @@ export default function OrderHistoryTable({ orders }: OrderHistoryTableProps) {
       Tanggal: order.dateLabel,
     }))
 
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Order History')
-
-    const today = new Date().toISOString().slice(0, 10)
-    XLSX.writeFile(workbook, `order-history-${today}.xlsx`)
+    downloadExcel(rows, 'Order History', 'order-history')
   }
 
   const presets: { key: DatePreset; label: string }[] = [

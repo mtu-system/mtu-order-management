@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Inbox, Search, Download } from 'lucide-react'
-import * as XLSX from 'xlsx'
+import { downloadExcel } from '@/lib/export-excel'
 import Link from 'next/link'
 
 type ReportRow = {
@@ -143,12 +143,7 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
       'Tanggal Dibatalkan': formatDateTimeLabel(row.cancelledAt),
     }))
 
-    const worksheet = XLSX.utils.json_to_sheet(exportRows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Booking Report')
-
-    const today = new Date().toISOString().slice(0, 10)
-    XLSX.writeFile(workbook, `booking-report-${today}.xlsx`)
+    downloadExcel(exportRows, 'Booking Report', 'booking-report')
   }
 
   return (

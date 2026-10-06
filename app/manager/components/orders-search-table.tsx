@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Inbox, Search, Download } from 'lucide-react'
-import * as XLSX from 'xlsx'
+import { downloadExcel } from '@/lib/export-excel'
 
 type OrderRow = {
   id: string
@@ -167,12 +167,7 @@ useEffect(() => {
       Tanggal: order.dateLabel,
     }))
 
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders')
-
-    const today = new Date().toISOString().slice(0, 10)
-    XLSX.writeFile(workbook, `manager-orders-${today}.xlsx`)
+    downloadExcel(rows, 'Orders', 'manager-orders')
   }
 
   const presets: { key: DatePreset; label: string }[] = [

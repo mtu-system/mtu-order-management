@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Inbox, Search, Download } from 'lucide-react'
-import * as XLSX from 'xlsx'
+import { downloadExcel } from '@/lib/export-excel'
 import OrderUnitsModal from '@/app/operational/components/order-units-modal'
 
 type UnitRow = {
@@ -191,11 +191,7 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
       Keterangan: order.reasonLabel,
       Tanggal: order.dateLabel,
     }))
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Operational History')
-    const today = new Date().toISOString().slice(0, 10)
-    XLSX.writeFile(workbook, `operational-history-${today}.xlsx`)
+       downloadExcel(rows, 'Operational History', 'operational-history')
   }
 
   const presets: { key: DatePreset; label: string }[] = [

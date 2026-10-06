@@ -1,7 +1,9 @@
 'use client'
 
 import {
+  Suspense,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -21,28 +23,38 @@ export function useNavigationLoading() {
   return useContext(NavigationLoadingContext)
 }
 
+// Komponen kecil khusus yang pakai useSearchParams. Harus dibungkus Suspense
+// supaya `next build` tidak gagal saat prerender.
+function RouteChangeWatcher({ onRouteChange }: { onRouteChange: () => void }) {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    onRouteChange()
+  }, [pathname, searchParams, onRouteChange])
+
+  return null
+}
+
 export default function NavigationLoadingProvider({
   children,
 }: {
   children: React.ReactNode
 }) {
   const [isLoading, setIsLoading] = useState(false)
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Begitu URL (pathname/query) beneran berubah, berarti halaman baru udah
-  // kepasang -- matikan loading.
-  useEffect(() => {
+  // Begitu URL (pathname/query) berubah, halaman baru sudah terpasang,
+  // jadi loading dimatikan.
+  const handleRouteChange = useCallback(() => {
     setIsLoading(false)
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
-  }, [pathname, searchParams])
+  }, [])
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
-      // Klik kanan / ctrl+klik / dsb -- biarin browser handle sendiri.
       if (
         event.button !== 0 ||
         event.metaKey ||
@@ -59,8 +71,6 @@ export default function NavigationLoadingProvider({
       const href = anchor.getAttribute('href')
       if (!href || href.startsWith('#')) return
 
-      // Cuma link internal (bukan ke domain lain, bukan _blank, bukan file
-      // download).
       if (
         anchor.target === '_blank' ||
         anchor.hasAttribute('download') ||
@@ -81,8 +91,7 @@ export default function NavigationLoadingProvider({
 
       setIsLoading(true)
 
-      // Jaga-jaga kalau navigasi gagal/macet -- jangan sampai overlay
-      // nyangkut selamanya.
+      // Jaga-jaga kalau navigasi macet, overlay tidak nyangkut selamanya.
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       timeoutRef.current = setTimeout(() => setIsLoading(false), 10000)
     }
@@ -93,6 +102,10 @@ export default function NavigationLoadingProvider({
 
   return (
     <NavigationLoadingContext.Provider value={{ isLoading }}>
+      <Suspense fallback={null}>
+        <RouteChangeWatcher onRouteChange={handleRouteChange} />
+      </Suspense>
+
       {children}
 
       {isLoading && (

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { Truck as TruckIcon, Save, Loader2, Info } from 'lucide-react'
+import { upperValue } from '@/lib/upper-value'
 
 type Requirement = {
   id: number | string
@@ -236,8 +237,8 @@ export default function TruckDetailForm({
                 <input
                   type="text"
                   value={truck.plate_number}
-                  onChange={(event) =>
-                    updateTruck(index, 'plate_number', event.target.value)
+                                  onChange={(event) =>
+                    updateTruck(index, 'plate_number', upperValue(event))
                   }
                   placeholder="Contoh: B 1234 XYZ"
                   required

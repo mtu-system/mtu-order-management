@@ -17,6 +17,9 @@ import {
   XCircle,
   Truck,
   CalendarClock,
+  MapPin,
+  Map as MapIcon,
+  Link2,
 } from 'lucide-react'
 
 type DashboardShellProps = {
@@ -162,6 +165,9 @@ function getMenus(role: UserRole): MenuItem[] {
           href: '/manager/customer-overview',
           icon: Users,
         },
+                { label: 'Monitoring', href: '/manager/monitoring', icon: MapPin },
+        { label: 'Live Map', href: '/manager/live-map', icon: MapIcon },
+        { label: 'Unit GPS', href: '/manager/gps-devices', icon: Link2 },
       ]
 
     case 'marketing':
@@ -180,6 +186,8 @@ function getMenus(role: UserRole): MenuItem[] {
           href: '/marketing/orders/history',
           icon: History,
         },
+                { label: 'Monitoring', href: '/marketing/monitoring', icon: MapPin },
+        { label: 'Live Map', href: '/marketing/live-map', icon: MapIcon },
       ]
 
     case 'operational':
@@ -192,6 +200,13 @@ function getMenus(role: UserRole): MenuItem[] {
         },
         { label: 'Aktivitas', href: '/operational/activity', icon: Activity },
         { label: 'History', href: '/operational/history', icon: History },
+        {
+          label: 'Monitoring',
+          href: '/operational/monitoring',
+          icon: MapPin,
+        },
+        { label: 'Live Map', href: '/operational/live-map', icon: MapIcon },
+        { label: 'Unit GPS', href: '/operational/gps-devices', icon: Link2 },
       ]
 
     case 'hse':

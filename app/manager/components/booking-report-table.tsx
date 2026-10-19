@@ -59,6 +59,14 @@ const resultLabel: Record<string, string> = {
   review: 'Menunggu Cek Kapasitas',
 }
 
+function finalStatusOf(result: ReportRow['result']) {
+  if (result === 'activated') return 'WIN'
+  if (result === 'cancelled_ops' || result === 'cancelled_marketing') {
+    return 'LOSE'
+  }
+  return 'Dalam Proses'
+}
+
 function formatDateLabel(iso: string | null) {
   if (!iso) return '-'
   return new Date(iso).toLocaleString('id-ID', {
@@ -141,6 +149,7 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
         ? `${row.cancelledByName} (${row.cancelledByRole || '-'})`
         : '-',
       'Tanggal Dibatalkan': formatDateTimeLabel(row.cancelledAt),
+      'Final Status': finalStatusOf(row.result),
     }))
 
     downloadExcel(exportRows, 'Booking Report', 'booking-report')

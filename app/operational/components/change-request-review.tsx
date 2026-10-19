@@ -14,6 +14,7 @@ import {
   Plus,
 } from 'lucide-react'
 import { logOrderHistory, logUnitHistory } from '@/lib/history'
+import { upperValue } from '@/lib/upper-value'
 
 
 type Truck = {
@@ -1685,10 +1686,10 @@ export default function ChangeRequestReview({
                                     type="text"
                                     value={unit.plate_number}
                                     onChange={(event) =>
-                                      updateReplacementUnit(
+                                                                            updateReplacementUnit(
                                         index,
                                         'plate_number',
-                                        event.target.value
+                                        upperValue(event)
                                       )
                                     }
                                     disabled={loading}
@@ -1887,10 +1888,10 @@ export default function ChangeRequestReview({
                             type="text"
                             value={unit.plate_number}
                             onChange={(event) =>
-                              updateNewUnit(
+                                                            updateNewUnit(
                                 index,
                                 'plate_number',
-                                event.target.value
+                                upperValue(event)
                               )
                             }
                             disabled={loading}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { Search, Truck, CheckCircle2, Clock, X, Save, Loader2 } from 'lucide-react'
+import { upperValue } from '@/lib/upper-value'
 
 type VendorUnitRow = {
   id: string
@@ -374,7 +375,7 @@ function VendorUnitFormModal({
               <input
                 type="text"
                 value={plateNumber}
-                onChange={(event) => setPlateNumber(event.target.value)}
+                              onChange={(event) => setPlateNumber(upperValue(event))}
                 placeholder="B 1234 XYZ"
                 required
                 disabled={saving}
@@ -386,7 +387,7 @@ function VendorUnitFormModal({
               <input
                 type="text"
                 value={noBuntut}
-                onChange={(event) => setNoBuntut(event.target.value)}
+                                               onChange={(event) => setNoBuntut(upperValue(event))}
                 disabled={saving}
                 className={inputClass}
               />

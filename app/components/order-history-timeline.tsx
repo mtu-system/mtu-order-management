@@ -27,6 +27,7 @@ const actionLabels: Record<string, string> = {
   booking_revised: 'Booking Direvisi oleh Marketing',
   booking_approved: 'Booking Di-approve, Mulai Diproses',
   booking_cancelled: 'Booking Dibatalkan',
+  trip_status_changed: 'Status Perjalanan Unit',
 }
 
 const roleLabels: Record<string, string> = {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { upperValue } from '@/lib/upper-value'
 
 type NoBuntutSuggestion = {
   id: string
@@ -101,8 +102,8 @@ export default function NoBuntutAutocomplete({
       <input
         type="text"
         value={value}
-        onChange={(event) => {
-          onChange(event.target.value)
+                onChange={(event) => {
+          onChange(upperValue(event))
           setOpen(true)
           setHighlightedIndex(-1)
         }}

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { logOrderHistory, logUnitHistory } from '@/lib/history'
 import { syncOrderStatus } from '@/lib/sync-order-status'
+import { upperValue } from '@/lib/upper-value'
 
 type FailedUnitResolutionProps = {
   truck: {
@@ -541,7 +542,7 @@ export default function FailedUnitResolution({
             <input
               type="text"
               value={plateNumber}
-              onChange={(event) => setPlateNumber(event.target.value)}
+                          onChange={(event) => setPlateNumber(upperValue(event))}
               placeholder="Plat Nomor"
               disabled={saving}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"

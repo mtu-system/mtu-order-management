@@ -128,6 +128,7 @@ export async function GET(request: Request) {
   const inserts: Record<string, unknown>[] = []
   const touches: PromiseLike<unknown>[] = []
   const driveEvaluatedByTruck = new Map<string, boolean>()
+  const liveByTruck = new Map<string, boolean>()
   const activeTruckIds = new Set<string>()
   const nowIso = new Date().toISOString()
 
@@ -144,10 +145,13 @@ export async function GET(request: Request) {
       ? fences.some((fence) => distanceMeters(here, fence) <= fence.radius_m)
       : false
 
+    const live = device ? isLive(device) : false
+    liveByTruck.set(truckId, live)
+
     const { candidates, driveEvaluated } = evaluateAlerts({
       tripStatus: truck.trip_status,
       hasDevice: Boolean(device),
-      live: device ? isLive(device) : false,
+      live,
       inArea,
       drive: device ? driveMap.get(device.imei) : undefined,
     })
@@ -198,7 +202,8 @@ export async function GET(request: Request) {
     if (
       !stillActive ||
       !isDriveKind ||
-      driveEvaluatedByTruck.get(String(alert.order_truck_id)) === true
+      driveEvaluatedByTruck.get(String(alert.order_truck_id)) === true ||
+      liveByTruck.get(String(alert.order_truck_id)) === false
     ) {
       toResolve.push(alert.id)
     }

@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { distanceMeters } from '@/lib/geo'
 
 const BASE_URL =
   process.env.TRACKSOLID_BASE_URL ||
@@ -24,6 +25,9 @@ let accountsCache: AccountsCache = null
 
 type LocationCache = { devices: TracksolidDevice[]; fetchedAt: number } | null
 let locationCache: LocationCache = null
+
+// IMEI → akun pemilik perangkat (dibutuhkan laporan parkir).
+const imeiAccount = new Map<string, string>()
 
 const LOCATION_TTL_MS = 30_000
 const ACCOUNTS_TTL_MS = 10 * 60 * 1000
@@ -231,11 +235,13 @@ async function fetchLocations(): Promise<TracksolidDevice[]> {
     const batch = accounts.slice(i, i + BATCH_SIZE)
     const results = await Promise.all(batch.map(fetchAccountLocations))
 
-    for (const rows of results) {
-      for (const row of rows) {
+    for (let r = 0; r < results.length; r++) {
+      for (const row of results[r]) {
         const lat = Number(row.lat)
         const lng = Number(row.lng)
         const imei = String(row.imei)
+
+        imeiAccount.set(imei, batch[r])
 
         byImei.set(imei, {
           imei,
@@ -286,4 +292,386 @@ export async function debugTracksolid() {
     online: devices.filter((d) => d.online).length,
     sampleKeys: devices[0] ? Object.keys(devices[0]) : null,
   }
+}
+
+// ===== Laporan unit: rute, jarak tempuh, parkir/idle =====
+
+export type RoutePoint = { lat: number; lng: number; time: string; speed: number }
+
+export type TripItem = {
+  start: string
+  end: string
+  startLat: number | null
+  startLng: number | null
+  endLat: number | null
+  endLng: number | null
+  distanceKm: number
+  durationSec: number
+  avgSpeed: number
+}
+
+export type StopItem = {
+  start: string
+  end: string
+  durationSec: number
+  lat: number | null
+  lng: number | null
+  address: string
+  acc: 'on' | 'off'
+}
+
+export type CallInfo = {
+  method: string
+  code: number | null
+  message: string
+  rows: number
+}
+
+const MAX_ROUTE_POINTS = 1200
+
+function formatUtc(date: Date) {
+  return date.toISOString().replace('T', ' ').slice(0, 19)
+}
+
+// Waktu TrackSolid "yyyy-MM-dd HH:mm:ss" (UTC) → ISO; format ISO dibiarkan.
+function asIso(value: unknown): string {
+  const text = String(value ?? '').trim()
+  if (!text) return ''
+  if (text.includes('T')) return text
+  return text.replace(' ', 'T') + 'Z'
+}
+
+function num(value: unknown) {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+function numOrNull(value: unknown) {
+  if (value === null || value === undefined || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+function diffSeconds(start: string, end: string) {
+  const a = new Date(start).getTime()
+  const b = new Date(end).getTime()
+  return Number.isFinite(a) && Number.isFinite(b) && b > a
+    ? Math.round((b - a) / 1000)
+    : 0
+}
+
+// Struktur respons tiap method sedikit berbeda, jadi cari array yang
+// barisnya punya field kunci (di level atas atau satu tingkat di dalam).
+function findRows(result: unknown, key: string): Record<string, unknown>[] {
+  const candidates: unknown[] = []
+
+  // Kumpulkan array sampai 3 tingkat (mis. data.rows pada laporan parkir).
+  function collect(value: unknown, depth: number) {
+    candidates.push(value)
+
+    if (depth >= 3 || !value || typeof value !== 'object' || Array.isArray(value)) {
+      return
+    }
+
+    for (const child of Object.values(value as Record<string, unknown>)) {
+      collect(child, depth + 1)
+    }
+  }
+
+  collect(result, 0)
+
+  for (const candidate of candidates) {
+    if (
+      Array.isArray(candidate) &&
+      candidate.length > 0 &&
+      candidate[0] &&
+      typeof candidate[0] === 'object' &&
+      key in (candidate[0] as object)
+    ) {
+      return candidate as Record<string, unknown>[]
+    }
+  }
+
+  return []
+}
+
+export async function getUnitReport(imei: string, from: Date, to: Date) {
+  const begin = formatUtc(from)
+  const end = formatUtc(to)
+  const info: CallInfo[] = []
+
+  // Berurutan (bukan paralel) supaya tidak kena "too frequent".
+  async function run(
+    method: string,
+    params: Record<string, string>,
+    key: string
+  ) {
+    try {
+      const data = await callAuthed(method, params)
+      const rows = data.code === 0 ? findRows(data, key) : []
+
+      info.push({
+        method,
+        code: data.code,
+        message: data.message || '',
+        rows: rows.length,
+      })
+
+      return rows
+    } catch (error) {
+      info.push({
+        method,
+        code: null,
+        message: error instanceof Error ? error.message : 'error',
+        rows: 0,
+      })
+      return []
+    }
+  }
+
+  const trackRows = await run(
+    'jimi.device.track.list',
+    { imei, begin_time: begin, end_time: end },
+    'gpsTime'
+  )
+
+  const tripRows = await run(
+    'jimi.device.track.mileage',
+    { imeis: imei, begin_time: begin, end_time: end },
+    'startTime'
+  )
+
+  const account = imeiAccount.get(imei) || env('TRACKSOLID_ACCOUNT')
+
+  const parkParams = {
+    account,
+    imeis: imei,
+    start_time: begin,
+    end_time: end,
+    start_row: '1',
+    page_size: '200',
+  }
+
+  const parkRows = await run(
+    'jimi.open.platform.report.parking',
+    { ...parkParams, acc_type: 'off' },
+    'startTime'
+  )
+
+  const idleRows = await run(
+    'jimi.open.platform.report.parking',
+    { ...parkParams, acc_type: 'on' },
+    'startTime'
+  )
+
+  // Titik rute: utamakan GPS (posType 1), buang titik LBS/WiFi yang kasar.
+  let points: RoutePoint[] = trackRows
+    .map((row) => ({
+      lat: num(row.lat),
+      lng: num(row.lng),
+      time: asIso(row.gpsTime),
+      speed: num(row.gpsSpeed),
+      posType: String(row.posType ?? ''),
+    }))
+    .filter((p) => (p.lat !== 0 || p.lng !== 0) && p.time)
+    .sort((a, b) => a.time.localeCompare(b.time))
+    .map((p) => ({ ...p }))
+    .filter((p, _i, all) => {
+      const hasGps = all.some((x) => x.posType === '1' || x.posType === '')
+      return !hasGps || p.posType === '1' || p.posType === ''
+    })
+    .map(({ lat, lng, time, speed }) => ({ lat, lng, time, speed }))
+
+  const movingSpeeds = points
+    .map((p) => p.speed)
+    .filter((speed) => speed >= DRIVE_MOVING_KMH)
+  const avgSpeed = movingSpeeds.length
+    ? movingSpeeds.reduce((sum, speed) => sum + speed, 0) / movingSpeeds.length
+    : 0
+  const maxSpeed = points.reduce((max, p) => Math.max(max, p.speed), 0)
+
+  let fallbackMeters = 0
+  for (let i = 1; i < points.length; i++) {
+    fallbackMeters += distanceMeters(points[i - 1], points[i])
+  }
+
+  if (points.length > MAX_ROUTE_POINTS) {
+    const step = Math.ceil(points.length / MAX_ROUTE_POINTS)
+    const last = points[points.length - 1]
+    points = points.filter((_p, index) => index % step === 0)
+    if (points[points.length - 1] !== last) points.push(last)
+  }
+
+  const trips: TripItem[] = tripRows.map((row) => {
+    const start = asIso(row.startTime)
+    const endTime = asIso(row.endTime)
+    const duration =
+      num(row.runTimeSecond) || num(row.elapsed) || diffSeconds(start, endTime)
+
+    return {
+      start,
+      end: endTime,
+      startLat: numOrNull(row.startLat),
+      startLng: numOrNull(row.startLng),
+      endLat: numOrNull(row.endLat),
+      endLng: numOrNull(row.endLng),
+      distanceKm: num(row.distance) / 1000,
+      durationSec: duration,
+      avgSpeed: num(row.avgSpeed),
+    }
+  })
+
+  function toStops(rows: Record<string, unknown>[], acc: 'on' | 'off'): StopItem[] {
+    return rows.map((row) => {
+      const start = asIso(row.startTime)
+      const endTime = asIso(row.endTime)
+
+      return {
+        start,
+        end: endTime,
+        durationSec: num(row.durSecond) || diffSeconds(start, endTime),
+        lat: numOrNull(row.lat),
+        lng: numOrNull(row.lng),
+        address: String(row.addr ?? ''),
+        acc,
+      }
+    })
+  }
+
+  let stops = [...toStops(parkRows, 'off'), ...toStops(idleRows, 'on')].sort(
+    (a, b) => a.start.localeCompare(b.start)
+  )
+
+  // Cadangan: kalau API parkir kosong, turunkan dari jeda antar perjalanan.
+  if (parkRows.length === 0 && trips.length > 1) {
+    const ordered = [...trips].sort((a, b) => a.start.localeCompare(b.start))
+    const derived: StopItem[] = []
+
+    for (let i = 1; i < ordered.length; i++) {
+      const gap = diffSeconds(ordered[i - 1].end, ordered[i].start)
+
+      if (gap >= 300) {
+        derived.push({
+          start: ordered[i - 1].end,
+          end: ordered[i].start,
+          durationSec: gap,
+          lat: ordered[i - 1].endLat,
+          lng: ordered[i - 1].endLng,
+          address: '(dihitung dari jeda antar perjalanan)',
+          acc: 'off',
+        })
+      }
+    }
+
+    stops = derived
+  }
+
+  const tripKm = trips.reduce((sum, trip) => sum + trip.distanceKm, 0)
+
+  return {
+    points,
+    trips,
+    stops,
+    totalKm: tripKm > 0 ? tripKm : fallbackMeters / 1000,
+    avgSpeed,
+    maxSpeed,
+    info,
+  }
+}
+
+// ===== Durasi mengemudi berkelanjutan (deteksi kelelahan) =====
+
+export type DriveState = {
+  driveMinutes: number // lama mengemudi sejak istirahat terakhir
+  stoppedMinutes: number // lama diam sejak terakhir bergerak
+  avgSpeed: number // rata-rata kecepatan saat bergerak (12 jam terakhir)
+  maxSpeed: number
+}
+
+const DRIVE_TTL_MS = 3 * 60 * 1000
+const DRIVE_LOOKBACK_MS = 12 * 60 * 60 * 1000
+const REST_GAP_MS = 30 * 60 * 1000 // berhenti >= 30 menit dianggap istirahat
+const DRIVE_MOVING_KMH = 5
+const driveCache = new Map<string, { state: DriveState; fetchedAt: number }>()
+
+async function computeDriveState(imei: string): Promise<DriveState | null> {
+  const cached = driveCache.get(imei)
+  if (cached && Date.now() - cached.fetchedAt < DRIVE_TTL_MS) return cached.state
+
+  const now = Date.now()
+
+  const data = await callAuthed('jimi.device.track.list', {
+    imei,
+    begin_time: formatUtc(new Date(now - DRIVE_LOOKBACK_MS)),
+    end_time: formatUtc(new Date(now - 5000)),
+  })
+
+  if (data.code !== 0) return null
+
+  const samples = findRows(data.result, 'gpsTime')
+    .map((row) => ({
+      time: new Date(asIso(row.gpsTime)).getTime(),
+      speed: num(row.gpsSpeed),
+    }))
+    .filter((sample) => Number.isFinite(sample.time))
+
+  const movingSamples = samples.filter((s) => s.speed >= DRIVE_MOVING_KMH)
+  const moving = movingSamples.map((s) => s.time).sort((a, b) => a - b)
+  const avgSpeed = movingSamples.length
+    ? movingSamples.reduce((sum, s) => sum + s.speed, 0) / movingSamples.length
+    : 0
+  const maxSpeed = samples.reduce((max, s) => Math.max(max, s.speed), 0)
+
+  let state: Omit<DriveState, 'avgSpeed' | 'maxSpeed'>
+
+  if (moving.length === 0) {
+    state = { driveMinutes: 0, stoppedMinutes: DRIVE_LOOKBACK_MS / 60000 }
+  } else {
+    let start = moving[0]
+
+    for (let i = 1; i < moving.length; i++) {
+      if (moving[i] - moving[i - 1] >= REST_GAP_MS) start = moving[i]
+    }
+
+    const last = moving[moving.length - 1]
+    const stopped = Math.round((now - last) / 60000)
+
+    state =
+      now - last >= REST_GAP_MS
+        ? { driveMinutes: 0, stoppedMinutes: stopped }
+        : {
+            driveMinutes: Math.round((last - start) / 60000),
+            stoppedMinutes: stopped,
+          }
+  }
+
+  const full: DriveState = { ...state, avgSpeed, maxSpeed }
+  driveCache.set(imei, { state: full, fetchedAt: Date.now() })
+  return full
+}
+
+// Maksimal 3 panggilan sekaligus supaya tidak kena "too frequent".
+export async function getDriveStates(imeis: string[]) {
+  const result = new Map<string, DriveState>()
+
+  for (let i = 0; i < imeis.length; i += 3) {
+    const batch = imeis.slice(i, i + 3)
+
+    const states = await Promise.all(
+      batch.map(async (imei) => {
+        try {
+          return await computeDriveState(imei)
+        } catch {
+          return null
+        }
+      })
+    )
+
+    batch.forEach((imei, index) => {
+      const state = states[index]
+      if (state) result.set(imei, state)
+    })
+  }
+
+  return result
 }

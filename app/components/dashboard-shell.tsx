@@ -20,6 +20,10 @@ import {
   MapPin,
   Map as MapIcon,
   Link2,
+  Target,
+  Route as RouteIcon,
+  Radar,
+  BellRing,
 } from 'lucide-react'
 
 type DashboardShellProps = {
@@ -165,9 +169,13 @@ function getMenus(role: UserRole): MenuItem[] {
           href: '/manager/customer-overview',
           icon: Users,
         },
-                { label: 'Monitoring', href: '/manager/monitoring', icon: MapPin },
+                              { label: 'Control Tower', href: '/manager/control-tower', icon: Radar },
+        { label: 'Peringatan', href: '/manager/alerts', icon: BellRing },
+        { label: 'Monitoring', href: '/manager/monitoring', icon: MapPin },
         { label: 'Live Map', href: '/manager/live-map', icon: MapIcon },
-        { label: 'Unit GPS', href: '/manager/gps-devices', icon: Link2 },
+               { label: 'Unit GPS', href: '/manager/gps-devices', icon: Link2 },
+                { label: 'Geofence', href: '/manager/geofences', icon: Target },
+        { label: 'Laporan Unit', href: '/manager/unit-report', icon: RouteIcon },
       ]
 
     case 'marketing':
@@ -186,8 +194,10 @@ function getMenus(role: UserRole): MenuItem[] {
           href: '/marketing/orders/history',
           icon: History,
         },
-                { label: 'Monitoring', href: '/marketing/monitoring', icon: MapPin },
-        { label: 'Live Map', href: '/marketing/live-map', icon: MapIcon },
+                        { label: 'Control Tower', href: '/marketing/control-tower', icon: Radar },
+        { label: 'Monitoring', href: '/marketing/monitoring', icon: MapPin },
+                { label: 'Live Map', href: '/marketing/live-map', icon: MapIcon },
+        { label: 'Laporan Unit', href: '/marketing/unit-report', icon: RouteIcon },
       ]
 
     case 'operational':
@@ -201,12 +211,24 @@ function getMenus(role: UserRole): MenuItem[] {
         { label: 'Aktivitas', href: '/operational/activity', icon: Activity },
         { label: 'History', href: '/operational/history', icon: History },
         {
+          label: 'Control Tower',
+          href: '/operational/control-tower',
+          icon: Radar,
+        },
+        { label: 'Peringatan', href: '/operational/alerts', icon: BellRing },
+        {
           label: 'Monitoring',
           href: '/operational/monitoring',
           icon: MapPin,
         },
         { label: 'Live Map', href: '/operational/live-map', icon: MapIcon },
-        { label: 'Unit GPS', href: '/operational/gps-devices', icon: Link2 },
+               { label: 'Unit GPS', href: '/operational/gps-devices', icon: Link2 },
+                { label: 'Geofence', href: '/operational/geofences', icon: Target },
+        {
+          label: 'Laporan Unit',
+          href: '/operational/unit-report',
+          icon: RouteIcon,
+        },
       ]
 
     case 'hse':

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import type { Map as LeafletMap, LayerGroup } from 'leaflet'
 import { normalizePlate } from '@/lib/plate'
+import { createClient } from '@/lib/supabase/client'
+import { type Geofence, FENCE_COLOR, FENCE_LABEL } from '@/lib/geo'
 import {
   type MonitoringRow,
   TRIP_LABEL,
@@ -42,6 +44,7 @@ export default function LiveMap({ rows }: { rows: MonitoringRow[] }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<LeafletMap | null>(null)
   const layerRef = useRef<LayerGroup | null>(null)
+  const fenceLayerRef = useRef<LayerGroup | null>(null)
   const leafletRef = useRef<typeof import('leaflet') | null>(null)
   const fittedRef = useRef(false)
 
@@ -49,6 +52,33 @@ export default function LiveMap({ rows }: { rows: MonitoringRow[] }) {
   const [positions, setPositions] = useState<Record<string, Position>>({})
   const [failed, setFailed] = useState(false)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
+  const [geofences, setGeofences] = useState<Geofence[]>([])
+
+  useEffect(() => {
+    createClient()
+      .from('geofences')
+      .select('id, name, type, lat, lng, radius_m')
+      .then(({ data }) => setGeofences((data || []) as Geofence[]))
+  }, [])
+
+  useEffect(() => {
+    const L = leafletRef.current
+    const layer = fenceLayerRef.current
+    if (!ready || !L || !layer) return
+
+    layer.clearLayers()
+
+    for (const fence of geofences) {
+      L.circle([fence.lat, fence.lng], {
+        radius: fence.radius_m,
+        color: FENCE_COLOR[fence.type],
+        weight: 2,
+        fillOpacity: 0.12,
+      })
+        .bindTooltip(`${fence.name} (${FENCE_LABEL[fence.type]})`)
+        .addTo(layer)
+    }
+  }, [ready, geofences])
 
   // Inisialisasi peta sekali.
   useEffect(() => {
@@ -66,6 +96,7 @@ export default function LiveMap({ rows }: { rows: MonitoringRow[] }) {
         attribution: '&copy; OpenStreetMap',
       }).addTo(map)
 
+      fenceLayerRef.current = L.layerGroup().addTo(map)
       layerRef.current = L.layerGroup().addTo(map)
       mapRef.current = map
       setReady(true)

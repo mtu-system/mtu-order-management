@@ -4,6 +4,7 @@ import './globals.css'
 import { ToastProvider } from '@/app/components/toast-provider'
 import { ConfirmDialogProvider } from '@/app/components/confirm-dialog-provider'
 import NavigationLoadingProvider from '@/app/components/navigation-loading-provider'
+import AlertWatcher from '@/app/components/alert-watcher'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -31,7 +32,8 @@ export default function RootLayout({
       <body className="font-sans">
              <ToastProvider>
           <ConfirmDialogProvider>
-            <NavigationLoadingProvider>{children}</NavigationLoadingProvider>
+            <NavigationLoadingProvider><AlertWatcher />
+{children}</NavigationLoadingProvider>
           </ConfirmDialogProvider>
         </ToastProvider>
       </body>

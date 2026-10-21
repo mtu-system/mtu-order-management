@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { debugTracksolid, getDeviceLocations } from '@/lib/tracksolid'
+import {
+  debugTracksolid,
+  getDeviceLocations,
+  getDriveStates,
+} from '@/lib/tracksolid'
 import { normalizePlate } from '@/lib/plate'
 
 export const dynamic = 'force-dynamic'
@@ -12,6 +16,10 @@ const ALLOWED_ROLES = [
   'operational',
   'hse',
 ]
+
+const MOVING_KMH = 5
+const LIVE_MS = 30 * 60 * 1000
+const MAX_DRIVE_UNITS = 30
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -35,7 +43,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    if (new URL(request.url).searchParams.get('debug') === '1') {
+    const searchParams = new URL(request.url).searchParams
+
+    if (searchParams.get('debug') === '1') {
       if (profile.role !== 'manager') {
         return NextResponse.json({ error: 'Tidak punya akses.' }, { status: 403 })
       }
@@ -52,6 +62,11 @@ export async function GET(request: Request) {
         .not('plate_number', 'is', null),
       supabase.from('gps_device_links').select('plate_key, imei'),
     ])
+
+    const statusByPlate = new Map<string, string | null>()
+    for (const unit of units || []) {
+      statusByPlate.set(normalizePlate(unit.plate_number), unit.trip_status)
+    }
 
     const wantedPlates = Array.from(
       new Set(
@@ -85,6 +100,7 @@ export async function GET(request: Request) {
         gpsTime: string | null
       }
     > = {}
+    const imeiByPlate = new Map<string, string>()
 
     for (const plate of wantedPlates) {
       const linkedImei = linkMap.get(plate)
@@ -98,6 +114,7 @@ export async function GET(request: Request) {
       }
 
       if (hit) {
+        imeiByPlate.set(plate, hit.imei)
         positions[plate] = {
           deviceName: hit.deviceName,
           lat: hit.lat,
@@ -110,7 +127,40 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ positions, fetchedAt: new Date().toISOString() })
+    // Durasi mengemudi: hanya untuk unit yang sedang bergerak atau On Going.
+    const drive: Record<string, { driveMinutes: number; stoppedMinutes: number }> = {}
+
+    if (searchParams.get('drive') === '1') {
+      const targets = Object.entries(positions)
+        .filter(([plate, position]) => {
+          if (!position.online || !position.gpsTime) return false
+
+          const age =
+            Date.now() - new Date(position.gpsTime.replace(' ', 'T') + 'Z').getTime()
+          if (age > LIVE_MS) return false
+
+          return (
+            position.speed >= MOVING_KMH ||
+            statusByPlate.get(plate) === 'on_going'
+          )
+        })
+        .slice(0, MAX_DRIVE_UNITS)
+
+      const states = await getDriveStates(
+        targets.map(([plate]) => imeiByPlate.get(plate) as string)
+      )
+
+      for (const [plate] of targets) {
+        const state = states.get(imeiByPlate.get(plate) as string)
+        if (state) drive[plate] = state
+      }
+    }
+
+    return NextResponse.json({
+      positions,
+      drive,
+      fetchedAt: new Date().toISOString(),
+    })
   } catch (error) {
     console.error('TRACKSOLID ERROR:', error)
     return NextResponse.json(

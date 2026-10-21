@@ -58,4 +58,5 @@ export type MonitoringRow = {
   driverName: string | null
   tripStatus: TripStatus | null
   times: Record<TripStatus, string | null>
+  destinationFenceId: string | null
 }

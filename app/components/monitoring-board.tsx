@@ -7,6 +7,7 @@ import { useToast } from '@/app/components/toast-provider'
 import { useConfirm } from '@/app/components/confirm-dialog-provider'
 import { logOrderHistory } from '@/lib/history'
 import { normalizePlate } from '@/lib/plate'
+import { type Geofence, distanceMeters } from '@/lib/geo'
 import {
   type MonitoringRow,
   type TripStatus,
@@ -63,10 +64,12 @@ function GpsCell({
   plate,
   position,
   gpsFailed,
+  areaName,
 }: {
   plate: string | null
   position: Position | undefined
   gpsFailed: boolean
+  areaName?: string | null
 }) {
   if (!plate) return <span className="text-gray-400">-</span>
 
@@ -97,6 +100,10 @@ function GpsCell({
 
       {lastUpdate && (
         <p className="text-gray-400">Update {timeAgo(lastUpdate)}</p>
+      )}
+
+      {live && areaName && (
+        <p className="font-semibold text-emerald-700">Di area: {areaName}</p>
       )}
 
       {position.lat !== null && position.lng !== null && (
@@ -131,6 +138,7 @@ export default function MonitoringBoard({
   const [filter, setFilter] = useState<Filter>('active')
   const [search, setSearch] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [geofences, setGeofences] = useState<Geofence[]>([])
 
   useEffect(() => {
     let alive = true
@@ -163,6 +171,58 @@ export default function MonitoringBoard({
       clearInterval(timer)
     }
   }, [])
+
+  useEffect(() => {
+    supabase
+      .from('geofences')
+      .select('id, name, type, lat, lng, radius_m')
+      .then(({ data }) => setGeofences((data || []) as Geofence[]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function areaNameFor(position: Position | undefined): string | null {
+    if (!position || position.lat === null || position.lng === null) return null
+
+    const here = { lat: position.lat, lng: position.lng }
+
+    return (
+      geofences.find((fence) => distanceMeters(here, fence) <= fence.radius_m)
+        ?.name ?? null
+    )
+  }
+
+  function suggestionFor(
+    row: MonitoringRow,
+    position: Position | undefined
+  ): string | null {
+    if (!position || position.lat === null || position.lng === null) return null
+    if (!position.online || !position.gpsTime) return null
+    if (Date.now() - parseGpsTime(position.gpsTime).getTime() > STALE_MS) {
+      return null
+    }
+
+    const here = { lat: position.lat, lng: position.lng }
+    const inside = (type: Geofence['type']) =>
+      geofences.find(
+        (fence) => fence.type === type && distanceMeters(here, fence) <= fence.radius_m
+      )
+
+    if (row.tripStatus === 'finished_loading') {
+      const hasLoadingFence = geofences.some((fence) => fence.type === 'loading')
+      if (hasLoadingFence && !inside('loading') && position.speed >= 5) {
+        return 'Unit sudah keluar dari area loading. Mungkin sudah On Going.'
+      }
+    }
+
+    if (row.tripStatus === 'on_going') {
+      const fence = inside('unloading')
+      if (fence) {
+        return `Unit sudah di ${fence.name}. Mungkin sudah Finished Unloading.`
+      }
+    }
+
+    return null
+  }
 
   const counts = useMemo(() => {
     const result = {
@@ -431,6 +491,11 @@ export default function MonitoringBoard({
                           <p className="mt-1 text-[11px] text-gray-400">
                             {formatTime(row.times[row.tripStatus])}
                           </p>
+                          {suggestionFor(row, position) && (
+                            <p className="mt-1.5 max-w-[220px] rounded-md bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">
+                              {suggestionFor(row, position)}
+                            </p>
+                          )}
                         </>
                       ) : (
                         <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-500">
@@ -444,6 +509,7 @@ export default function MonitoringBoard({
                         plate={row.plateNumber}
                         position={position}
                         gpsFailed={gpsFailed}
+                        areaName={areaNameFor(position)}
                       />
                     </td>
 

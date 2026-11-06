@@ -1,15 +1,17 @@
-import * as XLSX from 'xlsx'
+
 
 type CellValue = string | number | null | undefined
 
 const MIN_COL_WIDTH = 8
 const MAX_COL_WIDTH = 60
 
-export function downloadExcel(
+export async function downloadExcel(
   rows: Record<string, CellValue>[],
   sheetName: string,
   filePrefix: string
 ) {
+  const XLSX = await import('xlsx')
+
   // Tambah kolom "No" di paling kiri.
   const numberedRows = rows.map((row, index) => ({
     No: index + 1,

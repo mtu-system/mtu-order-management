@@ -26,7 +26,7 @@ export async function GET() {
 
   const { data } = await supabase
     .from('unit_alerts')
-    .select('id, plate, level, message, acknowledged_at')
+    .select('id, plate, kind, level, message, acknowledged_at')
     .is('resolved_at', null)
     .order('started_at', { ascending: false })
     .limit(100)

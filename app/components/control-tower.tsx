@@ -37,9 +37,18 @@ type Drive = {
   stoppedMinutes: number
   avgSpeed: number
   maxSpeed: number
+  dailyDriveMinutes: number
+  overspeedNowSec: number
+  overspeedMinutes: number
 }
 type UnitState = 'moving' | 'idle' | 'stopped' | 'offline'
 type Alert = { level: 'red' | 'amber'; text: string }
+type DbAlert = {
+  plate: string
+  kind: string
+  level: 'red' | 'amber'
+  message: string
+}
 type Filter = 'all' | 'alert' | UnitState
 
 type Item = {
@@ -147,6 +156,7 @@ export default function ControlTower({
   const [positions, setPositions] = useState<Record<string, Position>>({})
   const [drives, setDrives] = useState<Record<string, Drive>>({})
   const [geofences, setGeofences] = useState<Geofence[]>([])
+  const [dbAlerts, setDbAlerts] = useState<DbAlert[]>([])
   const [failed, setFailed] = useState(false)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
@@ -192,12 +202,38 @@ export default function ControlTower({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Peringatan dari pemeriksa server (overspeed, malam, jam harian)
+  useEffect(() => {
+    let alive = true
+
+    async function loadAlerts() {
+      try {
+        if (document.hidden) return
+        const response = await fetch('/api/alerts', { cache: 'no-store' })
+        if (!response.ok || !alive) return
+        const json = await response.json()
+        setDbAlerts((json.alerts || []) as DbAlert[])
+      } catch {
+        // abaikan
+      }
+    }
+
+    loadAlerts()
+    const timer = setInterval(loadAlerts, POLL_MS)
+
+    return () => {
+      alive = false
+      clearInterval(timer)
+    }
+  }, [])
+
   // Posisi + durasi mengemudi
   useEffect(() => {
     let alive = true
 
     async function load() {
       try {
+        if (document.hidden) return
         const response = await fetch('/api/tracksolid/locations?drive=1', {
           cache: 'no-store',
         })
@@ -290,6 +326,18 @@ export default function ControlTower({
         }
       }
 
+      for (const dbAlert of dbAlerts) {
+        if (normalizePlate(dbAlert.plate) !== key) continue
+        if (
+          ['drive_red', 'drive_amber', 'gps_offline', 'stop_outside'].includes(
+            dbAlert.kind
+          )
+        ) {
+          continue
+        }
+        alerts.push({ level: dbAlert.level, text: dbAlert.message })
+      }
+
       result.push({
         row,
         position,
@@ -314,7 +362,7 @@ export default function ControlTower({
       (a, b) =>
         rank(a) - rank(b) || (b.position?.speed ?? 0) - (a.position?.speed ?? 0)
     )
-  }, [rows, positions, drives, geofences])
+  }, [rows, positions, drives, geofences, dbAlerts])
 
   const counts = useMemo(() => {
     const result = { moving: 0, idle: 0, stopped: 0, offline: 0, alert: 0 }
@@ -469,6 +517,25 @@ export default function ControlTower({
     setRows((current) =>
       current.map((row) =>
         row.id === rowId ? { ...row, destinationFenceId: value } : row
+      )
+    )
+  }
+
+  async function setUrgent(rowId: string, value: boolean) {
+    const { data, error } = await supabase
+      .from('order_trucks')
+      .update({ urgent_shipment: value })
+      .eq('id', rowId)
+      .select('id')
+
+    if (error || !data || data.length === 0) {
+      toast.error('Gagal Menyimpan', error?.message || 'Ditolak oleh database.')
+      return
+    }
+
+    setRows((current) =>
+      current.map((row) =>
+        row.id === rowId ? { ...row, urgentShipment: value } : row
       )
     )
   }
@@ -628,9 +695,17 @@ export default function ControlTower({
                       )}
                       {item.drive && item.drive.avgSpeed > 0 && (
                         <p>
-                          Kecepatan 12 jam terakhir: rata-rata{' '}
+                          Kecepatan 24 jam terakhir: rata-rata{' '}
                           {Math.round(item.drive.avgSpeed)} km/j · maks{' '}
                           {Math.round(item.drive.maxSpeed)} km/j
+                        </p>
+                      )}
+                      {item.drive && item.drive.dailyDriveMinutes > 0 && (
+                        <p>
+                          Total mengemudi 24 jam:{' '}
+                          {formatMinutes(item.drive.dailyDriveMinutes)}
+                          {item.drive.overspeedMinutes > 0 &&
+                            ` · di atas batas ${item.drive.overspeedMinutes} menit`}
                         </p>
                       )}
                       {item.tripMinutes !== null && (
@@ -668,6 +743,19 @@ export default function ControlTower({
                   >
                     Lihat riwayat perjalanan →
                   </Link>
+
+                  {canEdit && (
+                    <label className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={item.row.urgentShipment}
+                        onChange={(event) =>
+                          setUrgent(item.row.id, event.target.checked)
+                        }
+                      />
+                      Pengiriman urgent (boleh jalan malam)
+                    </label>
+                  )}
 
                   {canEdit && (
                     <select

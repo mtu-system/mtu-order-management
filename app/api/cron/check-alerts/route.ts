@@ -6,7 +6,6 @@ import {
   type TracksolidDevice,
 } from '@/lib/tracksolid'
 import { normalizePlate } from '@/lib/plate'
-import { distanceMeters, type Geofence } from '@/lib/geo'
 import { LIVE_MS, MOVING_KMH, evaluateAlerts } from '@/lib/alert-rules'
 
 export const dynamic = 'force-dynamic'
@@ -19,10 +18,22 @@ type TruckRow = {
   order_id: string | number | null
   plate_number: string | null
   trip_status: string | null
+  urgent_shipment: boolean | null
   orders: OrderInfo | OrderInfo[] | null
 }
 
 const MAX_DRIVE_UNITS = 30
+
+// Peringatan yang butuh riwayat rute untuk dievaluasi.
+const NEEDS_TRACK = new Set([
+  'drive_red',
+  'drive_amber',
+  'stop_outside',
+  'overspeed',
+  'overspeed_long',
+  'daily_amber',
+  'daily_red',
+])
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET
@@ -33,17 +44,18 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient()
 
-  const [trucksRes, linksRes, fencesRes, openRes] = await Promise.all([
+  const [trucksRes, linksRes, openRes] = await Promise.all([
     admin
       .from('order_trucks')
-      .select('id, order_id, plate_number, trip_status, orders(customer, trip)')
+      .select(
+        'id, order_id, plate_number, trip_status, urgent_shipment, orders(customer, trip)'
+      )
       .or(
         'status.in.(ready_to_depart,driver_started,departed,finished),trip_status.not.is.null'
       )
       .not('plate_number', 'is', null)
       .limit(2000),
     admin.from('gps_device_links').select('plate_key, imei'),
-    admin.from('geofences').select('id, name, type, lat, lng, radius_m'),
     admin
       .from('unit_alerts')
       .select('id, order_truck_id, kind')
@@ -70,7 +82,6 @@ export async function GET(request: Request) {
   const trucks = ((trucksRes.data || []) as unknown as TruckRow[]).filter(
     (truck) => truck.trip_status !== 'complete'
   )
-  const fences = (fencesRes.data || []) as Geofence[]
   const linkMap = new Map(
     (linksRes.data || []).map((link) => [link.plate_key as string, link.imei as string])
   )
@@ -103,7 +114,7 @@ export async function GET(request: Request) {
     device: resolveDevice(normalizePlate(truck.plate_number)),
   }))
 
-  // Hitung durasi mengemudi hanya untuk unit yang bergerak atau On Going.
+  // Riwayat rute hanya untuk unit yang bergerak atau On Going.
   const driveImeis = Array.from(
     new Set(
       matched
@@ -130,20 +141,12 @@ export async function GET(request: Request) {
   const driveEvaluatedByTruck = new Map<string, boolean>()
   const liveByTruck = new Map<string, boolean>()
   const activeTruckIds = new Set<string>()
-  const nowIso = new Date().toISOString()
+  const nowDate = new Date()
+  const nowIso = nowDate.toISOString()
 
   for (const { truck, device } of matched) {
     const truckId = String(truck.id)
     activeTruckIds.add(truckId)
-
-    const here =
-      device && device.lat !== null && device.lng !== null
-        ? { lat: device.lat, lng: device.lng }
-        : null
-
-    const inArea = here
-      ? fences.some((fence) => distanceMeters(here, fence) <= fence.radius_m)
-      : false
 
     const live = device ? isLive(device) : false
     liveByTruck.set(truckId, live)
@@ -152,7 +155,9 @@ export async function GET(request: Request) {
       tripStatus: truck.trip_status,
       hasDevice: Boolean(device),
       live,
-      inArea,
+      speed: device ? device.speed : 0,
+      urgent: Boolean(truck.urgent_shipment),
+      now: nowDate,
       drive: device ? driveMap.get(device.imei) : undefined,
     })
 
@@ -188,22 +193,24 @@ export async function GET(request: Request) {
     }
   }
 
-  // Tutup peringatan yang kondisinya sudah hilang. Peringatan berbasis durasi
-  // hanya ditutup kalau datanya benar-benar berhasil dihitung kali ini.
+  // Tutup peringatan yang kondisinya sudah hilang. Peringatan berbasis riwayat
+  // hanya ditutup kalau datanya berhasil dihitung, atau unit sedang offline
+  // (unit offline sudah punya peringatan "GPS tidak aktif" sendiri).
   const toResolve: string[] = []
 
   for (const alert of openRes.data || []) {
     const key = `${alert.order_truck_id}:${alert.kind}`
     if (seen.has(key)) continue
 
-    const stillActive = activeTruckIds.has(String(alert.order_truck_id))
-    const isDriveKind = alert.kind !== 'gps_offline'
+    const truckId = String(alert.order_truck_id)
+    const stillActive = activeTruckIds.has(truckId)
+    const needsTrack = NEEDS_TRACK.has(alert.kind)
 
     if (
       !stillActive ||
-      !isDriveKind ||
-      driveEvaluatedByTruck.get(String(alert.order_truck_id)) === true ||
-      liveByTruck.get(String(alert.order_truck_id)) === false
+      !needsTrack ||
+      driveEvaluatedByTruck.get(truckId) === true ||
+      liveByTruck.get(truckId) === false
     ) {
       toResolve.push(alert.id)
     }

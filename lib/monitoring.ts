@@ -12,6 +12,7 @@ type RawTruck = {
   driver_name: string | null
   trip_status: TripStatus | null
   destination_fence_id: string | null
+  urgent_shipment: boolean | null
   finished_loading_at: string | null
   on_going_at: string | null
   finished_unloading_at: string | null
@@ -53,6 +54,7 @@ export async function loadMonitoringRows(
       driver_name,
       trip_status,
       destination_fence_id,
+      urgent_shipment,
       finished_loading_at,
       on_going_at,
       finished_unloading_at,
@@ -105,6 +107,7 @@ export async function loadMonitoringRows(
         driverName: truck.driver_name,
         tripStatus: truck.trip_status,
         destinationFenceId: truck.destination_fence_id,
+        urgentShipment: Boolean(truck.urgent_shipment),
         times: {
           finished_loading: truck.finished_loading_at,
           on_going: truck.on_going_at,

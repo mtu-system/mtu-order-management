@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import { distanceMeters } from '@/lib/geo'
+import { SPEED_LIMIT_KMH } from '@/lib/alert-rules'
 
 const BASE_URL =
   process.env.TRACKSOLID_BASE_URL ||
@@ -579,19 +580,24 @@ export async function getUnitReport(imei: string, from: Date, to: Date) {
   }
 }
 
-// ===== Durasi mengemudi berkelanjutan (deteksi kelelahan) =====
+// ===== Statistik mengemudi dari riwayat rute (24 jam terakhir) =====
 
 export type DriveState = {
   driveMinutes: number // lama mengemudi sejak istirahat terakhir
   stoppedMinutes: number // lama diam sejak terakhir bergerak
-  avgSpeed: number // rata-rata kecepatan saat bergerak (12 jam terakhir)
+  avgSpeed: number
   maxSpeed: number
+  dailyDriveMinutes: number // total waktu bergerak dalam 24 jam
+  overspeedNowSec: number // lama berturut-turut di atas batas, sampai sekarang
+  overspeedMinutes: number // total waktu di atas batas dalam 24 jam
 }
 
 const DRIVE_TTL_MS = 3 * 60 * 1000
-const DRIVE_LOOKBACK_MS = 12 * 60 * 60 * 1000
+const DRIVE_LOOKBACK_MS = 24 * 60 * 60 * 1000
 const REST_GAP_MS = 30 * 60 * 1000 // berhenti >= 30 menit dianggap istirahat
 const DRIVE_MOVING_KMH = 5
+const DRIVE_MAX_GAP_MS = 10 * 60 * 1000 // celah data > 10 menit tidak dihitung
+const OVERSPEED_GAP_MS = 2 * 60 * 1000
 const driveCache = new Map<string, { state: DriveState; fetchedAt: number }>()
 
 async function computeDriveState(imei: string): Promise<DriveState | null> {
@@ -614,19 +620,21 @@ async function computeDriveState(imei: string): Promise<DriveState | null> {
       speed: num(row.gpsSpeed),
     }))
     .filter((sample) => Number.isFinite(sample.time))
+    .sort((a, b) => a.time - b.time)
 
   const movingSamples = samples.filter((s) => s.speed >= DRIVE_MOVING_KMH)
-  const moving = movingSamples.map((s) => s.time).sort((a, b) => a - b)
+  const moving = movingSamples.map((s) => s.time)
+
   const avgSpeed = movingSamples.length
     ? movingSamples.reduce((sum, s) => sum + s.speed, 0) / movingSamples.length
     : 0
   const maxSpeed = samples.reduce((max, s) => Math.max(max, s.speed), 0)
 
-  let state: Omit<DriveState, 'avgSpeed' | 'maxSpeed'>
+  // Mengemudi nonstop sejak istirahat (berhenti >= 30 menit) terakhir.
+  let driveMinutes = 0
+  let stoppedMinutes = DRIVE_LOOKBACK_MS / 60000
 
-  if (moving.length === 0) {
-    state = { driveMinutes: 0, stoppedMinutes: DRIVE_LOOKBACK_MS / 60000 }
-  } else {
+  if (moving.length > 0) {
     let start = moving[0]
 
     for (let i = 1; i < moving.length; i++) {
@@ -634,20 +642,61 @@ async function computeDriveState(imei: string): Promise<DriveState | null> {
     }
 
     const last = moving[moving.length - 1]
-    const stopped = Math.round((now - last) / 60000)
-
-    state =
-      now - last >= REST_GAP_MS
-        ? { driveMinutes: 0, stoppedMinutes: stopped }
-        : {
-            driveMinutes: Math.round((last - start) / 60000),
-            stoppedMinutes: stopped,
-          }
+    stoppedMinutes = Math.round((now - last) / 60000)
+    driveMinutes =
+      now - last >= REST_GAP_MS ? 0 : Math.round((last - start) / 60000)
   }
 
-  const full: DriveState = { ...state, avgSpeed, maxSpeed }
-  driveCache.set(imei, { state: full, fetchedAt: Date.now() })
-  return full
+  // Total waktu bergerak dan waktu di atas batas kecepatan.
+  let dailyMs = 0
+  let overspeedMs = 0
+
+  for (let i = 0; i < samples.length - 1; i++) {
+    const dt = samples[i + 1].time - samples[i].time
+    if (dt <= 0) continue
+
+    if (dt <= DRIVE_MAX_GAP_MS && samples[i].speed >= DRIVE_MOVING_KMH) {
+      dailyMs += dt
+    }
+    if (dt <= OVERSPEED_GAP_MS && samples[i].speed > SPEED_LIMIT_KMH) {
+      overspeedMs += dt
+    }
+  }
+
+  // Lama melaju di atas batas secara berturut-turut sampai titik terakhir.
+  let overspeedNowSec = 0
+  const lastSample = samples[samples.length - 1]
+
+  if (
+    lastSample &&
+    now - lastSample.time <= 5 * 60 * 1000 &&
+    lastSample.speed > SPEED_LIMIT_KMH
+  ) {
+    let j = samples.length - 1
+
+    while (
+      j > 0 &&
+      samples[j - 1].speed > SPEED_LIMIT_KMH &&
+      samples[j].time - samples[j - 1].time <= OVERSPEED_GAP_MS
+    ) {
+      j--
+    }
+
+    overspeedNowSec = Math.round((lastSample.time - samples[j].time) / 1000)
+  }
+
+  const state: DriveState = {
+    driveMinutes,
+    stoppedMinutes,
+    avgSpeed,
+    maxSpeed,
+    dailyDriveMinutes: Math.round(dailyMs / 60000),
+    overspeedNowSec,
+    overspeedMinutes: Math.round(overspeedMs / 60000),
+  }
+
+  driveCache.set(imei, { state, fetchedAt: Date.now() })
+  return state
 }
 
 // Maksimal 3 panggilan sekaligus supaya tidak kena "too frequent".

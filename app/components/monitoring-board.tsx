@@ -145,6 +145,7 @@ export default function MonitoringBoard({
 
     async function loadPositions() {
       try {
+        if (document.hidden) return
         const response = await fetch('/api/tracksolid/locations', {
           cache: 'no-store',
         })

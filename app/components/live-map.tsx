@@ -116,6 +116,7 @@ export default function LiveMap({ rows }: { rows: MonitoringRow[] }) {
 
     async function load() {
       try {
+        if (document.hidden) return
         const response = await fetch('/api/tracksolid/locations', {
           cache: 'no-store',
         })

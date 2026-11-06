@@ -59,4 +59,5 @@ export type MonitoringRow = {
   tripStatus: TripStatus | null
   times: Record<TripStatus, string | null>
   destinationFenceId: string | null
+  urgentShipment: boolean
 }

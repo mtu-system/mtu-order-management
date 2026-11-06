@@ -171,6 +171,11 @@ function getMenus(role: UserRole): MenuItem[] {
         },
                               { label: 'Control Tower', href: '/manager/control-tower', icon: Radar },
         { label: 'Peringatan', href: '/manager/alerts', icon: BellRing },
+        {
+          label: 'Laporan Keselamatan',
+          href: '/manager/safety-report',
+          icon: ShieldCheck,
+        },
         { label: 'Monitoring', href: '/manager/monitoring', icon: MapPin },
         { label: 'Live Map', href: '/manager/live-map', icon: MapIcon },
                { label: 'Unit GPS', href: '/manager/gps-devices', icon: Link2 },
@@ -217,6 +222,11 @@ function getMenus(role: UserRole): MenuItem[] {
         },
         { label: 'Peringatan', href: '/operational/alerts', icon: BellRing },
         {
+          label: 'Laporan Keselamatan',
+          href: '/operational/safety-report',
+          icon: ShieldCheck,
+        },
+        {
           label: 'Monitoring',
           href: '/operational/monitoring',
           icon: MapPin,
@@ -236,6 +246,11 @@ function getMenus(role: UserRole): MenuItem[] {
         { label: 'Waiting Inspection', href: '/hse', icon: ShieldCheck },
         { label: 'Aktivitas', href: '/hse/activity', icon: Activity },
         { label: 'Inspection History', href: '/hse/history', icon: History },
+        {
+          label: 'Laporan Keselamatan',
+          href: '/hse/safety-report',
+          icon: ShieldCheck,
+        },
       ]
 
     case 'vm':

@@ -67,9 +67,7 @@ export default function AlertWatcher() {
 
     async function poll() {
       try {
-        if (document.hidden) return
         const response = await fetch('/api/alerts', { cache: 'no-store' })
-
         // 403 / bukan Operational: berhenti memeriksa. 401 (belum login): coba lagi nanti.
         if (response.status === 403) {
           if (timer) clearInterval(timer)

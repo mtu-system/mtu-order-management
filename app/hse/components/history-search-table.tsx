@@ -39,6 +39,7 @@ function toDateInputValue(date: Date) {
 
 export default function HistorySearchTable({ orders }: HistorySearchTableProps) {
   const [search, setSearch] = useState('')
+  const [visible, setVisible] = useState(100)
   const [showPk, setShowPk] = useState(false)
   const [showRft, setShowRft] = useState(false)
   const [resultFilter, setResultFilter] = useState<ResultFilter>('all')
@@ -294,7 +295,7 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
                 </td>
               </tr>
             ) : (
-              filteredOrders.map((order) => {
+              filteredOrders.slice(0, visible).map((order) => {
                 const [dateLabelDay, dateLabelTime] = order.dateLabel.split(', ')
                 return (
                   <tr key={order.id} className="transition-colors hover:bg-gray-50/60">

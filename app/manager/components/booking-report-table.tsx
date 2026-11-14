@@ -91,6 +91,7 @@ function formatDateTimeLabel(iso: string | null) {
 
 export default function BookingReportTable({ rows }: BookingReportTableProps) {
   const [search, setSearch] = useState('')
+  const [visible, setVisible] = useState(100)
   const [resultFilter, setResultFilter] = useState<'all' | ReportRow['result']>(
     'all'
   )
@@ -249,7 +250,7 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
                 </td>
               </tr>
             ) : (
-              filteredRows.map((row) => (
+              filteredRows.slice(0, visible).map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50/60">
                   <td className="px-5 py-3.5 font-semibold text-gray-900">
                     {formatDateLabel(row.bookingDate)}
@@ -366,6 +367,30 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
             )}
           </tbody>
         </table>
+
+        {filteredRows.length > visible && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
+            <span>
+              Menampilkan {visible} dari {filteredRows.length} baris
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setVisible((current) => current + 100)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-bold text-gray-700 hover:bg-gray-50"
+              >
+                Muat 100 lagi
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisible(filteredRows.length)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-bold text-gray-700 hover:bg-gray-50"
+              >
+                Tampilkan semua
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

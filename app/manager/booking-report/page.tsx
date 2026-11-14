@@ -1,13 +1,22 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PeriodSwitcher from '@/app/components/period-switcher'
+import { fetchAll } from '@/lib/fetch-all'
+import { resolvePeriod } from '@/lib/period'
 import { createClient } from '@/lib/supabase/server'
 import BookingReportTable from '@/app/manager/components/booking-report-table'
 
-export default async function BookingReportPage() {
+export default async function BookingReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bulan?: string }>
+}) {
+  const { bulan } = await searchParams
+  const period = resolvePeriod(bulan, true)
   const user = await requireRole(['manager'])
   const supabase = await createClient()
 
-  const { data: orders, error } = await supabase
+  const query = supabase
     .from('orders')
     .select(`
       id,
@@ -31,7 +40,14 @@ export default async function BookingReportPage() {
       )
     `)
     .eq('is_booking', true)
+    .gte('booking_date', period.startDate)
+    .lt('booking_date', period.endDate)
     .order('booking_date', { ascending: false })
+    .order('id', { ascending: false })
+
+  const { rows: orders, error, truncated } = await fetchAll((from, to) =>
+    query.range(from, to)
+  )
 
   if (error) {
     console.error('BOOKING REPORT ERROR:', error)
@@ -209,6 +225,8 @@ export default async function BookingReportPage() {
           </span>
         </div>
       </div>
+
+      <PeriodSwitcher period={period} count={rows.length} truncated={truncated} />
 
       <BookingReportTable rows={reportRows} />
     </DashboardShell>

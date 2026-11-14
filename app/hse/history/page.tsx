@@ -1,5 +1,8 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PeriodSwitcher from '@/app/components/period-switcher'
+import { fetchAll } from '@/lib/fetch-all'
+import { resolvePeriod } from '@/lib/period'
 import { createClient } from '@/lib/supabase/server'
 import HistorySearchTable from '@/app/hse/components/history-search-table'
 
@@ -18,12 +21,18 @@ function getAvatarClass(name: string) {
   return avatarColors[index]
 }
 
-export default async function HSEHistoryPage() {
+export default async function HSEHistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bulan?: string }>
+}) {
+  const { bulan } = await searchParams
+  const period = resolvePeriod(bulan)
   const user = await requireRole(['hse'])
 
   const supabase = await createClient()
 
-  const { data: orders, error } = await supabase
+  const query = supabase
     .from('orders')
     .select(`
       id,
@@ -43,7 +52,14 @@ export default async function HSEHistoryPage() {
     `)
     .neq('status', 'waiting_unit')
     .neq('status', 'cancelled')
+    .gte('created_at', period.startIso)
+    .lt('created_at', period.endIso)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+
+  const { rows: orders, error, truncated } = await fetchAll((from, to) =>
+    query.range(from, to)
+  )
 
   if (error) {
     console.error('GET HSE HISTORY ERROR:', error)
@@ -138,6 +154,8 @@ export default async function HSEHistoryPage() {
           butuh pemeriksaan.
         </p>
       </div>
+
+      <PeriodSwitcher period={period} count={orders.length} truncated={truncated} />
 
       <HistorySearchTable orders={historyRows} />
     </DashboardShell>

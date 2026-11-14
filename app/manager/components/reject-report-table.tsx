@@ -53,6 +53,7 @@ const decisionLabel: Record<string, string> = {
 
 export default function RejectReportTable({ rows }: RejectReportTableProps) {
   const [search, setSearch] = useState('')
+  const [visible, setVisible] = useState(100)
     const [decisionFilter, setDecisionFilter] = useState(
     'all' as 'all' | 'partial' | 'unavailable'
   )
@@ -288,7 +289,7 @@ export default function RejectReportTable({ rows }: RejectReportTableProps) {
                 </td>
               </tr>
             ) : (
-              filteredRows.map((row) => (
+              filteredRows.slice(0, visible).map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50/60">
                   <td className="px-5 py-3.5">
                     <Link
@@ -342,6 +343,30 @@ export default function RejectReportTable({ rows }: RejectReportTableProps) {
             )}
           </tbody>
         </table>
+
+        {filteredRows.length > visible && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
+            <span>
+              Menampilkan {visible} dari {filteredRows.length} baris
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setVisible((current) => current + 100)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-bold text-gray-700 hover:bg-gray-50"
+              >
+                Muat 100 lagi
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisible(filteredRows.length)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-bold text-gray-700 hover:bg-gray-50"
+              >
+                Tampilkan semua
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

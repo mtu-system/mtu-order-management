@@ -1,6 +1,9 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PeriodSwitcher from '@/app/components/period-switcher'
+import { fetchAll } from '@/lib/fetch-all'
+import { resolvePeriod } from '@/lib/period'
 import OrderHistoryTable from '@/app/marketing/components/order-history-table'
 
 const avatarColors = [
@@ -18,7 +21,13 @@ function getAvatarClass(name: string) {
   return avatarColors[index]
 }
 
-export default async function MarketingOrderHistoryPage() {
+export default async function MarketingOrderHistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bulan?: string }>
+}) {
+  const { bulan } = await searchParams
+  const period = resolvePeriod(bulan)
   const user = await requireRole(['marketing', 'marketing_admin'])
 
   const supabase = await createClient()
@@ -43,13 +52,18 @@ export default async function MarketingOrderHistoryPage() {
         status
       )
     `)
+    .gte('created_at', period.startIso)
+    .lt('created_at', period.endIso)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
 
   if (user.role === 'marketing') {
     query = query.eq('created_by', user.id)
   }
 
-  const { data: orders, error } = await query
+  const { rows: orders, error, truncated } = await fetchAll((from, to) =>
+    query.range(from, to)
+  )
 
   if (error) {
     console.error('Failed to fetch order history:', error)
@@ -131,6 +145,8 @@ export default async function MarketingOrderHistoryPage() {
           </p>
         </div>
       </div>
+
+      <PeriodSwitcher period={period} count={orders.length} truncated={truncated} />
 
       <OrderHistoryTable orders={historyRows} />
     </DashboardShell>

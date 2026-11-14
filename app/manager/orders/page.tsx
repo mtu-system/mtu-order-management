@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import { fetchAll } from '@/lib/fetch-all'
 import { createClient } from '@/lib/supabase/server'
 import OrdersSearchTable from '@/app/manager/components/orders-search-table'
 export const dynamic = 'force-dynamic'
@@ -94,7 +95,9 @@ export default async function ManagerOrdersPage({
     query = query.gte('created_at', windowStart.toISOString())
   }
 
-  const { data: orders, error } = await query
+  const { rows: orders, error } = await fetchAll((from, to) =>
+    query.range(from, to)
+  )
 
   if (error) {
     console.error('MANAGER ORDERS LIST ERROR:', error)

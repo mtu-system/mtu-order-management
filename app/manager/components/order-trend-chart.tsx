@@ -48,7 +48,7 @@ export default function OrderTrendChart({
         </button>
       </div>
 
-     <div className="flex h-28 gap-1">
+<div className="flex h-48 gap-1.5">
         {data.map((point, index) => (
           <div
             key={index}
@@ -58,7 +58,7 @@ export default function OrderTrendChart({
               {point.count}
             </span>
             <div
-              className="w-full rounded-t-sm bg-[#2563EB] transition-all"
+className="w-full rounded-t-md bg-[#082868] transition-all"
               style={{
                 height: `${Math.max(4, (point.count / maxCount) * 100)}%`,
                 opacity: point.count === 0 ? 0.15 : 1,

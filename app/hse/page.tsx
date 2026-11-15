@@ -2,6 +2,7 @@ import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
 import HseDashboardPanel from '@/app/hse/components/hse-dashboard-panel'
+import PageHeader from '@/app/components/page-header'
 
 function getJakartaTodayStartIso() {
   const now = new Date()
@@ -128,12 +129,10 @@ export default async function HSEPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">HSE Orders</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Monitor pemeriksaan HSE untuk seluruh unit internal.
-        </p>
-      </div>
+      <PageHeader
+        title="HSE Orders"
+        subtitle="Monitor pemeriksaan HSE untuk seluruh unit internal."
+      />
 
       <HseDashboardPanel orders={hseOrderRows} />
     </DashboardShell>

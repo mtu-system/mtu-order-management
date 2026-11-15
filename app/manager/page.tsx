@@ -5,6 +5,7 @@ import Link from 'next/link'
 import OrderTrendChart from '@/app/manager/components/order-trend-chart'
 import OrderStatusDonut from '@/app/manager/components/order-status-donut'
 import OrderStatusPanel from '@/app/manager/components/order-status-panel'
+import PageHeader from '@/app/components/page-header'
 import {
   ClipboardList,
   Inbox,
@@ -427,25 +428,10 @@ export default async function ManagerDashboardPage() {
   return (
     <DashboardShell user={user}>
       {/* HEADER */}
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            Manager Dashboard
-          </h1>
-          <p className="text-xs text-gray-500">
-            Overview kondisi order dari Marketing sampai Ready to Depart.
-          </p>
-        </div>
-
-        <span className="rounded-full bg-[#2563EB]/10 px-3.5 py-1.5 text-xs font-bold text-[#2563EB]">
-          {new Date().toLocaleDateString('id-ID', {
-            timeZone: 'Asia/Jakarta',
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-          })}
-        </span>
-      </div>
+      <PageHeader
+        title="Manager Dashboard"
+        subtitle="Overview kondisi order dari Marketing sampai Ready to Depart."
+      />
 
       {/* KPI STRIP + TABEL — BISA DIKLIK UNTUK FILTER */}
       <OrderStatusPanel

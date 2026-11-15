@@ -2,6 +2,7 @@ import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import { createClient } from '@/lib/supabase/server'
 import MarketingDashboardPanel from '@/app/marketing/components/marketing-dashboard-panel'
+import PageHeader from '@/app/components/page-header'
 
 function getStatusLabel(status: string) {
   switch (status) {
@@ -189,14 +190,10 @@ export default async function MarketingPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">
-          Dashboard Marketing
-        </h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Kelola dan monitor permintaan kendaraan.
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard Marketing"
+        subtitle="Kelola dan monitor permintaan kendaraan."
+      />
 
       <MarketingDashboardPanel
         todayOrders={todayOrderRows}

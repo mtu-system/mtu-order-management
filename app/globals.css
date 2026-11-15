@@ -24,3 +24,105 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+
+/* ===== MTU UI — terang gradien + kaca ===== */
+.app-bg {
+  background: linear-gradient(135deg, #dce6f8 0%, #f1f5fc 45%, #fdedef 100%);
+  background-attachment: fixed;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 32px rgba(8, 40, 104, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Scrollbar tipis untuk menu sidebar */
+.nav-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(8, 40, 104, 0.18);
+  border-radius: 6px;
+}
+
+/* Semua kartu putih di area konten ikut tampil lembut (tanpa blur supaya ringan) */
+.app-glass .rounded-xl.bg-white:not(.shadow-xl):not(.shadow-2xl),
+.app-glass .rounded-2xl.bg-white:not(.shadow-xl):not(.shadow-2xl) {
+  background-color: rgba(255, 255, 255, 0.82);
+  border-color: rgba(255, 255, 255, 0.95);
+  border-radius: 1.1rem;
+  box-shadow: 0 6px 24px rgba(8, 40, 104, 0.07);
+}
+
+/* Kartu statistik */
+.stat-card {
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 24px rgba(8, 40, 104, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(8, 40, 104, 0.14);
+}
+.stat-card-alert {
+  background: linear-gradient(135deg, #e30613, #b80510);
+  border-color: transparent;
+  box-shadow: 0 10px 28px rgba(227, 6, 19, 0.3);
+}
+.stat-card-alert * {
+  color: #fff !important;
+}
+
+/* Ikon kartu Attention tetap terlihat di atas latar merah */
+.stat-card-alert span:first-child {
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Teks kecil lebih mudah dibaca */
+.app-glass .text-\[9px\] { font-size: 11px; }
+.app-glass .text-\[10px\] { font-size: 11.5px; }
+.app-glass .text-\[10\.5px\] { font-size: 12px; }
+.app-glass .text-\[11px\] { font-size: 12px; }
+.app-glass .text-\[11\.5px\] { font-size: 12.5px; }
+.app-glass .text-\[12px\] { font-size: 13px; }
+.app-glass .text-xs { font-size: 12.5px; }
+
+/* Tabel: header jelas, baris lega, hover lembut */
+.app-glass table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.app-glass thead th {
+  background: #f1f5fb !important;
+  color: #3b4a66 !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-top: 0.85rem !important;
+  padding-bottom: 0.85rem !important;
+  border-bottom: 1px solid #e1e8f4;
+}
+.app-glass tbody td {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  font-size: 13.5px;
+  color: #1e293b;
+}
+.app-glass tbody tr:hover {
+  background: rgba(8, 40, 104, 0.035);
+}
+.app-glass tbody tr + tr td {
+  border-top: 1px solid #edf1f8;
+}
+
+/* Warna aksen biru lama → navy MTU */
+.app-glass .text-\[\#2563EB\] { color: #082868; }
+.app-glass .bg-\[\#2563EB\] { background-color: #082868; }
+.app-glass .border-\[\#2563EB\] { border-color: #082868; }

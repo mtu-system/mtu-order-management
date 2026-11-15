@@ -5,6 +5,7 @@ import DashboardShell from '@/app/components/dashboard-shell'
 import RecentActivityFeed from '@/app/components/recent-activity-feed'
 import OrderTablesPanel from '@/app/operational/components/order-tables-panel'
 import CopyWaFormatButton from '@/app/operational/components/copy-wa-format-button'
+import PageHeader from '@/app/components/page-header'
 import {
   History as HistoryIcon,
 } from 'lucide-react'
@@ -533,17 +534,10 @@ export default async function OperationalPage() {
   return (
     <DashboardShell user={user}>
       {/* HEADER */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Operational Control Tower
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Monitor order, unit, pemeriksaan HSE, dan kesiapan keberangkatan.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="Operational Control Tower"
+        subtitle="Monitor order, unit, pemeriksaan HSE, dan kesiapan keberangkatan."
+      >
           <CopyWaFormatButton />
 
           <Link
@@ -553,8 +547,7 @@ export default async function OperationalPage() {
             <HistoryIcon className="h-4 w-4 text-[#2563EB]" />
             History
           </Link>
-        </div>
-      </div>
+      </PageHeader>
 
             {pendingChangeRequestAlerts.length > 0 && (
         <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-5">

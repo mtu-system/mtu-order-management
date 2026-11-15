@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import StatCard from '@/app/components/stat-card'
+import type { StatTone } from '@/app/components/stat-card'
 import {
   ArrowRight,
   Inbox,
@@ -115,6 +117,15 @@ function getBookingStatusBadge(status: string) {
         </span>
       )
   }
+}
+
+const TONE_BY_LABEL: Record<string, StatTone> = {
+  'Booking Menunggu': 'violet',
+  'Waiting Unit': 'amber',
+  'Waiting HSE': 'blue',
+  'Menunggu SJ/UJ': 'green',
+  'Ready to Depart': 'navy',
+  Failed: 'red',
 }
 
 export default function OrderTablesPanel({
@@ -234,35 +245,18 @@ export default function OrderTablesPanel({
   return (
     <div className="space-y-4">
       {/* STATISTIK — KLIK UNTUK PINDAH TAB */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-        {kpiItems.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <button
-              key={item.label}
-              type="button"
-              onClick={item.onClick}
-              className="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-[#2563EB]/30 hover:shadow-md"
-            >
-              <div
-                className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg} ${item.iconColor}`}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-              <p className="text-sm font-medium text-gray-500">
-                {item.label}
-              </p>
-              <p
-                className={`mt-1 text-3xl font-bold ${
-                  item.valueColor || 'text-gray-900'
-                }`}
-              >
-                {item.value}
-              </p>
-            </button>
-          )
-        })}
+<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+        {kpiItems.map((item) => (
+          <StatCard
+            key={item.label}
+            label={item.label}
+            value={item.value}
+            icon={item.icon}
+            tone={TONE_BY_LABEL[item.label] || 'navy'}
+            alert={item.label === 'Failed' && item.value > 0}
+            onClick={item.onClick}
+          />
+        ))}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

@@ -1,7 +1,10 @@
+
 'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
+import StatCard from '@/app/components/stat-card'
+import type { StatTone } from '@/app/components/stat-card'
 import {
   Inbox,
   ArrowRight,
@@ -53,6 +56,22 @@ type OrderStatusPanelProps = {
   attentionItem: AttentionItem
 }
 
+const TONE_BY_KEY: Record<string, StatTone> = {
+  all: 'navy',
+  waiting_unit: 'amber',
+  waiting_hse: 'blue',
+  ready_loading: 'green',
+  ready_to_depart: 'violet',
+}
+
+const HINT_BY_KEY: Record<string, string> = {
+  all: 'Seluruh order',
+  waiting_unit: 'Menunggu proses',
+  waiting_hse: 'Sedang berjalan',
+  ready_loading: 'Unit terpasang',
+  ready_to_depart: 'Siap jalan',
+}
+
 export default function OrderStatusPanel({
   orders,
   kpiItems,
@@ -62,70 +81,69 @@ export default function OrderStatusPanel({
 
   const filteredOrders = orders.filter((order) => {
     if (activeKey === 'all') return true
+
     if (activeKey === 'waiting_hse') {
-      return order.status === 'waiting_hse' || order.status === 'inspection'
+      return (
+        order.status === 'waiting_hse' ||
+        order.status === 'inspection'
+      )
     }
+
     return order.status === activeKey
   })
 
   const activeLabel =
-    kpiItems.find((item) => item.key === activeKey)?.label || 'Total Order'
+    kpiItems.find((item) => item.key === activeKey)?.label ||
+    'Total Order'
 
   return (
     <div className="mb-5 space-y-4">
-      <div className="grid grid-cols-2 divide-x divide-gray-100 rounded-xl border border-gray-200 bg-white shadow-sm sm:grid-cols-3 lg:grid-cols-6">
-             {kpiItems.map((item) => {
-          const Icon = iconMap[item.key as keyof typeof iconMap] || ClipboardList
-          const isActive = activeKey === item.key
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
+
+        {kpiItems.map((item) => {
+          const Icon =
+            iconMap[item.key as keyof typeof iconMap] || ClipboardList
 
           return (
-            <button
+            <StatCard
               key={item.key}
-              type="button"
+              label={item.label}
+              value={item.value}
+              hint={HINT_BY_KEY[item.key]}
+              icon={Icon}
+              tone={TONE_BY_KEY[item.key] || 'navy'}
+              active={activeKey === item.key}
               onClick={() => setActiveKey(item.key)}
-              className={`flex items-center gap-3 px-5 py-4 text-left transition-colors ${
-                isActive ? 'bg-[#2563EB]/5' : 'hover:bg-gray-50/60'
-              }`}
-            >
-              <Icon className={`h-4.5 w-4.5 shrink-0 ${item.color}`} />
-              <div>
-                <p className="text-lg font-bold leading-tight text-gray-900">
-                  {item.value}
-                </p>
-                <p className="text-[11px] font-medium leading-tight text-gray-500">
-                  {item.label}
-                </p>
-              </div>
-            </button>
+            />
           )
         })}
 
-        
-                 <button
-          type="button"
+        <StatCard
+          label={attentionItem.label}
+          value={attentionItem.value}
+          hint="Perlu tindakan"
+          icon={AlertTriangle}
+          tone="red"
+          alert={attentionItem.value > 0}
           onClick={() => {
             const target = document.getElementById('needs-attention')
+
             if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              })
             }
           }}
-          className="flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-gray-50/60"
-        >
-          <AlertTriangle className={`h-4.5 w-4.5 shrink-0 ${attentionItem.color}`} />
-          <div>
-            <p className="text-lg font-bold leading-tight text-gray-900">
-              {attentionItem.value}
-            </p>
-            <p className="text-[11px] font-medium leading-tight text-gray-500">
-              {attentionItem.label}
-            </p>
-          </div>
-        </button>
+        />
+
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 px-5 py-3">
-          <h2 className="text-sm font-bold text-gray-900">{activeLabel}</h2>
+          <h2 className="text-sm font-bold text-gray-900">
+            {activeLabel}
+          </h2>
         </div>
 
         <div className="overflow-x-auto">
@@ -158,22 +176,29 @@ export default function OrderStatusPanel({
 
             <tbody className="divide-y divide-gray-50">
               {filteredOrders.slice(0, 20).map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50/60">
+                <tr
+                  key={order.id}
+                  className="hover:bg-gray-50/60"
+                >
                   <td className="px-5 py-2.5 font-semibold text-gray-900">
                     {order.customer}
                   </td>
+
                   <td className="px-5 py-2.5 text-gray-700">
                     <div>{order.pkNumber || '-'}</div>
                     <div className="text-[11px] text-gray-400">
                       {order.rftTrJob || '-'}
                     </div>
                   </td>
+
                   <td className="px-5 py-2.5 text-gray-700">
                     {order.quantity} Unit
                   </td>
+
                   <td className="px-5 py-2.5 text-gray-700">
                     {order.trip || '-'}
                   </td>
+
                   <td className="px-5 py-2.5">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${order.statusClass}`}
@@ -181,9 +206,11 @@ export default function OrderStatusPanel({
                       {order.statusLabel}
                     </span>
                   </td>
+
                   <td className="px-5 py-2.5 text-gray-500">
                     {order.dateLabel}
                   </td>
+
                   <td className="px-5 py-2.5 text-right">
                     <Link
                       href={`/manager/orders/${order.id}`}
@@ -203,6 +230,7 @@ export default function OrderStatusPanel({
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <Inbox className="h-5 w-5" />
               </div>
+
               <p className="text-sm text-gray-400">
                 Tidak ada order untuk kategori ini.
               </p>

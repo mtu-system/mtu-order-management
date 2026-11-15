@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import StatCard from '@/app/components/stat-card'
+import type { StatTone } from '@/app/components/stat-card'
 import {
   ShieldCheck,
   CheckCircle2,
@@ -29,6 +31,11 @@ type HseDashboardPanelProps = {
 }
 
 type Tab = 'waiting' | 'passed' | 'failed'
+const TONE_BY_KEY: Record<string, StatTone> = {
+  waiting: 'amber',
+  passed: 'green',
+  failed: 'red',
+}
 
 export default function HseDashboardPanel({ orders }: HseDashboardPanelProps) {
   const [tab, setTab] = useState('waiting' as Tab)
@@ -86,37 +93,18 @@ export default function HseDashboardPanel({ orders }: HseDashboardPanelProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {kpiItems.map((item) => {
-          const Icon = item.icon
-          const isActive = tab === item.key
-
-          return (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setTab(item.key)}
-              className={`rounded-xl border bg-white p-5 text-left shadow-sm transition hover:shadow-md ${
-                isActive
-                  ? 'border-[#2563EB] ring-1 ring-[#2563EB]/20'
-                  : 'border-gray-200 hover:border-[#2563EB]/30'
-              }`}
-            >
-              <div
-                className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${item.iconBg} ${item.iconColor}`}
-              >
-                <Icon className="h-5 w-5" />
-              </div>
-              <p className="text-sm font-medium text-gray-500">{item.label}</p>
-              <p
-                className={`mt-1 text-3xl font-bold ${
-                  item.valueColor || 'text-gray-900'
-                }`}
-              >
-                {item.value}
-              </p>
-            </button>
-          )
-        })}
+        {kpiItems.map((item) => (
+          <StatCard
+            key={item.key}
+            label={item.label}
+            value={item.value}
+            icon={item.icon}
+            tone={TONE_BY_KEY[item.key] || 'navy'}
+            active={tab === item.key}
+            alert={item.key === 'failed' && item.value > 0}
+            onClick={() => setTab(item.key)}
+          />
+        ))}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

@@ -2,6 +2,7 @@ import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import DashboardShell from '@/app/components/dashboard-shell'
 import VendorUnitsPanel from '@/app/vm/components/vendor-units-panel'
+import PageHeader from '@/app/components/page-header'
 
 export default async function VmDashboardPage() {
   const user = await requireRole(['vm'])
@@ -73,16 +74,10 @@ export default async function VmDashboardPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">
-          Unit Vendor / VM
-        </h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Lengkapi data PT Vendor, No Unit, dan Driver untuk unit vendor yang
-          dialokasikan Operational. Data order (Customer, PK, Trip) sudah
-          otomatis terbawa dari Operational — tidak perlu diinput ulang.
-        </p>
-      </div>
+      <PageHeader
+        title="Unit Vendor / VM"
+        subtitle="Lengkapi data PT Vendor, No Unit, dan Driver untuk unit vendor yang dialokasikan Operational. Data order (Customer, PK, Trip) sudah otomatis terbawa dari Operational — tidak perlu diinput ulang."
+      />
 
       <VendorUnitsPanel
         rows={rows}

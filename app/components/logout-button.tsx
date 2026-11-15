@@ -33,7 +33,7 @@ export default function LogoutButton() {
         type="button"
         onClick={handleLogout}
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
       >
         <LogOut className="h-4 w-4" />
         {loading ? 'Keluar...' : 'Logout'}

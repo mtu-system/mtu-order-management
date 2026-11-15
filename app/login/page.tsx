@@ -11,8 +11,7 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  ArrowRight,
-  ShieldCheck,
+  Check,
 } from 'lucide-react'
 
 export default function LoginPage() {
@@ -24,6 +23,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(true)
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -48,102 +48,68 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    'h-11 w-full rounded-lg border border-gray-200 bg-gray-50/70 pl-10 pr-4 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:opacity-60'
+    'h-[52px] w-full rounded-2xl border-[1.5px] border-[#D5DDEC] bg-white pl-12 pr-4 text-[14.5px] font-medium text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-[#B8C4DC] focus:border-[#082868] focus:ring-4 focus:ring-[#082868]/10 disabled:cursor-not-allowed disabled:opacity-60'
 
   return (
-    <main className="min-h-screen bg-[#F9FAFB] lg:grid lg:grid-cols-[52%_1fr]">
-      {/* LEFT — BRAND PANEL */}
-      <section className="relative hidden min-h-screen overflow-hidden bg-[#0E2451] lg:flex lg:flex-col lg:justify-between lg:px-16 lg:py-14">
-        <div className="pointer-events-none absolute -right-36 -top-36 h-[420px] w-[420px] rounded-full border border-white/10" />
-        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full border border-white/[0.06]" />
-        <div className="pointer-events-none absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-500/[0.18] blur-3xl" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#C9DAF5] via-[#EEF3FC] via-45% to-[#FDEBED] px-4 py-10">
+      <div className="pointer-events-none absolute -left-40 -top-56 h-[640px] w-[640px] rounded-full bg-[radial-gradient(circle,rgba(8,40,104,0.22),transparent_68%)]" />
+      <svg
+        viewBox="0 0 320 180"
+        className="pointer-events-none absolute bottom-0 right-0 hidden h-[180px] w-[320px] sm:block"
+        aria-hidden="true"
+      >
+        <path d="M320 40 C250 55 210 90 170 180 H320Z" fill="#082868" />
+        <path
+          d="M320 20 C265 28 225 52 196 92 C240 70 280 62 320 66Z"
+          fill="#E30613"
+        />
+      </svg>
 
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 p-1.5">
+      <div className="relative flex w-full max-w-[1100px] overflow-hidden rounded-[32px] bg-white shadow-[0_40px_90px_rgba(8,40,104,0.2),0_4px_14px_rgba(8,40,104,0.06)]">
+        {/* FORM */}
+        <section className="flex min-w-0 flex-1 flex-col justify-center px-7 py-10 sm:px-14 lg:px-16">
+          <div className="mb-6 flex items-center gap-3">
             <Image
               src="/mtu.png"
               alt="Mandiri Trucking"
-              width={28}
-              height={22}
-              className="h-full w-full object-contain"
+              width={54}
+              height={46}
+              className="h-[46px] w-[54px] object-contain"
             />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">MTU</p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-blue-200/60">
-              Management System
-            </p>
-          </div>
-        </div>
-
-        <div className="relative z-10 mx-auto w-full max-w-md text-center">
-          <div className="mx-auto mb-8 flex h-[180px] w-[180px] items-center justify-center rounded-3xl bg-white p-8 shadow-[0_24px_60px_rgba(0,0,0,0.3)]">
-            <Image
-              src="/mtu.png"
-              alt="Mandiri Trucking"
-              width={190}
-              height={150}
-              className="h-auto w-full object-contain"
-              priority
-            />
+            <div className="leading-none">
+              <p className="text-[21px] font-extrabold tracking-tight text-[#082868]">
+                MANDIRI
+              </p>
+              <p className="mt-[3px] text-[12.5px] font-extrabold tracking-[0.06em] text-[#082868]">
+                TRANS UTAMA
+              </p>
+            </div>
           </div>
 
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">
-            MTU Order Management
-          </h2>
-          <p className="mx-auto mt-3.5 max-w-sm text-[13.5px] leading-6 text-blue-100/70">
-            Internal Order Management System untuk mendukung proses
-            pengelolaan order PT Mandiri Trans Utama.
-          </p>
-
-          <div className="mt-6 flex justify-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3.5 py-1.5 text-[11.5px] text-blue-100/80">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Internal System
-            </span>
-            <span className="rounded-full border border-white/15 px-3.5 py-1.5 text-[11.5px] text-blue-100/80">
-              Secure Access
-            </span>
-          </div>
-        </div>
-
-        <div className="relative z-10 flex items-center justify-between text-[11px] text-blue-200/40">
-          <span>© {new Date().getFullYear()} Mandiri Trucking</span>
-          <span>Internal use only</span>
-        </div>
-      </section>
-
-      {/* RIGHT — LOGIN FORM */}
-      <section className="flex min-h-screen items-center justify-center px-6 py-10 sm:px-10">
-        <div className="w-full max-w-[400px]">
-          <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50">
-            <Lock className="h-5 w-5 text-blue-600" />
-          </div>
-
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
-            Selamat Datang
+          <h1 className="text-[38px] font-extrabold leading-none tracking-tight text-[#082868]">
+            MASUK
           </h1>
-          <p className="mt-1.5 text-[13px] leading-6 text-gray-500">
-            Login menggunakan akun kantor untuk mengakses MTU Order
-            Management.
+          <div className="mb-1 mt-3 h-[5px] w-14 rounded-full bg-[#E30613]" />
+          <p className="mb-6 mt-2.5 text-[13.5px] text-slate-500">
+            Gunakan akun kantor untuk membuka MTU Order Management.
           </p>
 
-          <form onSubmit={handleLogin} className="mt-7 space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label
                 htmlFor="email"
-                className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500"
+                className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.05em] text-[#0F1E3D]"
               >
                 Email
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-[16px] w-[16px] -translate-y-1/2 text-gray-400" />
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="nama@mandiritrans.com"
+                  placeholder="Masukkan email perusahaan"
                   required
                   disabled={loading}
                   autoComplete="email"
@@ -155,12 +121,12 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500"
+                className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.05em] text-[#0F1E3D]"
               >
                 Password
               </label>
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-[16px] w-[16px] -translate-y-1/2 text-gray-400" />
+                <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -170,7 +136,7 @@ export default function LoginPage() {
                   required
                   disabled={loading}
                   autoComplete="current-password"
-                  className={`${inputClass} pr-11`}
+                  className={`${inputClass} pr-12`}
                 />
                 <button
                   type="button"
@@ -179,19 +145,44 @@ export default function LoginPage() {
                   aria-label={
                     showPassword ? 'Sembunyikan password' : 'Tampilkan password'
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:pointer-events-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:pointer-events-none"
                 >
                   {showPassword ? (
-                    <EyeOff className="h-[16px] w-[16px]" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-[16px] w-[16px]" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
             </div>
 
+            <div className="flex items-center justify-between text-[13px]">
+              <label className="flex cursor-pointer select-none items-center gap-2.5 font-medium text-slate-700">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={remember}
+                  aria-label="Ingat saya"
+                  onClick={() => setRemember((value) => !value)}
+                  className={`flex h-5 w-5 items-center justify-center rounded-md border-[1.5px] transition ${
+                    remember
+                      ? 'border-[#082868] bg-[#082868]'
+                      : 'border-[#B8C4DC] bg-white'
+                  }`}
+                >
+                  {remember && (
+                    <Check className="h-3.5 w-3.5 text-white" strokeWidth={3.5} />
+                  )}
+                </button>
+                Ingat saya
+              </label>
+              <span className="font-bold text-[#082868]">
+                Lupa password? Hubungi admin
+              </span>
+            </div>
+
             {error && (
-              <div className="flex items-start gap-2.5 rounded-lg border border-red-100 bg-red-50 px-3.5 py-3 text-sm text-red-700">
+              <div className="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-3.5 py-3 text-sm text-red-700">
                 <AlertCircle className="mt-0.5 h-[16px] w-[16px] shrink-0" />
                 <div>
                   <p className="font-semibold">Login gagal</p>
@@ -205,31 +196,51 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-sm font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.25)] transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+              className="flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[#0B3C94] to-[#082868] text-[15px] font-bold tracking-[0.08em] text-white shadow-[0_12px_26px_rgba(8,40,104,0.32)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(8,40,104,0.38)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Memproses...
+                  MEMPROSES...
                 </>
               ) : (
-                <>
-                  Login
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </>
+                'MASUK'
               )}
             </button>
           </form>
 
-          <div className="mt-6 flex items-center justify-center gap-2 border-t border-gray-200 pt-5 text-[11px] text-gray-400">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Akses terbatas untuk pengguna internal MTU</span>
+          <div className="mt-5 rounded-2xl bg-[#F1F4FA] px-3 py-3 text-center text-[13px] text-slate-600">
+            Belum punya akun?{' '}
+            <span className="font-bold text-[#082868]">Hubungi admin</span>
           </div>
-          <p className="mt-3.5 text-center text-[10.5px] text-gray-400">
-            PT Mandiri Trans Utama • Internal Order Management System
-          </p>
-        </div>
-      </section>
+        </section>
+
+        {/* FOTO ARMADA */}
+        <section className="relative hidden w-[500px] shrink-0 overflow-hidden bg-gradient-to-b from-[#0A3487] to-[#061C4A] lg:block">
+          <Image
+            src="/login-trucks.jpg"
+            alt="Armada truk Mandiri Trans Utama"
+            width={624}
+            height={486}
+            priority
+            className="absolute bottom-0 left-0 h-auto w-full [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,black_42%)] [mask-image:linear-gradient(to_bottom,transparent_0%,black_42%)]"
+          />
+          <div className="absolute inset-x-11 top-12 text-white">
+            <p className="text-[30px] font-extrabold leading-[1.18] tracking-tight">
+              Kirim lebih tenang,
+              <br />
+              pantau lebih dekat.
+            </p>
+            <div className="mt-3.5 flex">
+              <span className="h-1 w-[46px] rounded-l-full bg-[#E30613]" />
+              <span className="h-1 w-[46px] rounded-r-full bg-white" />
+            </div>
+            <p className="mt-3.5 text-[13px] font-medium italic text-white/90">
+              Safety • Quality • Integrity • Consistency • Efficiency
+            </p>
+          </div>
+        </section>
+      </div>
     </main>
   )
 }

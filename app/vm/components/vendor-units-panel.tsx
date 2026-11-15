@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { Search, Truck, CheckCircle2, Clock, X, Save, Loader2 } from 'lucide-react'
 import { upperValue } from '@/lib/upper-value'
+import StatCard from '@/app/components/stat-card'
 
 type VendorUnitRow = {
   id: string
@@ -101,25 +102,21 @@ export default function VendorUnitsPanel({
   return (
     <>
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {kpiItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <div
-              key={item.label}
-              className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-gray-500">
-                  {item.label}
-                </p>
-                <Icon className="h-4 w-4 text-gray-300" />
-              </div>
-              <p className={`mt-1.5 text-2xl font-extrabold ${item.color}`}>
-                {item.value}
-              </p>
-            </div>
-          )
-        })}
+         {kpiItems.map((item) => (
+          <StatCard
+            key={item.label}
+            label={item.label}
+            value={item.value}
+            icon={item.icon}
+            tone={
+              item.label === 'Belum Diisi Detail'
+                ? 'amber'
+                : item.label === 'Sudah Diisi'
+                ? 'green'
+                : 'navy'
+            }
+          />
+        ))}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

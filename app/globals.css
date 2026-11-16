@@ -4,9 +4,25 @@
   --font-sans: 'Inter Variable', system-ui, sans-serif;
 }
 
+/* Radius kecil & seragam: semua rounded-lg/xl/2xl di app ikut token ini. */
+@theme {
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 10px;
+}
+
 :root {
-  --background: #F3F4F6;
-  --foreground: #111827;
+  --mtu-navy: #082868;
+  --mtu-navy-hover: #0b3486;
+  --mtu-red: #e30613;
+  --background: #f4f5f7;
+  --surface: #ffffff;
+  --border: #e3e6eb;
+  --border-strong: #d0d5dd;
+  --foreground: #101828;
+  --muted: #667085;
 }
 
 * {
@@ -25,104 +41,146 @@ body {
   color: var(--foreground);
 }
 
-
-/* ===== MTU UI — terang gradien + kaca ===== */
-.app-bg {
-  background: linear-gradient(135deg, #dce6f8 0%, #f1f5fc 45%, #fdedef 100%);
-  background-attachment: fixed;
-}
-
-.glass {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 32px rgba(8, 40, 104, 0.08);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
+/* ===== MTU UI — internal tool: permukaan solid, border tipis ===== */
 
 /* Scrollbar tipis untuk menu sidebar */
 .nav-scroll::-webkit-scrollbar {
   width: 6px;
 }
 .nav-scroll::-webkit-scrollbar-thumb {
-  background: rgba(8, 40, 104, 0.18);
-  border-radius: 6px;
+  background: rgba(8, 40, 104, 0.15);
+  border-radius: 3px;
 }
 
-/* Semua kartu putih di area konten ikut tampil lembut (tanpa blur supaya ringan) */
-.app-glass .rounded-xl.bg-white:not(.shadow-xl):not(.shadow-2xl),
-.app-glass .rounded-2xl.bg-white:not(.shadow-xl):not(.shadow-2xl) {
-  background-color: rgba(255, 255, 255, 0.82);
-  border-color: rgba(255, 255, 255, 0.95);
-  border-radius: 1.1rem;
-  box-shadow: 0 6px 24px rgba(8, 40, 104, 0.07);
+/* Panel / kartu standar */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+/* Kartu putih bawaan di area konten: border tipis, shadow minimal */
+.app-main .rounded-xl.bg-white:not(.shadow-xl):not(.shadow-2xl),
+.app-main .rounded-2xl.bg-white:not(.shadow-xl):not(.shadow-2xl) {
+  border-color: var(--border);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+/* Tombol */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 36px;
+  padding: 0 0.875rem;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.btn-primary {
+  background: var(--mtu-navy);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--mtu-navy-hover);
+}
+.btn-secondary {
+  background: #fff;
+  color: #344054;
+  border-color: var(--border-strong);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+}
+.btn-danger {
+  background: var(--mtu-red);
+  color: #fff;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #c40511;
 }
 
 /* Kartu statistik */
 .stat-card {
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 6px 24px rgba(8, 40, 104, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: border-color 0.15s;
 }
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 34px rgba(8, 40, 104, 0.14);
+button.stat-card:hover {
+  border-color: var(--border-strong);
 }
 .stat-card-alert {
-  background: linear-gradient(135deg, #e30613, #b80510);
-  border-color: transparent;
-  box-shadow: 0 10px 28px rgba(227, 6, 19, 0.3);
+  border-left: 3px solid var(--mtu-red);
 }
-.stat-card-alert * {
-  color: #fff !important;
-}
-
-/* Ikon kartu Attention tetap terlihat di atas latar merah */
-.stat-card-alert span:first-child {
-  background: rgba(255, 255, 255, 0.22) !important;
+.stat-card-alert .stat-value {
+  color: var(--mtu-red) !important;
 }
 
 /* Teks kecil lebih mudah dibaca */
-.app-glass .text-\[9px\] { font-size: 11px; }
-.app-glass .text-\[10px\] { font-size: 11.5px; }
-.app-glass .text-\[10\.5px\] { font-size: 12px; }
-.app-glass .text-\[11px\] { font-size: 12px; }
-.app-glass .text-\[11\.5px\] { font-size: 12.5px; }
-.app-glass .text-\[12px\] { font-size: 13px; }
-.app-glass .text-xs { font-size: 12.5px; }
+.app-main .text-\[9px\] { font-size: 11px; }
+.app-main .text-\[10px\] { font-size: 11.5px; }
+.app-main .text-\[10\.5px\] { font-size: 12px; }
+.app-main .text-\[11px\] { font-size: 12px; }
+.app-main .text-\[11\.5px\] { font-size: 12.5px; }
+.app-main .text-\[12px\] { font-size: 13px; }
+.app-main .text-xs { font-size: 12.5px; }
 
-/* Tabel: header jelas, baris lega, hover lembut */
-.app-glass table {
+/* Tabel: padat, header tegas, hover tipis */
+.app-main table {
   border-collapse: separate;
   border-spacing: 0;
 }
-.app-glass thead th {
-  background: #f1f5fb !important;
-  color: #3b4a66 !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.05em;
+.app-main thead th {
+  background: #f8f9fb !important;
+  color: #475467 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding-top: 0.85rem !important;
-  padding-bottom: 0.85rem !important;
-  border-bottom: 1px solid #e1e8f4;
+  padding-top: 0.55rem !important;
+  padding-bottom: 0.55rem !important;
+  border-bottom: 1px solid var(--border);
 }
-.app-glass tbody td {
-  padding-top: 0.85rem;
-  padding-bottom: 0.85rem;
-  font-size: 13.5px;
-  color: #1e293b;
+.app-main tbody td {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  font-size: 13px;
+  color: #1d2939;
 }
-.app-glass tbody tr:hover {
-  background: rgba(8, 40, 104, 0.035);
+.app-main tbody tr:hover {
+  background: #f8f9fb;
 }
-.app-glass tbody tr + tr td {
-  border-top: 1px solid #edf1f8;
+.app-main tbody tr + tr td {
+  border-top: 1px solid #eef0f3;
 }
 
 /* Warna aksen biru lama → navy MTU */
-.app-glass .text-\[\#2563EB\] { color: #082868; }
-.app-glass .bg-\[\#2563EB\] { background-color: #082868; }
-.app-glass .border-\[\#2563EB\] { border-color: #082868; }
+.app-main .text-\[\#2563EB\] { color: var(--mtu-navy); }
+.app-main .bg-\[\#2563EB\] { background-color: var(--mtu-navy); }
+.app-main .border-\[\#2563EB\] { border-color: var(--mtu-navy); }
+.app-main .bg-blue-600 { background-color: var(--mtu-navy); }
+.app-main .hover\:bg-blue-700:hover { background-color: var(--mtu-navy-hover); }

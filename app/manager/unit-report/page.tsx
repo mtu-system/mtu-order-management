@@ -25,6 +25,7 @@ export default async function ManagerUnitReportPage({
       />
       <UnitReport
         plates={plates}
+        geofenceBase="/manager/geofences"
         initial={
           query.plate
             ? { plate: query.plate, from: query.from || '', to: query.to || '' }

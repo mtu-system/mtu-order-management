@@ -25,6 +25,7 @@ import {
   Route as RouteIcon,
   Radar,
   BellRing,
+  Warehouse,
   ChevronDown,
   MoreHorizontal,
   Menu,
@@ -381,6 +382,7 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
           title: 'Pemantauan',
           items: [
             { label: 'Control Tower', href: '/manager/control-tower', icon: Radar },
+            { label: 'Armada & Pool', href: '/manager/fleet', icon: Warehouse },
             { label: 'Peringatan', href: '/manager/alerts', icon: BellRing },
             { label: 'Monitoring', href: '/manager/monitoring', icon: MapPin },
             { label: 'Live Map', href: '/manager/live-map', icon: MapIcon },
@@ -452,6 +454,7 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
           title: 'Pemantauan',
           items: [
             { label: 'Control Tower', href: '/operational/control-tower', icon: Radar },
+            { label: 'Armada & Pool', href: '/operational/fleet', icon: Warehouse },
             { label: 'Peringatan', href: '/operational/alerts', icon: BellRing },
             { label: 'Monitoring', href: '/operational/monitoring', icon: MapPin },
             { label: 'Live Map', href: '/operational/live-map', icon: MapIcon },

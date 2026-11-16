@@ -25,6 +25,7 @@ export default async function OperationalUnitReportPage({
       />
       <UnitReport
         plates={plates}
+        geofenceBase="/operational/geofences"
         initial={
           query.plate
             ? { plate: query.plate, from: query.from || '', to: query.to || '' }

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import type { Map as LeafletMap, LayerGroup } from 'leaflet'
-import { ExternalLink, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { ExternalLink, Loader2, MapPinPlus } from 'lucide-react'
 import { upperValue } from '@/lib/upper-value'
 
 type RoutePoint = { lat: number; lng: number; time: string; speed: number }
@@ -151,12 +152,21 @@ function ReportMap({ points, stops }: { points: RoutePoint[]; stops: StopItem[] 
   return <div ref={containerRef} className="isolate z-0 h-[420px] w-full" />
 }
 
+// "Jl. Pahlawan Seribu, BSD, Tangerang" -> nama awal geofence.
+function fenceNameFromAddress(address: string) {
+  return address.split(',').slice(0, 2).join(',').trim().slice(0, 60)
+}
+
 export default function UnitReport({
   plates,
   initial,
+  geofenceBase,
 }: {
   plates: string[]
   initial?: { plate: string; from: string; to: string }
+  // Kalau diisi (role yang boleh membuat geofence), titik berhenti punya
+  // tombol "Jadikan Geofence".
+  geofenceBase?: string
 }) {
   const [plate, setPlate] = useState(initial?.plate || '')
   const [fromDate, setFromDate] = useState(initial?.from || todayWib())
@@ -401,7 +411,7 @@ export default function UnitReport({
                 <table className="w-full min-w-[700px] text-sm">
                   <thead className="bg-gray-50 text-left text-[11px] uppercase tracking-wide text-gray-500">
                     <tr>
-                      {['Mulai', 'Durasi', 'Jenis', 'Lokasi'].map((h) => (
+                      {['Mulai', 'Durasi', 'Jenis', 'Lokasi', ...(geofenceBase ? [''] : [])].map((h) => (
                         <th key={h} className="px-5 py-2.5 font-semibold">{h}</th>
                       ))}
                     </tr>
@@ -429,6 +439,23 @@ export default function UnitReport({
                             </a>
                           )}
                         </td>
+                        {geofenceBase && (
+                          <td className="whitespace-nowrap px-5 py-2.5 text-right">
+                            {stop.lat !== null && stop.lng !== null && (
+                              <Link
+                                href={`${geofenceBase}?${new URLSearchParams({
+                                  lat: String(stop.lat),
+                                  lng: String(stop.lng),
+                                  name: fenceNameFromAddress(stop.address || ''),
+                                })}`}
+                                className="btn btn-secondary"
+                              >
+                                <MapPinPlus className="h-3.5 w-3.5" />
+                                Jadikan Geofence
+                              </Link>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

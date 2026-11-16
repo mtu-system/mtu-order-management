@@ -3,11 +3,16 @@ import DashboardShell from '@/app/components/dashboard-shell'
 import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import GeofenceManager from '@/app/components/geofence-manager'
-import type { Geofence } from '@/lib/geo'
+import { type Geofence, parseFencePrefill } from '@/lib/geo'
 
 export const dynamic = 'force-dynamic'
 
-export default async function OperationalGeofencesPage() {
+export default async function OperationalGeofencesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lat?: string; lng?: string; name?: string; type?: string }>
+}) {
+  const prefill = parseFencePrefill(await searchParams)
   const user = await requireRole(['operational'])
   const supabase = await createClient()
 
@@ -20,9 +25,11 @@ export default async function OperationalGeofencesPage() {
     <DashboardShell user={user}>
       <PageHeader
         title="Geofence"
-        subtitle="Tandai lokasi loading dan bongkar. Sistem akan memberi saran status saat unit keluar atau masuk area."
+        subtitle="Tandai lokasi muat, bongkar, dan pool. Sistem memakai area ini untuk status otomatis dan menghitung unit yang pulang ke pool."
       />
-      <GeofenceManager initialFences={(data || []) as Geofence[]} />
+      <GeofenceManager initialFences={(data || []) as Geofence[]} prefill={prefill}
+        key={prefill ? `${prefill.lat},${prefill.lng}` : 'baru'}
+      />
     </DashboardShell>
   )
 }

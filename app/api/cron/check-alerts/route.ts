@@ -8,6 +8,7 @@ import {
 } from '@/lib/tracksolid'
 import { normalizePlate } from '@/lib/plate'
 import { LIVE_MS, MOVING_KMH, evaluateAlerts } from '@/lib/alert-rules'
+import { updateJourneys } from '@/lib/fleet-journey'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -239,9 +240,21 @@ export async function GET(request: Request) {
     if (error) console.error('CRON RESOLVE ERROR:', error)
   }
 
+  // Status perjalanan armada (pool / luar kota / pulang). Terpisah dari
+  // peringatan: kalau gagal (mis. migration belum dijalankan), peringatan
+  // tetap jalan.
+  let journey: { updated: number; poolSet: boolean } | { error: string }
+  try {
+    journey = await updateJourneys(admin, devices)
+  } catch (error) {
+    console.error('CRON JOURNEY ERROR:', error)
+    journey = { error: 'Gagal memperbarui status perjalanan.' }
+  }
+
   return NextResponse.json({
     checked: trucks.length,
     created: inserts.length,
     resolved: toResolve.length,
+    journey,
   })
 }

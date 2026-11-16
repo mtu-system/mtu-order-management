@@ -3,16 +3,29 @@
 import { useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import type { Map as LeafletMap, LayerGroup } from 'leaflet'
-import { Loader2, Search, Trash2 } from 'lucide-react'
+import { Link2, Loader2, Search, Trash2, Truck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { useConfirm } from '@/app/components/confirm-dialog-provider'
-import { type Geofence, FENCE_COLOR, FENCE_LABEL } from '@/lib/geo'
+import { type Geofence, FENCE_COLOR, FENCE_LABEL, parseCoordinates } from '@/lib/geo'
+import { normalizePlate } from '@/lib/plate'
+import type { FleetResponse } from '@/lib/fleet'
+
+export type GeofencePrefill = {
+  lat: number
+  lng: number
+  name?: string
+  type?: Geofence['type']
+}
+
+type SearchResult = { lat: number; lng: number; label: string }
 
 export default function GeofenceManager({
   initialFences,
+  prefill,
 }: {
   initialFences: Geofence[]
+  prefill?: GeofencePrefill | null
 }) {
   const supabase = createClient()
   const toast = useToast()
@@ -26,12 +39,19 @@ export default function GeofenceManager({
 
   const [ready, setReady] = useState(false)
   const [fences, setFences] = useState(initialFences)
-  const [name, setName] = useState('')
-  const [type, setType] = useState<Geofence['type']>('loading')
+  const [name, setName] = useState(prefill?.name || '')
+  const [type, setType] = useState<Geofence['type']>(prefill?.type || 'loading')
   const [radius, setRadius] = useState(300)
-  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null)
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(
+    prefill ? { lat: prefill.lat, lng: prefill.lng } : null
+  )
   const [search, setSearch] = useState('')
   const [searching, setSearching] = useState(false)
+  const [results, setResults] = useState<SearchResult[]>([])
+  const [linkText, setLinkText] = useState('')
+  const [resolving, setResolving] = useState(false)
+  const [unitPlate, setUnitPlate] = useState('')
+  const [unitLoading, setUnitLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -42,7 +62,9 @@ export default function GeofenceManager({
       if (cancelled || !containerRef.current || mapRef.current) return
 
       leafletRef.current = L
-      const map = L.map(containerRef.current).setView([-6.3, 107.0], 9)
+      const map = prefill
+        ? L.map(containerRef.current).setView([prefill.lat, prefill.lng], 16)
+        : L.map(containerRef.current).setView([-6.3, 107.0], 9)
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
@@ -65,6 +87,7 @@ export default function GeofenceManager({
       mapRef.current?.remove()
       mapRef.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Geofence yang sudah tersimpan.
@@ -113,23 +136,105 @@ export default function GeofenceManager({
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=id&q=${encodeURIComponent(keyword)}`
+        `https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=id&q=${encodeURIComponent(keyword)}`
       )
-      const results = await response.json()
+      const found = await response.json()
 
-      if (!Array.isArray(results) || results.length === 0) {
-        toast.error('Tidak Ditemukan', 'Coba kata kunci lain atau klik peta langsung.')
+      if (!Array.isArray(found) || found.length === 0) {
+        setResults([])
+        toast.error(
+          'Tidak Ditemukan',
+          'Coba kata kunci lebih umum, tempel link Google Maps, atau ambil dari posisi unit.'
+        )
         return
       }
 
-      mapRef.current.flyTo(
-        [Number(results[0].lat), Number(results[0].lon)],
-        15
-      )
+      const list: SearchResult[] = found.map((item: { lat: string; lon: string; display_name: string }) => ({
+        lat: Number(item.lat),
+        lng: Number(item.lon),
+        label: item.display_name,
+      }))
+      setResults(list)
+      mapRef.current.flyTo([list[0].lat, list[0].lng], 15)
     } catch {
       toast.error('Pencarian Gagal', 'Klik peta langsung untuk menandai lokasi.')
     } finally {
       setSearching(false)
+    }
+  }
+
+  function applyCenter(point: { lat: number; lng: number }, zoom = 16) {
+    setCenter(point)
+    mapRef.current?.flyTo([point.lat, point.lng], zoom)
+  }
+
+  // Tempel link Google Maps (termasuk link pendek maps.app.goo.gl) atau koordinat.
+  async function handleLink() {
+    const text = linkText.trim()
+    if (!text) return
+
+    const direct = parseCoordinates(text)
+    if (direct) {
+      applyCenter(direct)
+      toast.success('Lokasi Ditemukan', 'Periksa lingkaran di peta, lalu simpan.')
+      return
+    }
+
+    if (!/^https:\/\//i.test(text)) {
+      toast.error('Format Tidak Dikenal', 'Tempel link Google Maps atau koordinat, mis. -6.2245, 106.9921')
+      return
+    }
+
+    setResolving(true)
+    try {
+      const response = await fetch(`/api/geo/resolve-link?url=${encodeURIComponent(text)}`, {
+        cache: 'no-store',
+      })
+      const json = await response.json()
+      if (!response.ok) {
+        toast.error('Gagal Membaca Link', json.error || 'Coba salin koordinatnya langsung.')
+        return
+      }
+      applyCenter(json as { lat: number; lng: number })
+      toast.success('Lokasi Ditemukan', 'Periksa lingkaran di peta, lalu simpan.')
+    } catch {
+      toast.error('Gagal Membaca Link', 'Periksa koneksi lalu coba lagi.')
+    } finally {
+      setResolving(false)
+    }
+  }
+
+  // Ambil titik dari posisi GPS unit saat ini (mis. unit yang sedang parkir di pool).
+  async function handleUnitPosition() {
+    const key = normalizePlate(unitPlate)
+    if (key.length < 3) {
+      toast.error('Plat Kosong', 'Ketik plat unit yang sedang berada di lokasi.')
+      return
+    }
+
+    setUnitLoading(true)
+    try {
+      const response = await fetch('/api/fleet', { cache: 'no-store' })
+      const json = await response.json()
+      if (!response.ok) {
+        toast.error('Gagal Memuat Posisi', json.error || 'Coba lagi.')
+        return
+      }
+      const unit = (json as FleetResponse).units.find(
+        (item) => normalizePlate(item.plate) === key || normalizePlate(item.plate).includes(key)
+      )
+      if (!unit || unit.lat === null || unit.lng === null) {
+        toast.error('Unit Tidak Ditemukan', 'Plat tidak cocok dengan perangkat GPS mana pun.')
+        return
+      }
+      if (unit.gps === 'offline') {
+        toast.error('GPS Offline', `Posisi ${unit.plate} bukan posisi terkini. Periksa sebelum menyimpan.`)
+      }
+      applyCenter({ lat: unit.lat, lng: unit.lng }, 17)
+    } catch {
+      toast.error('Gagal Memuat Posisi', 'Periksa koneksi lalu coba lagi.')
+    } finally {
+      setUnitLoading(false)
     }
   }
 
@@ -207,6 +312,64 @@ export default function GeofenceManager({
     <div className="space-y-5">
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="text-sm font-extrabold text-gray-900">Tambah Geofence</h2>
+        <p className="mt-1 text-xs text-gray-500">
+          Tentukan titik dengan salah satu cara: tempel link/koordinat dari Google Maps atau
+          WhatsApp, ambil dari posisi unit yang sedang di lokasi, cari nama tempat, atau klik
+          peta. Paling mudah: buka Laporan Unit, lalu klik <b>Jadikan Geofence</b> di titik
+          berhenti unit.
+        </p>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div>
+            <label className="text-xs font-semibold text-gray-600">
+              Tempel Link Google Maps / Koordinat
+            </label>
+            <div className="mt-1.5 flex gap-2">
+              <input
+                type="text"
+                value={linkText}
+                onChange={(event) => setLinkText(event.target.value)}
+                onKeyDown={(event) => event.key === 'Enter' && handleLink()}
+                placeholder="https://maps.app.goo.gl/… atau -6.2245, 106.9921"
+                className={input}
+              />
+              <button
+                type="button"
+                onClick={handleLink}
+                disabled={resolving}
+                className="btn btn-secondary shrink-0"
+              >
+                {resolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                Pakai
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-600">
+              Ambil dari Posisi Unit Sekarang
+            </label>
+            <div className="mt-1.5 flex gap-2">
+              <input
+                type="text"
+                value={unitPlate}
+                onChange={(event) => setUnitPlate(event.target.value.toUpperCase())}
+                onKeyDown={(event) => event.key === 'Enter' && handleUnitPosition()}
+                placeholder="Plat unit yang sedang di lokasi, mis. B 9940 KEH"
+                className={input}
+              />
+              <button
+                type="button"
+                onClick={handleUnitPosition}
+                disabled={unitLoading}
+                className="btn btn-secondary shrink-0"
+              >
+                {unitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />}
+                Ambil
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-4">
           <div className="lg:col-span-2">
@@ -236,6 +399,22 @@ export default function GeofenceManager({
                 )}
               </button>
             </div>
+            {results.length > 1 && (
+              <ul className="mt-1.5 max-h-40 overflow-y-auto rounded-md border border-gray-200 text-xs">
+                {results.map((result, index) => (
+                  <li key={index}>
+                    <button
+                      type="button"
+                      onClick={() => mapRef.current?.flyTo([result.lat, result.lng], 16)}
+                      className="block w-full truncate px-3 py-1.5 text-left hover:bg-gray-50"
+                      title={result.label}
+                    >
+                      {result.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div>
@@ -258,6 +437,7 @@ export default function GeofenceManager({
             >
               <option value="loading">Area Loading</option>
               <option value="unloading">Area Bongkar</option>
+              <option value="pool">Pool</option>
               <option value="other">Lainnya</option>
             </select>
           </div>

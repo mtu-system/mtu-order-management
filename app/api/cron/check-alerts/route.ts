@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
@@ -35,10 +36,17 @@ const NEEDS_TRACK = new Set([
   'daily_red',
 ])
 
+// Perbandingan constant-time supaya secret tidak bisa ditebak lewat timing.
+function safeEqual(a: string, b: string) {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB)
+}
+
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET
 
-  if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
+  if (!secret || !safeEqual(request.headers.get('authorization') || '', `Bearer ${secret}`)) {
     return NextResponse.json({ error: 'Tidak diizinkan.' }, { status: 401 })
   }
 

@@ -19,6 +19,10 @@ export const NIGHT_GRACE_MIN = 30
 export const DAILY_AMBER_MIN = 420
 export const DAILY_RED_MIN = 480
 
+// Unit sudah di area muat lebih dari ini tapi belum muat (trip_status masih
+// kosong) -> masuk daftar "Perlu Perhatian".
+export const LOADING_WAIT_MAX_MIN = 240
+
 export type AlertKind =
   | 'drive_red'
   | 'drive_amber'

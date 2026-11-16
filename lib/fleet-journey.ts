@@ -32,7 +32,16 @@ export async function loadFleetTrucks(client: SupabaseClient) {
   return rows
 }
 
-function isLive(device: TracksolidDevice) {
+// Geofence terkecil yang memuat titik ini (area muat di dalam kawasan besar
+// tetap terbaca sebagai area muat).
+export function fenceAt(point: { lat: number; lng: number }, fences: Geofence[]) {
+  const hits = fences
+    .filter((fence) => inFence(point, fence))
+    .sort((a, b) => a.radius_m - b.radius_m)
+  return hits[0] ? { id: String(hits[0].id), type: hits[0].type } : null
+}
+
+export function isLive(device: TracksolidDevice) {
   if (!device.online || !device.gpsTime) return false
   const age = Date.now() - new Date(device.gpsTime.replace(' ', 'T') + 'Z').getTime()
   return age <= LIVE_MS
@@ -84,6 +93,7 @@ export async function updateJourneys(admin: SupabaseClient, devices: TracksolidD
       truckIds: plateTrucks.map((truck) => String(truck.id)),
       pendingTruckIds: plateTrucks.filter(isPendingAssignment).map((truck) => String(truck.id)),
       poolDistKm: pool ? Math.round(distanceMeters(point, pool) / 100) / 10 : null,
+      fence: fenceAt(point, fences),
       now,
     })
 

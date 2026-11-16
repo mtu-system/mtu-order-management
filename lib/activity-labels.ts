@@ -124,11 +124,20 @@ function firstPart(value: string | null | undefined, index = 0) {
   return clean(part)
 }
 
-// Ditulis monitoring-board: "Unit B 9940 KEH (Wingbox)"
+// Ditulis monitoring-board: "Unit B 9940 KEH (Wingbox)". Cron status
+// otomatis menambah " · otomatis: tiba di Gudang X".
 function parseUnitReason(reason: string | null | undefined) {
-  const match = /^Unit (.+?) \((.*)\)$/.exec((reason || '').trim())
-  if (!match) return { plate: null, vehicleType: null }
-  return { plate: clean(match[1]), vehicleType: clean(match[2]) }
+  const match = /^Unit (.+?) \((.*?)\)(?: · (otomatis: .*))?$/.exec((reason || '').trim())
+  if (!match) return { plate: null, vehicleType: null, note: null }
+  return { plate: clean(match[1]), vehicleType: clean(match[2]), note: clean(match[3]) }
+}
+
+// Perubahan yang dibuat sistem (cron), bukan orang.
+export const AUTO_FIELD_NAMES = new Set(['trip_status_auto'])
+
+export function actorOf(entry: { action: string; field_name?: string | null }) {
+  if (entry.field_name && AUTO_FIELD_NAMES.has(entry.field_name)) return 'Sistem'
+  return actorLabel[entry.action] || 'System'
 }
 
 function summarizeAllocation(raw: string | null | undefined): ActivityText | null {
@@ -197,9 +206,13 @@ export function describeActivity(entry: ActivityEntry): ActivityText {
     case 'trip_status_changed': {
       const parsed = parseUnitReason(entry.reason)
       const plate = unit || parsed.plate
+      const auto = entry.field_name ? AUTO_FIELD_NAMES.has(entry.field_name) : false
       return {
         title: `Status trip ${plate || 'unit'}: ${arrow(from, to) || '-'}`,
-        detail: parsed.vehicleType,
+        detail:
+          [parsed.vehicleType, auto ? `Otomatis dari GPS${parsed.note ? ` (${parsed.note.replace(/^otomatis: /, '')})` : ''}` : parsed.note]
+            .filter(Boolean)
+            .join(' · ') || null,
       }
     }
 

@@ -3,10 +3,10 @@
 import { Fragment, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Inbox } from 'lucide-react'
-import { actorLabel, describeActivity } from '@/lib/activity-labels'
+import { actorOf, describeActivity } from '@/lib/activity-labels'
 import type { ActivityRow } from '@/lib/activity-feed'
 
-type ActorFilter = 'all' | 'Marketing' | 'Operational' | 'HSE'
+type ActorFilter = 'all' | 'Marketing' | 'Operational' | 'HSE' | 'Sistem'
 
 type ActivityLogTableProps = {
   rows: ActivityRow[]
@@ -21,6 +21,7 @@ const ACTOR_BADGE: Record<string, string> = {
   Operational: 'bg-[#082868]/[0.06] text-[#082868] ring-[#082868]/20',
   HSE: 'bg-amber-50 text-amber-800 ring-amber-200',
   System: 'bg-gray-50 text-gray-600 ring-gray-200',
+  Sistem: 'bg-slate-100 text-slate-700 ring-slate-300',
 }
 
 const FILTERS: { key: ActorFilter; label: string }[] = [
@@ -28,6 +29,7 @@ const FILTERS: { key: ActorFilter; label: string }[] = [
   { key: 'Marketing', label: 'Marketing' },
   { key: 'Operational', label: 'Operational' },
   { key: 'HSE', label: 'HSE' },
+  { key: 'Sistem', label: 'Sistem (otomatis)' },
 ]
 
 function wib(iso: string, options: Intl.DateTimeFormatOptions) {
@@ -97,7 +99,7 @@ export default function ActivityLogTable({
     () =>
       filter === 'all'
         ? rows
-        : rows.filter((row) => (actorLabel[row.action] || 'System') === filter),
+        : rows.filter((row) => actorOf(row) === filter),
     [rows, filter]
   )
 
@@ -220,7 +222,7 @@ export default function ActivityLogTable({
                   {dateGroups.map((group) => {
                     const first = group.rows[0]
                     const text = describeActivity(first)
-                    const actor = actorLabel[first.action] || 'System'
+                    const actor = actorOf(first)
                     const count = group.rows.length
                     const isOpen = expanded.has(group.key)
 

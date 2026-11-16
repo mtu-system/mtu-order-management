@@ -3,7 +3,8 @@
 -- ==========================================
 -- 1. Geofence boleh bertipe 'pool' (lokasi pool, mis. Pool Bekasi).
 -- 2. Tabel unit_journey: status perjalanan per perangkat GPS (di pool,
---    dalam kota, luar kota, pulang, batal pulang). Hanya ditulis oleh cron
+--    dalam kota, luar kota, pulang, batal pulang) + geofence tempat unit
+--    berada sejak kapan. Hanya ditulis oleh cron
 --    check-alerts (service role); staff Operational/Manager hanya membaca.
 -- Aman dijalankan ulang.
 
@@ -48,8 +49,16 @@ create table if not exists public.unit_journey (
   ref_dist_km double precision,
   ref_at timestamptz,
   trend_km double precision,
+  -- Geofence tempat unit berada sekarang + sejak kapan (untuk "lama di area muat").
+  fence_id text,
+  fence_type text,
+  fence_entered_at timestamptz,
   updated_at timestamptz not null default now()
 );
+
+alter table public.unit_journey add column if not exists fence_id text;
+alter table public.unit_journey add column if not exists fence_type text;
+alter table public.unit_journey add column if not exists fence_entered_at timestamptz;
 
 alter table public.unit_journey enable row level security;
 

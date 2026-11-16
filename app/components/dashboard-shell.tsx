@@ -26,6 +26,7 @@ import {
   Radar,
   BellRing,
   Warehouse,
+  AlertTriangle,
   ChevronDown,
   MoreHorizontal,
   Menu,
@@ -381,6 +382,7 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
         {
           title: 'Pemantauan',
           items: [
+            { label: 'Perlu Perhatian', href: '/manager/attention', icon: AlertTriangle },
             { label: 'Control Tower', href: '/manager/control-tower', icon: Radar },
             { label: 'Armada & Pool', href: '/manager/fleet', icon: Warehouse },
             { label: 'Peringatan', href: '/manager/alerts', icon: BellRing },
@@ -453,6 +455,7 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
         {
           title: 'Pemantauan',
           items: [
+            { label: 'Perlu Perhatian', href: '/operational/attention', icon: AlertTriangle },
             { label: 'Control Tower', href: '/operational/control-tower', icon: Radar },
             { label: 'Armada & Pool', href: '/operational/fleet', icon: Warehouse },
             { label: 'Peringatan', href: '/operational/alerts', icon: BellRing },

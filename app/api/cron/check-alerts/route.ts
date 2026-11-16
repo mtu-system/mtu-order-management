@@ -9,6 +9,7 @@ import {
 import { normalizePlate } from '@/lib/plate'
 import { LIVE_MS, MOVING_KMH, evaluateAlerts } from '@/lib/alert-rules'
 import { updateJourneys } from '@/lib/fleet-journey'
+import { runAutoTripStatus } from '@/lib/trip-auto'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -243,6 +244,16 @@ export async function GET(request: Request) {
   // Status perjalanan armada (pool / luar kota / pulang). Terpisah dari
   // peringatan: kalau gagal (mis. migration belum dijalankan), peringatan
   // tetap jalan.
+  // Status trip otomatis dari geofence. Harus sebelum updateJourneys (butuh
+  // geofence posisi sebelumnya dari unit_journey).
+  let autoTrip: { checked: number; applied: number } | { error: string }
+  try {
+    autoTrip = await runAutoTripStatus(admin, devices)
+  } catch (error) {
+    console.error('CRON AUTO TRIP ERROR:', error)
+    autoTrip = { error: 'Gagal memperbarui status trip otomatis.' }
+  }
+
   let journey: { updated: number; poolSet: boolean } | { error: string }
   try {
     journey = await updateJourneys(admin, devices)
@@ -255,6 +266,7 @@ export async function GET(request: Request) {
     checked: trucks.length,
     created: inserts.length,
     resolved: toResolve.length,
+    autoTrip,
     journey,
   })
 }

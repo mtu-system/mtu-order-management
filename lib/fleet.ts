@@ -58,6 +58,9 @@ export type JourneyRow = {
   ref_dist_km: number | null
   ref_at: string | null
   trend_km: number | null
+  fence_id: string | null
+  fence_type: string | null
+  fence_entered_at: string | null
   updated_at?: string | null
 }
 
@@ -147,6 +150,8 @@ export type JourneyInput = {
   // masih kosong) -- tanda unit akan muat lagi.
   pendingTruckIds: string[]
   poolDistKm: number | null
+  // Geofence tempat unit berada sekarang (kalau ada).
+  fence: { id: string; type: string } | null
   now: Date
 }
 
@@ -170,6 +175,13 @@ export function nextJourney(prev: JourneyRow | null, input: JourneyInput): Journ
     ref_dist_km: prev?.ref_dist_km ?? null,
     ref_at: prev?.ref_at ?? null,
     trend_km: prev?.trend_km ?? null,
+    fence_id: input.fence?.id || null,
+    fence_type: input.fence?.type || null,
+    fence_entered_at: input.fence
+      ? prev?.fence_id === input.fence.id && prev.fence_entered_at
+        ? prev.fence_entered_at
+        : nowIso
+      : null,
   }
 
   // Tren jarak ke pool (negatif = mendekat).

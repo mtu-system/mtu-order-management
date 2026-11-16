@@ -45,6 +45,17 @@ Because mutations come from the client, **RLS policies in `supabase/migrations/`
 
 **Armada & pool.** `lib/regions.ts` maps coordinates to a "dalam kota" zone (Jabodetabek + Cikarang, Karawang, Serang) or an island (simplified polygons). The pool is the geofence with `type = 'pool'` (Pool Bekasi). The same cron also updates `unit_journey`, one row per GPS device, via `lib/fleet-journey.ts`. It uses the state machine `nextJourney` in `lib/fleet.ts`: `pool → city → out_of_town → returning → pool`. When the unit is returning, it moves to `reloaded` if it gets a new order allocation that has not been loaded yet (`trip_status` null) or if it stops in a loading geofence. Only the service role writes this table. `/api/fleet` serves the "Armada & Pool" page for manager/operational. ETA constants (road factor, average speeds, crossing times) live in `lib/fleet.ts`.
 
+**Automatic trip status.** The cron runs `lib/trip-auto.ts` **before** `updateJourneys`, because it reads the previous geofence from `unit_journey`. It makes three status changes:
+- `finished_loading` → `on_going`: the unit was in a loading geofence and is now outside it and moving.
+- `on_going` → `finished_unloading`: the unit is stopped inside its destination geofence. If no destination is set, any unloading geofence counts.
+- `finished_unloading` → `complete`: the unit enters the pool.
+
+Each change is written to `order_history` with `field_name = 'trip_status_auto'` and `changed_by` null, shown as actor "Sistem" (`actorOf` in `lib/activity-labels.ts`). The "Perlu Perhatian" page (`lib/attention.ts`) lists:
+- units that have been in a loading area longer than `LOADING_WAIT_MAX_MIN` (240) without loading,
+- open alerts,
+- trips with no destination set,
+- automatic changes from the last 24 hours.
+
 **Driver safety rules** (business rules; the constants live in `lib/alert-rules.ts`, so change them there rather than hardcoding):
 - Night rest is 22:00–04:00 WIB (`NIGHT_START_HOUR`/`NIGHT_END_HOUR`). Driving in this window raises an alert after a `NIGHT_GRACE_MIN` (30 min) grace period, except for units with `urgent_shipment`.
 - The speed limit is 80 km/h (`SPEED_LIMIT_KMH`). The overspeed alert fires once the unit has stayed above it continuously for `OVERSPEED_MIN_SEC`, with a long variant at `OVERSPEED_LONG_SEC`.

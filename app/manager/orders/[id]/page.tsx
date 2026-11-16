@@ -183,7 +183,7 @@ export default async function ManagerOrderDetailPage({
             Info Order
           </h2>
 
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
             <div>
               <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                 Nomor PK
@@ -221,7 +221,7 @@ export default async function ManagerOrderDetailPage({
             </div>
 
             {order.instruction && (
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 xl:col-span-4">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                   Instruksi
                 </dt>
@@ -232,7 +232,7 @@ export default async function ManagerOrderDetailPage({
             )}
 
             {order.notes && (
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 xl:col-span-4">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                   Catatan
                 </dt>
@@ -243,7 +243,7 @@ export default async function ManagerOrderDetailPage({
             )}
 
                         {order.is_booking && (
-              <div className="sm:col-span-2 rounded-lg bg-violet-50 p-3">
+              <div className="sm:col-span-2 xl:col-span-4 rounded-lg bg-violet-50 p-3">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-violet-500">
                   Booking · Tanggal Kebutuhan
                 </dt>
@@ -277,7 +277,7 @@ export default async function ManagerOrderDetailPage({
             )}
 
             {order.unit_decision && (
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 xl:col-span-4">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                   Keputusan Unit
                 </dt>
@@ -289,7 +289,7 @@ export default async function ManagerOrderDetailPage({
             )}
 
             {order.status === 'cancelled' && order.cancel_reason && (
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-2 xl:col-span-4">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-red-400">
                   Alasan Dibatalkan
                 </dt>

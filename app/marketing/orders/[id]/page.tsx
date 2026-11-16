@@ -212,12 +212,12 @@ export default async function OrderDetailPage({
           )}
 
           {/* INFORMASI ORDER */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="mb-5 text-lg font-bold text-gray-900">
               Informasi Order
             </h2>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Customer
@@ -275,7 +275,7 @@ export default async function OrderDetailPage({
           </div>
 
           {/* KEBUTUHAN KENDARAAN */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">
                 Kebutuhan Kendaraan
@@ -332,7 +332,7 @@ export default async function OrderDetailPage({
           </div>
 
           {/* UNIT AKTUAL */}
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">
@@ -475,7 +475,7 @@ export default async function OrderDetailPage({
 
           {/* PERUBAHAN ORDER */}
           {!isBookingPending && (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -591,7 +591,7 @@ export default async function OrderDetailPage({
 
           {/* INSTRUKSI & CATATAN */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="mb-3 text-lg font-bold text-gray-900">
                 Instruksi
               </h2>
@@ -600,7 +600,7 @@ export default async function OrderDetailPage({
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="mb-3 text-lg font-bold text-gray-900">
                 Catatan
               </h2>

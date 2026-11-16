@@ -393,7 +393,7 @@ export default function ReduceUnitForm({
           </div>
 
           {!selectableTrucks.length && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center text-sm text-gray-400">
               Tidak ada unit {requestedVehicleType} yang dapat dipilih.
             </div>
           )}

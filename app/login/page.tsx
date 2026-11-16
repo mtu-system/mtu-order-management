@@ -48,26 +48,14 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    'h-[52px] w-full rounded-2xl border-[1.5px] border-[#D5DDEC] bg-white pl-12 pr-4 text-[14.5px] font-medium text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-[#B8C4DC] focus:border-[#082868] focus:ring-4 focus:ring-[#082868]/10 disabled:cursor-not-allowed disabled:opacity-60'
+    'h-11 w-full rounded-md border border-[#D0D5DD] bg-white pl-11 pr-4 text-[14px] text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-[#B8C4DC] focus:border-[#082868] focus:ring-2 focus:ring-[#082868]/10 disabled:cursor-not-allowed disabled:opacity-60'
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#C9DAF5] via-[#EEF3FC] via-45% to-[#FDEBED] px-4 py-10">
-      <div className="pointer-events-none absolute -left-40 -top-56 h-[640px] w-[640px] rounded-full bg-[radial-gradient(circle,rgba(8,40,104,0.22),transparent_68%)]" />
-      <svg
-        viewBox="0 0 320 180"
-        className="pointer-events-none absolute bottom-0 right-0 hidden h-[180px] w-[320px] sm:block"
-        aria-hidden="true"
-      >
-        <path d="M320 40 C250 55 210 90 170 180 H320Z" fill="#082868" />
-        <path
-          d="M320 20 C265 28 225 52 196 92 C240 70 280 62 320 66Z"
-          fill="#E30613"
-        />
-      </svg>
+    <main className="flex min-h-screen items-center justify-center bg-[#F4F5F7] px-4 py-10">
 
-      <div className="relative flex w-full max-w-[1100px] overflow-hidden rounded-[32px] bg-white shadow-[0_40px_90px_rgba(8,40,104,0.2),0_4px_14px_rgba(8,40,104,0.06)]">
+      <div className="flex w-full max-w-[1000px] overflow-hidden rounded-[10px] border border-[#E3E6EB] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.06)]">
         {/* FORM */}
-        <section className="flex min-w-0 flex-1 flex-col justify-center px-7 py-10 sm:px-14 lg:px-16">
+        <section className="flex min-w-0 flex-1 flex-col justify-center px-6 py-10 sm:px-12 lg:px-14">
           <div className="mb-6 flex items-center gap-3">
             <Image
               src="/mtu.png"
@@ -86,10 +74,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <h1 className="text-[38px] font-extrabold leading-none tracking-tight text-[#082868]">
-            MASUK
+          <h1 className="text-[24px] font-bold leading-tight tracking-tight text-slate-900">
+            Masuk
           </h1>
-          <div className="mb-1 mt-3 h-[5px] w-14 rounded-full bg-[#E30613]" />
+          <div className="mb-1 mt-2.5 h-[3px] w-10 bg-[#E30613]" />
           <p className="mb-6 mt-2.5 text-[13.5px] text-slate-500">
             Gunakan akun kantor untuk membuka MTU Order Management.
           </p>
@@ -98,12 +86,12 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-1.5 block text-[12px] font-bold uppercase tracking-[0.05em] text-[#0F1E3D]"
+                className="mb-1 block text-[12.5px] font-semibold text-slate-700"
               >
                 Email
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   id="email"
                   type="email"
@@ -164,7 +152,7 @@ export default function LoginPage() {
                   aria-checked={remember}
                   aria-label="Ingat saya"
                   onClick={() => setRemember((value) => !value)}
-                  className={`flex h-5 w-5 items-center justify-center rounded-md border-[1.5px] transition ${
+                  className={`flex h-5 w-5 items-center justify-center rounded border-[1.5px] transition ${
                     remember
                       ? 'border-[#082868] bg-[#082868]'
                       : 'border-[#B8C4DC] bg-white'
@@ -182,7 +170,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-3.5 py-3 text-sm text-red-700">
+              <div className="flex items-start gap-2.5 rounded-md border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-700">
                 <AlertCircle className="mt-0.5 h-[16px] w-[16px] shrink-0" />
                 <div>
                   <p className="font-semibold">Login gagal</p>
@@ -196,27 +184,27 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-[#0B3C94] to-[#082868] text-[15px] font-bold tracking-[0.08em] text-white shadow-[0_12px_26px_rgba(8,40,104,0.32)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(8,40,104,0.38)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[#082868] text-[14px] font-semibold text-white transition hover:bg-[#0b3486] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  MEMPROSES...
+                  Memproses...
                 </>
               ) : (
-                'MASUK'
+                'Masuk'
               )}
             </button>
           </form>
 
-          <div className="mt-5 rounded-2xl bg-[#F1F4FA] px-3 py-3 text-center text-[13px] text-slate-600">
+          <div className="mt-5 rounded-md border border-[#E3E6EB] bg-[#F8F9FB] px-3 py-2.5 text-center text-[13px] text-slate-600">
             Belum punya akun?{' '}
             <span className="font-bold text-[#082868]">Hubungi admin</span>
           </div>
         </section>
 
         {/* FOTO ARMADA */}
-        <section className="relative hidden w-[500px] shrink-0 overflow-hidden bg-gradient-to-b from-[#0A3487] to-[#061C4A] lg:block">
+        <section className="relative hidden w-[460px] shrink-0 overflow-hidden bg-[#082868] lg:block">
           <Image
             src="/login-trucks.jpg"
             alt="Armada truk Mandiri Trans Utama"
@@ -226,14 +214,14 @@ export default function LoginPage() {
             className="absolute bottom-0 left-0 h-auto w-full [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,black_42%)] [mask-image:linear-gradient(to_bottom,transparent_0%,black_42%)]"
           />
           <div className="absolute inset-x-11 top-12 text-white">
-            <p className="text-[30px] font-extrabold leading-[1.18] tracking-tight">
+            <p className="text-[26px] font-bold leading-[1.2] tracking-tight">
               Kirim lebih tenang,
               <br />
               pantau lebih dekat.
             </p>
             <div className="mt-3.5 flex">
-              <span className="h-1 w-[46px] rounded-l-full bg-[#E30613]" />
-              <span className="h-1 w-[46px] rounded-r-full bg-white" />
+              <span className="h-[3px] w-10 bg-[#E30613]" />
+              <span className="h-[3px] w-10 bg-white" />
             </div>
             <p className="mt-3.5 text-[13px] font-medium italic text-white/90">
               Safety • Quality • Integrity • Consistency • Efficiency

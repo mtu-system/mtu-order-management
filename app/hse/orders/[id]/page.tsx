@@ -94,12 +94,12 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* INFORMASI ORDER */}
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="mb-5 text-lg font-bold text-gray-900">
             Informasi Order
           </h2>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Customer
@@ -157,7 +157,7 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* KEBUTUHAN KENDARAAN */}
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">
               Kebutuhan Kendaraan
@@ -210,7 +210,7 @@ export default async function HSEOrderDetailPage({
 
         {/* INSTRUKSI & CATATAN */}
         <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="mb-3 text-lg font-bold text-gray-900">
               Instruksi
             </h2>
@@ -219,7 +219,7 @@ export default async function HSEOrderDetailPage({
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="mb-3 text-lg font-bold text-gray-900">
               Catatan
             </h2>
@@ -230,7 +230,7 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* KEPUTUSAN OPERATIONAL */}
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-bold text-gray-900">
             Keputusan Operational
           </h2>
@@ -257,7 +257,7 @@ export default async function HSEOrderDetailPage({
         </div>
 
         {/* DETAIL UNIT */}
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-5">
             <h2 className="text-lg font-bold text-gray-900">
               Detail Unit

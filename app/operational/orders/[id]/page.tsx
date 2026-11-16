@@ -445,7 +445,7 @@ export default async function OperationalOrderDetailPage({
           title="Instruksi & Catatan"
           icon={<MessageSquare className="h-4.5 w-4.5" />}
         >
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
             <div>
               <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Instruksi
@@ -467,7 +467,7 @@ export default async function OperationalOrderDetailPage({
 
                {/* KEPUTUSAN UNIT */}
         {!isBookingPending && !order.unit_decision && (
-          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold tracking-tight text-gray-900">
               Keputusan Unit
             </h2>
@@ -534,7 +534,7 @@ export default async function OperationalOrderDetailPage({
 
         {/* RINGKASAN ALOKASI */}
         {hasSavedAllocation && (
-          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
                 <Truck className="h-4.5 w-4.5 text-gray-400" />
@@ -690,7 +690,7 @@ export default async function OperationalOrderDetailPage({
 
         {/* STATUS INTERNAL */}
         {hasSavedAllocation && totalInternalRequired > 0 && (
-          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-gray-900">
                 <Gauge className="h-4.5 w-4.5 text-gray-400" />

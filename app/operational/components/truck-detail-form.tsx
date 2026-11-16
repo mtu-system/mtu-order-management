@@ -146,7 +146,7 @@ export default function TruckDetailForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+      className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
     >
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-start gap-3">

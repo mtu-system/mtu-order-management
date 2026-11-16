@@ -283,7 +283,7 @@ export default function UnitAllocationForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+      className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
     >
       <div className="mb-6 flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2563EB]/10">

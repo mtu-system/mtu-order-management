@@ -193,3 +193,51 @@ button.stat-card:hover {
   letter-spacing: -0.01em;
   color: var(--foreground);
 }
+
+/* ===== Normalisasi halaman lama (tanpa mengubah markup satu per satu) ===== */
+
+/* Judul seksi/panel: tegas tapi tidak berteriak */
+.app-main h2.text-lg { font-size: 15px; letter-spacing: -0.005em; }
+.app-main h2.text-sm,
+.app-main h3.text-sm { font-size: 13.5px; }
+
+/* Bobot font: extrabold/black terlalu "poster" untuk internal tool */
+.app-main .font-black,
+.app-main .font-extrabold { font-weight: 700; }
+
+/* Angka KPI di halaman lama */
+.app-main .text-3xl { font-size: 26px; line-height: 1.1; }
+.app-main .text-2xl { font-size: 22px; line-height: 1.15; }
+.app-main .text-3xl,
+.app-main .text-2xl { font-variant-numeric: tabular-nums; }
+
+/* Fokus input → navy MTU (dulu biru Tailwind) */
+.app-main .focus\:border-blue-500:focus,
+.app-main .focus\:border-\[\#2563EB\]:focus { border-color: var(--mtu-navy); }
+.app-main .focus\:ring-blue-500\/10:focus,
+.app-main .focus\:ring-\[\#2563EB\]\/10:focus {
+  --tw-ring-color: rgba(8, 40, 104, 0.1);
+}
+
+/* Border input/kartu abu-abu lama mengikuti token */
+.app-main .border-gray-200 { border-color: var(--border); }
+.app-main input.border-gray-200,
+.app-main select.border-gray-200,
+.app-main textarea.border-gray-200 { border-color: var(--border-strong); }
+
+/* Label definisi (Info Order, dsb): huruf biasa, abu-abu, padat */
+.app-main dt.uppercase {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.app-main p.uppercase.tracking-wide.text-gray-400,
+.app-main span.uppercase.tracking-wide.text-gray-400 {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}

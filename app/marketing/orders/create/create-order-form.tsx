@@ -1,19 +1,44 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/app/components/toast-provider'
 import { logOrderHistory } from '@/lib/history'
-import { PlusCircle, Trash2, Save, Loader2 } from 'lucide-react'
+import {
+  PlusCircle,
+  Trash2,
+  Save,
+  Loader2,
+  CheckCircle2,
+  Circle,
+  History,
+} from 'lucide-react'
 import CustomerAutocomplete from '@/app/marketing/components/customer-autocomplete'
 import VehicleTypeAutocomplete from '@/app/marketing/components/vehicle-type-autocomplete'
+import PageHeader from '@/app/components/page-header'
+import { OrderStatusBadge } from '@/app/components/status-badge'
 
 type VehicleRequirement = {
   id: number
   vehicle_type: string
   quantity: number
+}
+
+type RecentOrder = {
+  id: string
+  created_at: string
+  pk_number: string | null
+  rft_tr_job: string | null
+  trip: string | null
+  quantity: number | null
+  status: string | null
+}
+
+// Escape wildcard ilike supaya nama customer dicocokkan persis.
+function escapeLike(value: string) {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`)
 }
 
 export default function CreateOrderForm() {
@@ -25,6 +50,18 @@ export default function CreateOrderForm() {
   const [isBooking, setIsBooking] = useState(false)
   const [bookingDate, setBookingDate] = useState('')
 
+  // Hanya untuk panel ringkasan -- nilai tetap dibaca dari FormData saat submit.
+  const [pkNumber, setPkNumber] = useState('')
+  const [rftTrJob, setRftTrJob] = useState('')
+  const [trip, setTrip] = useState('')
+  const [bawaRa, setBawaRa] = useState('Tidak')
+  const [instruction, setInstruction] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
+  const [recentLoading, setRecentLoading] = useState(false)
+  const [recentFor, setRecentFor] = useState('')
+
   const [requirements, setRequirements] = useState<VehicleRequirement[]>([
     {
       id: 1,
@@ -32,6 +69,40 @@ export default function CreateOrderForm() {
       quantity: 1,
     },
   ])
+
+  // Order terakhir customer ini (read-only, ikut RLS: marketing hanya
+  // melihat order miliknya, marketing_admin melihat semua).
+  useEffect(() => {
+    const name = customer.trim()
+    let cancelled = false
+
+    const timer = setTimeout(async () => {
+      if (name.length < 2) {
+        setRecentOrders([])
+        setRecentFor('')
+        setRecentLoading(false)
+        return
+      }
+
+      setRecentLoading(true)
+      const { data } = await createClient()
+        .from('orders')
+        .select('id, created_at, pk_number, rft_tr_job, trip, quantity, status')
+        .ilike('customer', escapeLike(name))
+        .order('created_at', { ascending: false })
+        .limit(3)
+
+      if (cancelled) return
+      setRecentOrders((data || []) as RecentOrder[])
+      setRecentFor(name)
+      setRecentLoading(false)
+    }, 400)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [customer])
 
   function addRequirement() {
     setRequirements((current) => [
@@ -329,274 +400,369 @@ const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
   }
 
   const inputClass =
-    'w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'
+    'h-9 w-full rounded-md border border-[var(--border-strong)] bg-white px-3 text-[13px] outline-none transition placeholder:text-slate-400 focus:border-[#082868] focus:ring-2 focus:ring-[#082868]/10 disabled:bg-slate-50'
 
-  const labelClass =
-    'mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500'
+  const textareaClass =
+    'w-full resize-none rounded-md border border-[var(--border-strong)] bg-white px-3 py-2 text-[13px] outline-none transition placeholder:text-slate-400 focus:border-[#082868] focus:ring-2 focus:ring-[#082868]/10 disabled:bg-slate-50'
+
+  const labelClass = 'mb-1 block text-[12px] font-semibold text-slate-700'
+
+  const hasIdentity = isBooking || Boolean(pkNumber.trim() || rftTrJob.trim())
+
+  const checks = [
+    { label: 'Customer diisi', ok: Boolean(customer.trim()) },
+    {
+      label: isBooking ? 'PK / RFT (opsional untuk booking)' : 'Nomor PK atau RFT/TR/Job',
+      ok: hasIdentity,
+    },
+    { label: 'Trip diisi', ok: Boolean(trip.trim()) },
+    { label: 'Jenis & jumlah kendaraan lengkap', ok: !hasInvalidRequirement },
+    ...(isBooking
+      ? [{ label: 'Tanggal kebutuhan booking', ok: Boolean(bookingDate) }]
+      : []),
+  ]
+
+  const filledRequirements = requirements.filter((item) => item.vehicle_type.trim())
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">
-          Buat Order Baru
-        </h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Isi detail permintaan kendaraan untuk customer.
-        </p>
-      </div>
+    <div>
+      <PageHeader
+        title={isBooking ? 'Buat Booking Baru' : 'Buat Order Baru'}
+        subtitle="Isi detail permintaan kendaraan untuk customer. Field bertanda * wajib diisi."
+      />
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <label className="flex items-start gap-3 rounded-xl border-2 border-violet-200 bg-violet-50/60 p-4 cursor-pointer transition hover:border-violet-300">
-            <input
-              type="checkbox"
-              checked={isBooking}
-              onChange={(event) => setIsBooking(event.target.checked)}
-              disabled={saving}
-              className="mt-0.5 h-4 w-4 accent-violet-600"
-            />
-            <div>
-              <p className="text-sm font-bold text-violet-900">
-                Ini Booking (kebutuhan di masa depan)
-              </p>
-              <p className="mt-0.5 text-xs text-violet-700">
-                Order belum langsung jalan. Operational akan cek dulu apakah
-                MTU mumpuni untuk tanggal kebutuhan ini, sebelum diproses
-                seperti order biasa.
-              </p>
-            </div>
-          </label>
-
-          {isBooking && (
-            <div>
-              <label htmlFor="booking_date" className={labelClass}>
-                Tanggal Kebutuhan <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="booking_date"
-                name="booking_date"
-                type="date"
-                value={bookingDate}
-                onChange={(event) => setBookingDate(event.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                required={isBooking}
-                disabled={saving}
-                className={`sm:w-64 ${inputClass}`}
-              />
-            </div>
-          )}
-
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <div>
-              <label htmlFor="customer" className={labelClass}>
-                Customer <span className="text-red-500">*</span>
-              </label>
-              <CustomerAutocomplete
-                value={customer}
-                onChange={setCustomer}
-                disabled={saving}
-              />
-            </div>
-
-                        <div>
-              <label htmlFor="pk_number" className={labelClass}>
-                Nomor PK
-              </label>
-              <input
-                id="pk_number"
-                name="pk_number"
-                type="text"
-                placeholder="Contoh: PK/HI/26/1096"
-                disabled={saving}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="rft_tr_job" className={labelClass}>
-                RFT / TR / Job
-              </label>
-              <input
-                id="rft_tr_job"
-                name="rft_tr_job"
-                type="text"
-                placeholder="Contoh: RFT-001"
-                disabled={saving}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="trip" className={labelClass}>
-                Trip <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="trip"
-                name="trip"
-                type="text"
-                placeholder="Contoh: BSD - ONWJ"
-                required
-                disabled={saving}
-                className={inputClass}
-              />
-            </div>
-          </div>
-
-                  <p className="-mt-2 text-xs text-gray-400">
-            {isBooking
-              ? 'Nomor PK / RFT boleh dikosongkan dulu untuk booking, bisa diisi belakangan saat sudah final.'
-              : 'Isi minimal salah satu: Nomor PK atau RFT/TR/Job.'}
-          </p>
-
-          <div className="border-t border-gray-200 pt-5">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <label className={labelClass}>
-                  Kebutuhan Kendaraan <span className="text-red-500">*</span>
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"
+      >
+        {/* ===== KIRI: FORM PER BAGIAN ===== */}
+        <div className="space-y-4">
+          <FormSection number={1} title="Customer & PK">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="md:col-span-3">
+                <label htmlFor="customer" className={labelClass}>
+                  Customer <span className="text-red-600">*</span>
                 </label>
-                <p className="text-xs text-gray-400">
-                  Satu order dapat memiliki beberapa jenis kendaraan.
-                </p>
+                <CustomerAutocomplete
+                  value={customer}
+                  onChange={setCustomer}
+                  disabled={saving}
+                />
               </div>
 
-              <span className="inline-flex items-center rounded-md bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700">
-                Total: {totalQuantity} Unit
-              </span>
+              <div className="md:col-span-1">
+                <label htmlFor="pk_number" className={labelClass}>
+                  Nomor PK
+                </label>
+                <input
+                  id="pk_number"
+                  name="pk_number"
+                  type="text"
+                  value={pkNumber}
+                  onChange={(event) => setPkNumber(event.target.value)}
+                  placeholder="PK/HI/26/1096"
+                  disabled={saving}
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <label htmlFor="rft_tr_job" className={labelClass}>
+                  RFT / TR / Job
+                </label>
+                <input
+                  id="rft_tr_job"
+                  name="rft_tr_job"
+                  type="text"
+                  value={rftTrJob}
+                  onChange={(event) => setRftTrJob(event.target.value)}
+                  placeholder="RFT-001"
+                  disabled={saving}
+                  className={inputClass}
+                />
+              </div>
+
+              <div className="md:col-span-1">
+                <label htmlFor="booking_date" className={labelClass}>
+                  Tanggal Kebutuhan{' '}
+                  {isBooking && <span className="text-red-600">*</span>}
+                </label>
+                <input
+                  id="booking_date"
+                  name="booking_date"
+                  type="date"
+                  value={bookingDate}
+                  onChange={(event) => setBookingDate(event.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required={isBooking}
+                  disabled={saving || !isBooking}
+                  className={inputClass}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2.5">
-              {requirements.map((requirement, index) => (
-                <div
-                  key={requirement.id}
-                  className="flex items-end gap-2.5 rounded-xl border border-gray-200 bg-gray-50 p-3.5"
+            <p className="mt-2 text-[12px] text-slate-500">
+              {isBooking
+                ? 'Nomor PK / RFT boleh dikosongkan dulu untuk booking, bisa diisi belakangan saat sudah final.'
+                : 'Isi minimal salah satu: Nomor PK atau RFT/TR/Job.'}
+            </p>
+
+            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-md border border-[var(--border)] bg-slate-50 px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={isBooking}
+                onChange={(event) => setIsBooking(event.target.checked)}
+                disabled={saving}
+                className="mt-0.5 h-4 w-4 accent-[#082868]"
+              />
+              <span>
+                <span className="block text-[13px] font-semibold text-slate-900">
+                  Ini booking (kebutuhan di masa depan)
+                </span>
+                <span className="block text-[12px] text-slate-500">
+                  Order belum langsung jalan. Operational cek dulu apakah MTU
+                  mumpuni untuk tanggal kebutuhan ini, sebelum diproses seperti
+                  order biasa.
+                </span>
+              </span>
+            </label>
+          </FormSection>
+
+          <FormSection number={2} title="Trip">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
+              <div>
+                <label htmlFor="trip" className={labelClass}>
+                  Trip <span className="text-red-600">*</span>
+                </label>
+                <input
+                  id="trip"
+                  name="trip"
+                  type="text"
+                  value={trip}
+                  onChange={(event) => setTrip(event.target.value)}
+                  placeholder="BSD - ONWJ"
+                  required
+                  disabled={saving}
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="bawa_ra" className={labelClass}>
+                  Bawa RA
+                </label>
+                <select
+                  id="bawa_ra"
+                  name="bawa_ra"
+                  value={bawaRa}
+                  onChange={(event) => setBawaRa(event.target.value)}
+                  disabled={saving}
+                  className={inputClass}
                 >
-                  <div className="flex-1">
-                    <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">
-                      Jenis Kendaraan {index + 1}
-                    </label>
-                    <VehicleTypeAutocomplete
-                      value={requirement.vehicle_type}
-                      onChange={(value) =>
-                        updateVehicleType(requirement.id, value)
-                      }
-                      disabled={saving}
-                    />
-                  </div>
+                  <option value="Tidak">Tidak</option>
+                  <option value="Ya">Ya</option>
+                </select>
+              </div>
+            </div>
+          </FormSection>
 
-                  <div className="w-20">
-                    <label className="mb-1.5 block text-[11px] font-semibold text-gray-500">
-                      Jumlah
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={requirement.quantity}
-                      onChange={(event) =>
-                        updateQuantity(
-                          requirement.id,
-                          Number(event.target.value)
-                        )
-                      }
-                      disabled={saving}
-                      className={`bg-white ${inputClass}`}
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeRequirement(requirement.id)}
-                    disabled={requirements.length === 1 || saving}
-                    className="rounded-lg border border-gray-200 p-2.5 text-gray-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+          <FormSection
+            number={3}
+            title="Kebutuhan Kendaraan"
+            aside={
+              <span className="text-[12.5px] font-semibold tabular-nums text-slate-600">
+                Total {totalQuantity} unit
+              </span>
+            }
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[420px] text-[13px]">
+                <thead>
+                  <tr>
+                    <th className="w-10 px-2 text-left">#</th>
+                    <th className="px-2 text-left">
+                      Jenis Kendaraan <span className="text-red-600">*</span>
+                    </th>
+                    <th className="w-24 px-2 text-right">Jumlah</th>
+                    <th className="w-12 px-2" aria-label="Aksi" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {requirements.map((requirement, index) => (
+                    <tr key={requirement.id} className="hover:!bg-transparent">
+                      <td className="px-2 align-middle tabular-nums text-slate-500">
+                        {index + 1}
+                      </td>
+                      <td className="px-2">
+                        <VehicleTypeAutocomplete
+                          value={requirement.vehicle_type}
+                          onChange={(value) =>
+                            updateVehicleType(requirement.id, value)
+                          }
+                          disabled={saving}
+                        />
+                      </td>
+                      <td className="px-2">
+                        <input
+                          type="number"
+                          min="1"
+                          aria-label={`Jumlah kendaraan ${index + 1}`}
+                          value={requirement.quantity}
+                          onChange={(event) =>
+                            updateQuantity(
+                              requirement.id,
+                              Number(event.target.value)
+                            )
+                          }
+                          disabled={saving}
+                          className={`${inputClass} text-right tabular-nums`}
+                        />
+                      </td>
+                      <td className="px-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => removeRequirement(requirement.id)}
+                          disabled={requirements.length === 1 || saving}
+                          aria-label={`Hapus baris ${index + 1}`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             <button
               type="button"
               onClick={addRequirement}
               disabled={saving}
-              className="mt-2.5 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+              className="btn btn-secondary mt-3 h-8"
             >
               <PlusCircle className="h-3.5 w-3.5" />
-              Tambah Jenis Kendaraan
+              Tambah jenis kendaraan
             </button>
-          </div>
+          </FormSection>
 
-          <div className="grid grid-cols-1 gap-5 border-t border-gray-200 pt-5 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label htmlFor="instruction" className={labelClass}>
-                Instruksi
-              </label>
-              <textarea
-                id="instruction"
-                name="instruction"
-                rows={2}
-                placeholder="Contoh: Tolong disiapkan untuk muat besok."
-                disabled={saving}
-                className={`resize-none ${inputClass}`}
-              />
+          <FormSection number={4} title="Instruksi">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label htmlFor="instruction" className={labelClass}>
+                  Instruksi
+                </label>
+                <textarea
+                  id="instruction"
+                  name="instruction"
+                  rows={2}
+                  value={instruction}
+                  onChange={(event) => setInstruction(event.target.value)}
+                  placeholder="Tolong disiapkan untuk muat besok."
+                  disabled={saving}
+                  className={textareaClass}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="notes" className={labelClass}>
+                  Catatan Tambahan
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={3}
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Catatan tambahan jika diperlukan..."
+                  disabled={saving}
+                  className={textareaClass}
+                />
+              </div>
+            </div>
+          </FormSection>
+        </div>
+
+        {/* ===== KANAN: RINGKASAN ===== */}
+        <aside className="space-y-4 lg:sticky lg:top-[68px]">
+          <div className="panel overflow-hidden">
+            <div className="panel-header">
+              <p className="panel-title">Ringkasan</p>
+              {isBooking && (
+                <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-inset ring-violet-200">
+                  Booking
+                </span>
+              )}
             </div>
 
-            <div>
-              <label htmlFor="bawa_ra" className={labelClass}>
-                Bawa RA
-              </label>
-              <select
-                id="bawa_ra"
-                name="bawa_ra"
-                defaultValue="Tidak"
-                disabled={saving}
-                className={`bg-white ${inputClass}`}
-              >
-                <option value="Tidak">Tidak</option>
-                <option value="Ya">Ya</option>
-              </select>
-            </div>
-
-            <div className="sm:col-span-2">
-              <label htmlFor="notes" className={labelClass}>
-                Catatan Tambahan
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={3}
-                placeholder="Catatan tambahan jika diperlukan..."
-                disabled={saving}
-                className={`resize-none ${inputClass}`}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-gray-200 pt-5">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">
-                Total kebutuhan
+            <div className="border-b border-[var(--border)] px-4 py-3">
+              <p className="text-[12px] font-medium text-slate-500">Total unit</p>
+              <p className="mt-0.5 text-[28px] font-bold leading-none tabular-nums text-slate-900">
+                {totalQuantity}
               </p>
-              <p className="text-lg font-extrabold text-gray-900">
-                {totalQuantity} Unit
-              </p>
+              {filledRequirements.length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-[12.5px] text-slate-600">
+                  {filledRequirements.map((item) => (
+                    <li key={item.id} className="flex justify-between gap-3">
+                      <span className="truncate">{item.vehicle_type}</span>
+                      <span className="shrink-0 tabular-nums">{item.quantity}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
-            <div className="flex gap-3">
-              <Link
-                href="/marketing/orders"
-                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-              >
+            <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-1.5 px-4 py-3 text-[12.5px]">
+              <SummaryRow label="Customer" value={customer} />
+              <SummaryRow label="Nomor PK" value={pkNumber} />
+              <SummaryRow label="RFT/TR/Job" value={rftTrJob} />
+              <SummaryRow label="Trip" value={trip} />
+              <SummaryRow label="Bawa RA" value={bawaRa} />
+              {isBooking && (
+                <SummaryRow
+                  label="Kebutuhan"
+                  value={
+                    bookingDate
+                      ? new Date(`${bookingDate}T00:00:00+07:00`).toLocaleDateString(
+                          'id-ID',
+                          { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric' }
+                        )
+                      : ''
+                  }
+                />
+              )}
+            </dl>
+
+            <ul className="space-y-1 border-t border-[var(--border)] px-4 py-3 text-[12.5px]">
+              {checks.map((check) => (
+                <li
+                  key={check.label}
+                  className={`flex items-center gap-2 ${
+                    check.ok ? 'text-slate-700' : 'text-slate-400'
+                  }`}
+                >
+                  {check.ok ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                  {check.label}
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex gap-2 border-t border-[var(--border)] bg-slate-50 px-4 py-3">
+              <Link href="/marketing/orders" className="btn btn-secondary flex-1">
                 Batal
               </Link>
-
               <button
                 type="submit"
-                                               disabled={
+                disabled={
                   hasInvalidRequirement ||
                   saving ||
                   (isBooking && !bookingDate)
                 }
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="btn btn-primary flex-[2]"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -611,8 +777,100 @@ const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
               </button>
             </div>
           </div>
-        </form>
-      </div>
+
+          <div className="panel overflow-hidden">
+            <div className="panel-header">
+              <p className="panel-title flex items-center gap-2">
+                <History className="h-4 w-4 text-slate-400" />
+                Order terakhir customer
+              </p>
+              {recentLoading && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />
+              )}
+            </div>
+
+            {!customer.trim() ? (
+              <p className="px-4 py-3 text-[12.5px] text-slate-500">
+                Pilih customer untuk melihat order sebelumnya.
+              </p>
+            ) : recentOrders.length === 0 ? (
+              <p className="px-4 py-3 text-[12.5px] text-slate-500">
+                {recentLoading || recentFor !== customer.trim()
+                  ? 'Mencari order sebelumnya...'
+                  : 'Belum ada order untuk customer ini.'}
+              </p>
+            ) : (
+              <ul className="divide-y divide-[var(--border)]">
+                {recentOrders.map((order) => (
+                  <li key={order.id}>
+                    <Link
+                      href={`/marketing/orders/${order.id}`}
+                      className="block px-4 py-2.5 transition hover:bg-slate-50"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-[12.5px] font-semibold text-slate-900">
+                          {order.pk_number || order.rft_tr_job || 'Tanpa PK'}
+                        </span>
+                        <OrderStatusBadge status={order.status} />
+                      </div>
+                      <p className="mt-0.5 truncate text-[12px] text-slate-500">
+                        {new Date(order.created_at).toLocaleDateString('id-ID', {
+                          timeZone: 'Asia/Jakarta',
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                        {' · '}
+                        {order.quantity ?? 0} unit
+                        {order.trip ? ` · ${order.trip}` : ''}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
+      </form>
     </div>
+  )
+}
+
+function FormSection({
+  number,
+  title,
+  aside,
+  children,
+}: {
+  number: number
+  title: string
+  aside?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <section className="panel">
+      <div className="panel-header">
+        <h2 className="panel-title flex items-center gap-2.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#082868] text-[11px] font-bold text-white">
+            {number}
+          </span>
+          {title}
+        </h2>
+        {aside}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  const text = value.trim()
+  return (
+    <>
+      <dt className="text-slate-500">{label}</dt>
+      <dd className={`truncate ${text ? 'font-medium text-slate-900' : 'text-slate-400'}`}>
+        {text || '—'}
+      </dd>
+    </>
   )
 }

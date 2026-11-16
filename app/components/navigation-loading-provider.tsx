@@ -109,7 +109,7 @@ export default function NavigationLoadingProvider({
       {children}
 
       {isLoading && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/70">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-7 shadow-lg">
             <svg
               className="h-7 w-7 animate-spin text-[#2563EB]"

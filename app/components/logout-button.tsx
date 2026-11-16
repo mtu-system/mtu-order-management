@@ -33,14 +33,14 @@ export default function LogoutButton() {
         type="button"
         onClick={handleLogout}
         disabled={loading}
-className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+        className="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-[var(--border-strong)] bg-white px-3 text-[13px] font-semibold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
       >
         <LogOut className="h-4 w-4" />
         {loading ? 'Keluar...' : 'Logout'}
       </button>
 
       {loading && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/70">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-7 shadow-lg">
             <svg
               className="h-7 w-7 animate-spin text-[#2563EB]"

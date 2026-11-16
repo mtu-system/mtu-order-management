@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -24,6 +25,10 @@ import {
   Route as RouteIcon,
   Radar,
   BellRing,
+  ChevronDown,
+  MoreHorizontal,
+  Menu,
+  X,
 } from 'lucide-react'
 
 type DashboardShellProps = {
@@ -39,6 +44,8 @@ type MenuItem = {
   label: string
   href: string
   icon: LucideIcon
+  // Menu yang jarang dipakai: tidak tampil di grup, masuk ke "Lainnya".
+  overflow?: boolean
 }
 
 type MenuGroup = {
@@ -56,6 +63,49 @@ const ROLE_LABEL: Record<UserRole, string> = {
   pending: 'Pending',
 }
 
+function collapsedStorageKey(role: UserRole) {
+  return `mtu-nav-collapsed:${role}`
+}
+
+// Status lipat grup disimpan di localStorage, dibaca lewat
+// useSyncExternalStore supaya aman saat SSR (server selalu "[]").
+const COLLAPSED_EVENT = 'mtu-nav-collapsed'
+
+function readCollapsedRaw(role: UserRole) {
+  try {
+    return window.localStorage.getItem(collapsedStorageKey(role)) || '[]'
+  } catch {
+    return '[]'
+  }
+}
+
+function parseCollapsed(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function writeCollapsed(role: UserRole, titles: string[]) {
+  try {
+    window.localStorage.setItem(collapsedStorageKey(role), JSON.stringify(titles))
+  } catch {
+    // localStorage tidak tersedia (private mode, dsb) -- abaikan.
+  }
+  window.dispatchEvent(new Event(COLLAPSED_EVENT))
+}
+
+function subscribeCollapsed(callback: () => void) {
+  window.addEventListener(COLLAPSED_EVENT, callback)
+  window.addEventListener('storage', callback)
+  return () => {
+    window.removeEventListener(COLLAPSED_EVENT, callback)
+    window.removeEventListener('storage', callback)
+  }
+}
+
 export default function DashboardShell({
   children,
   user,
@@ -63,83 +113,188 @@ export default function DashboardShell({
   const pathname = usePathname()
   const groups = getMenuGroups(user.role)
   const allMenus = groups.flatMap((group) => group.items)
+  const overflowMenus = allMenus.filter((menu) => menu.overflow)
   const activeMenu = allMenus.find((menu) => menu.href === pathname)
   const initial = (user.full_name || user.email || '?').charAt(0).toUpperCase()
   const firstName = (user.full_name || user.email || 'User').split(' ')[0]
 
+  const collapsedRaw = useSyncExternalStore(
+    subscribeCollapsed,
+    () => readCollapsedRaw(user.role),
+    () => '[]'
+  )
+  const collapsed = useMemo(() => parseCollapsed(collapsedRaw), [collapsedRaw])
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [navPath, setNavPath] = useState(pathname)
+  const moreRef = useRef<HTMLDivElement>(null)
+
+  // Tutup popover & sidebar mobile saat pindah halaman.
+  if (navPath !== pathname) {
+    setNavPath(pathname)
+    setMoreOpen(false)
+    setMobileOpen(false)
+  }
+
+  useEffect(() => {
+    if (!moreOpen) return
+
+    function onPointerDown(event: PointerEvent) {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false)
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMoreOpen(false)
+    }
+
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [moreOpen])
+
+  function toggleGroup(title: string) {
+    const next = collapsed.includes(title)
+      ? collapsed.filter((item) => item !== title)
+      : [...collapsed, title]
+    writeCollapsed(user.role, next)
+  }
+
+  const overflowActive = overflowMenus.some((menu) => menu.href === pathname)
+
   return (
-    <div className="app-bg min-h-screen">
-      {/* SIDEBAR — menu scroll sendiri, user + logout selalu terlihat */}
-      <aside className="glass fixed bottom-4 left-4 top-4 z-30 flex w-[244px] flex-col rounded-3xl px-3 pb-3 pt-4">
-        <div className="mb-2 flex items-center gap-2.5 px-2 pb-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white p-1 shadow-[0_2px_8px_rgba(8,40,104,0.12)]">
-            <Image
-              src="/mtu.png"
-              alt="Mandiri Trucking"
-              width={30}
-              height={26}
-              className="h-full w-full object-contain"
-            />
-          </div>
-          <div>
-            <h1 className="text-[14px] font-extrabold leading-tight text-[#082868]">
+    <div className="min-h-screen bg-[var(--background)]">
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Tutup menu"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-30 bg-slate-900/30 lg:hidden"
+        />
+      )}
+
+      {/* SIDEBAR */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-[232px] flex-col border-r border-[var(--border)] bg-white transition-transform lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex h-[52px] shrink-0 items-center gap-2.5 border-b border-[var(--border)] px-4">
+          <Image
+            src="/mtu.png"
+            alt="Mandiri Trucking"
+            width={28}
+            height={24}
+            className="h-6 w-auto object-contain"
+          />
+          <div className="min-w-0">
+            <p className="text-[13.5px] font-bold leading-tight text-[var(--mtu-navy)]">
               MTU Order
-            </h1>
-            <p className="text-[11px] text-slate-500">Control Tower</p>
+            </p>
+            <p className="text-[11px] leading-tight text-slate-500">
+              {ROLE_LABEL[user.role]}
+            </p>
           </div>
         </div>
 
-        <nav className="nav-scroll min-h-0 flex-1 overflow-y-auto pr-1">
-          {groups.map((group, index) => (
-            <div key={group.title || `group-${index}`} className="mb-1">
-              {group.title && (
-                <p className="px-3 pb-1.5 pt-5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#082868]/60">
-                  {group.title}
-                </p>
-              )}
-              <div className="flex flex-col gap-0.5">
-                {group.items.map((menu) => {
-                  const Icon = menu.icon
-                  const isActive = pathname === menu.href
+        <nav className="nav-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3">
+          {groups.map((group, index) => {
+            const items = group.items.filter((menu) => !menu.overflow)
+            if (items.length === 0) return null
 
-                  return (
-                    <Link
-                      key={menu.href}
-                      href={menu.href}
-                      prefetch={false}
-                      className={`flex items-center gap-3 rounded-xl px-2.5 py-2 text-[13.5px] font-medium transition ${
-                        isActive
-                          ? 'bg-[#082868] font-semibold text-white shadow-[0_6px_16px_rgba(8,40,104,0.28)]'
-                          : 'text-slate-700 hover:bg-[#082868]/[0.06] hover:text-[#082868]'
+            const title = group.title
+            const containsActive = items.some((menu) => menu.href === pathname)
+            const isCollapsed =
+              Boolean(title) && collapsed.includes(title as string) && !containsActive
+
+            return (
+              <div key={title || `group-${index}`} className={index > 0 ? 'mt-3' : ''}>
+                {title && (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(title)}
+                    aria-expanded={!isCollapsed}
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500 hover:text-slate-800"
+                  >
+                    {title}
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${
+                        isCollapsed ? '-rotate-90' : ''
                       }`}
-                    >
-                      <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                          isActive ? 'bg-white/15' : 'bg-[#082868]/[0.07]'
-                        }`}
-                      >
-                        <Icon className="h-[17px] w-[17px]" />
-                      </span>
-                      {menu.label}
-                    </Link>
-                  )
-                })}
+                    />
+                  </button>
+                )}
+
+                {!isCollapsed && (
+                  <div className="mt-0.5 flex flex-col gap-px">
+                    {items.map((menu) => (
+                      <NavLink
+                        key={menu.href}
+                        menu={menu}
+                        active={pathname === menu.href}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
+            )
+          })}
+
+          {overflowMenus.length > 0 && (
+            <div ref={moreRef} className="relative mt-3">
+              <button
+                type="button"
+                onClick={() => setMoreOpen((open) => !open)}
+                aria-haspopup="menu"
+                aria-expanded={moreOpen}
+                className={`relative flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition ${
+                  overflowActive || moreOpen
+                    ? 'bg-[var(--mtu-navy)]/[0.07] text-[var(--mtu-navy)]'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                {overflowActive && (
+                  <span className="absolute inset-y-1.5 left-0 w-[2px] rounded-full bg-[var(--mtu-navy)]" />
+                )}
+                <MoreHorizontal className="h-4 w-4 shrink-0" />
+                Lainnya
+                {overflowActive && activeMenu && (
+                  <span className="ml-auto truncate text-[11px] font-semibold">
+                    {activeMenu.label}
+                  </span>
+                )}
+              </button>
+
+              {moreOpen && (
+                <div
+                  role="menu"
+                  className="absolute bottom-full left-0 z-50 mb-1 w-full rounded-lg border border-[var(--border)] bg-white p-1 shadow-lg"
+                >
+                  {overflowMenus.map((menu) => (
+                    <NavLink
+                      key={menu.href}
+                      menu={menu}
+                      active={pathname === menu.href}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+          )}
         </nav>
 
-        <div className="mt-2 shrink-0 border-t border-[#082868]/10 pt-3">
-          <div className="mb-2.5 flex items-center gap-2.5 px-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#082868] to-[#1E4DB7] text-sm font-bold text-white">
+        <div className="shrink-0 border-t border-[var(--border)] p-3">
+          <div className="mb-2.5 flex items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--mtu-navy)] text-[13px] font-bold text-white">
               {initial}
             </div>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-semibold leading-tight text-slate-800">
                 {user.full_name || firstName}
               </p>
-              <p className="text-[11px] leading-tight text-slate-500">
-                {ROLE_LABEL[user.role]}
+              <p className="truncate text-[11px] leading-tight text-slate-500">
+                {user.email}
               </p>
             </div>
           </div>
@@ -148,34 +303,61 @@ export default function DashboardShell({
       </aside>
 
       {/* KONTEN */}
-      <div className="flex min-h-screen flex-col gap-4 p-4 pl-[276px]">
-        <header className="glass flex h-[60px] shrink-0 items-center justify-between rounded-2xl px-5">
-          <div className="flex items-center gap-2 text-[12.5px] text-slate-500">
-            <span>{ROLE_LABEL[user.role]}</span>
-            <span>/</span>
-            <span className="font-semibold text-slate-900">
+      <div className="flex min-h-screen flex-col lg:pl-[232px]">
+        <header className="sticky top-0 z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] bg-white px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2 text-[13px] text-slate-500">
+            <button
+              type="button"
+              aria-label="Buka menu"
+              onClick={() => setMobileOpen(true)}
+              className="-ml-1 rounded-md p-1.5 text-slate-600 hover:bg-slate-100 lg:hidden"
+            >
+              {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+            <span className="hidden sm:inline">{ROLE_LABEL[user.role]}</span>
+            <span className="hidden text-slate-300 sm:inline">/</span>
+            <span className="truncate font-semibold text-slate-900">
               {activeMenu?.label || 'Dashboard'}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden rounded-full bg-[#082868]/[0.07] px-3 py-1 text-[12px] font-semibold text-[#082868] sm:inline">
-              {new Date().toLocaleDateString('id-ID', {
-                timeZone: 'Asia/Jakarta',
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#082868] to-[#1E4DB7] text-xs font-bold text-white">
-              {initial}
-            </div>
-          </div>
+          <span className="hidden shrink-0 text-[12.5px] font-medium text-slate-500 sm:inline">
+            {new Date().toLocaleDateString('id-ID', {
+              timeZone: 'Asia/Jakarta',
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </span>
         </header>
 
-        <main className="app-glass flex-1">{children}</main>
+        <main className="app-main flex-1 px-4 py-5 sm:px-6">{children}</main>
       </div>
     </div>
+  )
+}
+
+function NavLink({ menu, active }: { menu: MenuItem; active: boolean }) {
+  const Icon = menu.icon
+
+  return (
+    <Link
+      href={menu.href}
+      prefetch={false}
+      aria-current={active ? 'page' : undefined}
+      className={`relative flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] transition ${
+        active
+          ? 'bg-[var(--mtu-navy)]/[0.07] font-semibold text-[var(--mtu-navy)]'
+          : 'font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+      }`}
+    >
+      {active && (
+        <span className="absolute inset-y-1.5 left-0 w-[2px] rounded-full bg-[var(--mtu-navy)]" />
+      )}
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="truncate">{menu.label}</span>
+    </Link>
   )
 }
 
@@ -192,65 +374,33 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
           title: 'Order',
           items: [
             { label: 'Orders', href: '/manager/orders', icon: ClipboardList },
-            {
-              label: 'Activity Logs',
-              href: '/manager/activity-logs',
-              icon: History,
-            },
+            { label: 'Activity Logs', href: '/manager/activity-logs', icon: History },
           ],
         },
         {
           title: 'Pemantauan',
           items: [
-            {
-              label: 'Control Tower',
-              href: '/manager/control-tower',
-              icon: Radar,
-            },
+            { label: 'Control Tower', href: '/manager/control-tower', icon: Radar },
             { label: 'Peringatan', href: '/manager/alerts', icon: BellRing },
-            {
-              label: 'Laporan Keselamatan',
-              href: '/manager/safety-report',
-              icon: ShieldCheck,
-            },
-            {
-              label: 'Monitoring',
-              href: '/manager/monitoring',
-              icon: MapPin,
-            },
+            { label: 'Monitoring', href: '/manager/monitoring', icon: MapPin },
             { label: 'Live Map', href: '/manager/live-map', icon: MapIcon },
           ],
         },
         {
           title: 'Laporan',
           items: [
-            {
-              label: 'Reject Report',
-              href: '/manager/reject-report',
-              icon: XCircle,
-            },
-            {
-              label: 'Booking Report',
-              href: '/manager/booking-report',
-              icon: CalendarClock,
-            },
-            {
-              label: 'Customer Overview',
-              href: '/manager/customer-overview',
-              icon: Users,
-            },
-            {
-              label: 'Laporan Unit',
-              href: '/manager/unit-report',
-              icon: RouteIcon,
-            },
+            { label: 'Laporan Keselamatan', href: '/manager/safety-report', icon: ShieldCheck },
+            { label: 'Reject Report', href: '/manager/reject-report', icon: XCircle },
+            { label: 'Booking Report', href: '/manager/booking-report', icon: CalendarClock },
+            { label: 'Customer Overview', href: '/manager/customer-overview', icon: Users },
+            { label: 'Laporan Unit', href: '/manager/unit-report', icon: RouteIcon, overflow: true },
           ],
         },
         {
           title: 'Pengaturan',
           items: [
-            { label: 'Unit GPS', href: '/manager/gps-devices', icon: Link2 },
-            { label: 'Geofence', href: '/manager/geofences', icon: Target },
+            { label: 'Unit GPS', href: '/manager/gps-devices', icon: Link2, overflow: true },
+            { label: 'Geofence', href: '/manager/geofences', icon: Target, overflow: true },
           ],
         },
       ]
@@ -267,38 +417,18 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
           title: 'Order',
           items: [
             { label: 'Orders', href: '/marketing/orders', icon: ClipboardList },
-            {
-              label: 'Create Order',
-              href: '/marketing/orders/create',
-              icon: PlusCircle,
-            },
-            {
-              label: 'Order History',
-              href: '/marketing/orders/history',
-              icon: History,
-            },
+            { label: 'Create Order', href: '/marketing/orders/create', icon: PlusCircle },
+            { label: 'Order History', href: '/marketing/orders/history', icon: History },
             { label: 'Aktivitas', href: '/marketing/activity', icon: Activity },
           ],
         },
         {
           title: 'Pemantauan',
           items: [
-            {
-              label: 'Control Tower',
-              href: '/marketing/control-tower',
-              icon: Radar,
-            },
-            {
-              label: 'Monitoring',
-              href: '/marketing/monitoring',
-              icon: MapPin,
-            },
+            { label: 'Control Tower', href: '/marketing/control-tower', icon: Radar },
+            { label: 'Monitoring', href: '/marketing/monitoring', icon: MapPin },
             { label: 'Live Map', href: '/marketing/live-map', icon: MapIcon },
-            {
-              label: 'Laporan Unit',
-              href: '/marketing/unit-report',
-              icon: RouteIcon,
-            },
+            { label: 'Laporan Unit', href: '/marketing/unit-report', icon: RouteIcon, overflow: true },
           ],
         },
       ]
@@ -313,63 +443,32 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
         {
           title: 'Order',
           items: [
-            {
-              label: 'Waiting Unit',
-              href: '/operational/orders',
-              icon: ClipboardList,
-            },
-            {
-              label: 'Aktivitas',
-              href: '/operational/activity',
-              icon: Activity,
-            },
+            { label: 'Waiting Unit', href: '/operational/orders', icon: ClipboardList },
             { label: 'History', href: '/operational/history', icon: History },
+            { label: 'Aktivitas', href: '/operational/activity', icon: Activity },
           ],
         },
         {
           title: 'Pemantauan',
           items: [
-            {
-              label: 'Control Tower',
-              href: '/operational/control-tower',
-              icon: Radar,
-            },
-            {
-              label: 'Peringatan',
-              href: '/operational/alerts',
-              icon: BellRing,
-            },
-            {
-              label: 'Laporan Keselamatan',
-              href: '/operational/safety-report',
-              icon: ShieldCheck,
-            },
-            {
-              label: 'Monitoring',
-              href: '/operational/monitoring',
-              icon: MapPin,
-            },
+            { label: 'Control Tower', href: '/operational/control-tower', icon: Radar },
+            { label: 'Peringatan', href: '/operational/alerts', icon: BellRing },
+            { label: 'Monitoring', href: '/operational/monitoring', icon: MapPin },
             { label: 'Live Map', href: '/operational/live-map', icon: MapIcon },
-            {
-              label: 'Laporan Unit',
-              href: '/operational/unit-report',
-              icon: RouteIcon,
-            },
+          ],
+        },
+        {
+          title: 'Laporan',
+          items: [
+            { label: 'Laporan Keselamatan', href: '/operational/safety-report', icon: ShieldCheck },
+            { label: 'Laporan Unit', href: '/operational/unit-report', icon: RouteIcon, overflow: true },
           ],
         },
         {
           title: 'Pengaturan',
           items: [
-            {
-              label: 'Unit GPS',
-              href: '/operational/gps-devices',
-              icon: Link2,
-            },
-            {
-              label: 'Geofence',
-              href: '/operational/geofences',
-              icon: Target,
-            },
+            { label: 'Unit GPS', href: '/operational/gps-devices', icon: Link2, overflow: true },
+            { label: 'Geofence', href: '/operational/geofences', icon: Target, overflow: true },
           ],
         },
       ]
@@ -380,22 +479,14 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
           title: 'Inspeksi',
           items: [
             { label: 'Waiting Inspection', href: '/hse', icon: ShieldCheck },
+            { label: 'Inspection History', href: '/hse/history', icon: History },
             { label: 'Aktivitas', href: '/hse/activity', icon: Activity },
-            {
-              label: 'Inspection History',
-              href: '/hse/history',
-              icon: History,
-            },
           ],
         },
         {
           title: 'Laporan',
           items: [
-            {
-              label: 'Laporan Keselamatan',
-              href: '/hse/safety-report',
-              icon: ShieldCheck,
-            },
+            { label: 'Laporan Keselamatan', href: '/hse/safety-report', icon: ShieldCheck },
           ],
         },
       ]

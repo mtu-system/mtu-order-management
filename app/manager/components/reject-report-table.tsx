@@ -317,7 +317,7 @@ export default function RejectReportTable({ rows }: RejectReportTableProps) {
 
                   <td className="px-5 py-3.5">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${
                         decisionBadge[row.decision]
                       }`}
                     >

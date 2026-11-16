@@ -569,12 +569,12 @@ export default async function OperationalPage() {
                   <span className="ml-2 text-xs text-gray-400">
                     {alert.pkNumber || alert.rftTrJob || '-'}
                   </span>
-                  <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                  <span className="ml-2 inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
                     {alert.label}
                     {alert.quantity ? ` (${alert.quantity} Unit)` : ''}
                   </span>
                   {alert.orderStatus === 'ready_to_depart' && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+                    <span className="ml-2 inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
                       Sudah Ready to Depart
                     </span>
                   )}

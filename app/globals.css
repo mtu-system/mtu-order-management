@@ -184,3 +184,12 @@ button.stat-card:hover {
 .app-main .border-\[\#2563EB\] { border-color: var(--mtu-navy); }
 .app-main .bg-blue-600 { background-color: var(--mtu-navy); }
 .app-main .hover\:bg-blue-700:hover { background-color: var(--mtu-navy-hover); }
+
+/* Judul halaman seragam (termasuk header yang belum memakai PageHeader) */
+.app-main h1 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}

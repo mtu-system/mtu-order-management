@@ -278,7 +278,7 @@ export default function OrderTablesPanel({
             >
               {item.label}
               <span
-                className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
+                className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-md px-1.5 text-[11px] font-bold ${
                   isActive
                     ? 'bg-[#2563EB]/10 text-[#2563EB]'
                     : 'bg-gray-200 text-gray-600'

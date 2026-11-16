@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import RecentActivityFeed from '@/app/components/recent-activity-feed'
 
 export default async function OperationalActivityPage() {
@@ -7,13 +8,10 @@ export default async function OperationalActivityPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">Aktivitas</h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Semua kejadian penting dari semua order — unit Failed, dibatalkan,
-          dialihkan ke Vendor, dan perubahan request.
-        </p>
-      </div>
+      <PageHeader
+        title="Aktivitas"
+        subtitle="Semua kejadian penting dari semua order — unit Failed, dibatalkan, dialihkan ke Vendor, dan perubahan request."
+      />
 
       <RecentActivityFeed role="operational" limit={30} showHeader={false} />
     </DashboardShell>

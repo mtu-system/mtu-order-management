@@ -168,7 +168,7 @@ export default async function ManagerOrderDetailPage({
         </div>
 
         <span
-          className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold ${getStatusClass(
+          className={`inline-flex items-center rounded-md px-3 py-1.5 text-xs font-bold ${getStatusClass(
             order.status
           )}`}
         >
@@ -387,7 +387,7 @@ export default async function ManagerOrderDetailPage({
                       {truck.uang_jalan_distributed ? 'UJ ✓' : 'UJ -'}
                     </td>
                     <td className="px-5 py-2.5">
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-700">
+                      <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-700">
                         {getTruckStatusLabel(truck.status)}
                       </span>
                     </td>

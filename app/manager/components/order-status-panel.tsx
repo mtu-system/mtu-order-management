@@ -201,7 +201,7 @@ export default function OrderStatusPanel({
 
                   <td className="px-5 py-2.5">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${order.statusClass}`}
+                      className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${order.statusClass}`}
                     >
                       {order.statusLabel}
                     </span>

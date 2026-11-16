@@ -140,7 +140,7 @@ export default async function HSEOrderDetailPage({
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Status
               </p>
-              <span className="mt-1 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+              <span className="mt-1 inline-block rounded-md bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                 {order.status}
               </span>
             </div>
@@ -306,7 +306,7 @@ export default async function HSEOrderDetailPage({
                     <div className="font-bold text-gray-900">
                       Unit {index + 1}
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200">
+                    <span className="rounded-md bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200">
                       {truck.vehicle_type}
                     </span>
                   </div>

@@ -151,7 +151,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
           </p>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
           <ShieldCheck className="h-3.5 w-3.5" />
           HSE Passed
         </span>
@@ -228,7 +228,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
                   Akan dibagikan kepada driver
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                 <Clock className="h-3 w-3" />
                 Diproses
               </span>
@@ -243,7 +243,7 @@ export default function UnitProcessing({ truck }: UnitProcessingProps) {
                   Akan dibagikan kepada driver
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                 <Clock className="h-3 w-3" />
                 Diproses
               </span>

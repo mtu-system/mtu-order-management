@@ -537,7 +537,7 @@ export default async function ManagerDashboardPage() {
                       {truck.orders?.trip || '-'}
                     </td>
                     <td className="px-5 py-2.5">
-                      <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                      <span className="inline-flex items-center rounded-md bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
                         Ready
                       </span>
                     </td>
@@ -565,7 +565,7 @@ export default async function ManagerDashboardPage() {
               Needs Attention
             </h2>
             {needsAttentionList.length > 0 && (
-              <span className="ml-auto rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+              <span className="ml-auto rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                 {needsAttention.length}
               </span>
             )}

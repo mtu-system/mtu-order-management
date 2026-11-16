@@ -103,7 +103,7 @@ export default function ActivityLogsFeed({ items }: ActivityLogsFeedProps) {
             key={item.key}
             type="button"
             onClick={() => handleFilterChange(item.key)}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+            className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
               filter === item.key
                 ? 'bg-[#2563EB] text-white'
                 : 'text-gray-500 hover:bg-gray-100'
@@ -156,7 +156,7 @@ export default function ActivityLogsFeed({ items }: ActivityLogsFeedProps) {
                         </td>
                         <td className="w-28 px-2 py-2 align-top">
                           <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
                               actorBadgeClass[actor] || actorBadgeClass.System
                             }`}
                           >

@@ -328,7 +328,7 @@ export default async function OperationalOrderDetailPage({
 
         {/* BOOKING — CEK KAPASITAS / STATUS */}
         {order.is_booking && (
-          <div className="mb-6 flex items-center gap-2 rounded-full bg-violet-100 px-4 py-2 text-xs font-bold text-violet-700 w-fit">
+          <div className="mb-6 flex items-center gap-2 rounded-md bg-violet-100 px-4 py-2 text-xs font-bold text-violet-700 w-fit">
             <Truck className="h-3.5 w-3.5" />
             Booking · Kebutuhan{' '}
             {order.booking_date
@@ -403,7 +403,7 @@ export default async function OperationalOrderDetailPage({
               <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                 Status
               </p>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
                 {order.status}
               </span>
             </div>
@@ -427,14 +427,14 @@ export default async function OperationalOrderDetailPage({
               ([vehicleType, quantity]) => (
                 <span
                   key={vehicleType}
-                  className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
+                  className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
                 >
                   {vehicleType} · {quantity} Unit
                 </span>
               )
             )}
 
-            <span className="ml-auto inline-flex items-center rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
+            <span className="ml-auto inline-flex items-center rounded-md bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
               Total {totalRequiredUnits} Unit
             </span>
           </div>
@@ -602,7 +602,7 @@ export default async function OperationalOrderDetailPage({
             subtitle="Unit internal yang sudah diinformasikan oleh Operational."
             icon={<History className="h-4.5 w-4.5" />}
             badge={
-              <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#2563EB]">
+              <span className="inline-flex items-center rounded-md bg-[#2563EB]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#2563EB]">
                 {historyInternalTrucks.length} Unit
               </span>
             }
@@ -633,7 +633,7 @@ export default async function OperationalOrderDetailPage({
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
                       <ShieldCheck className="h-3 w-3" />
                       {truck.status}
                     </span>
@@ -807,7 +807,7 @@ export default async function OperationalOrderDetailPage({
             title="Unit Ready to Depart"
             icon={<Truck className="h-4.5 w-4.5" />}
             badge={
-              <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-bold text-violet-700">
+              <span className="inline-flex items-center rounded-md bg-violet-100 px-2.5 py-0.5 text-[11px] font-bold text-violet-700">
                 {readyToDepartTrucks.length} Unit
               </span>
             }
@@ -828,7 +828,7 @@ export default async function OperationalOrderDetailPage({
                       {truck.driver_name || '-'}
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700">
                     Ready to Depart
                   </span>
                 </div>

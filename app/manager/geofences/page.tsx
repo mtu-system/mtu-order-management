@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import GeofenceManager from '@/app/components/geofence-manager'
 import type { Geofence } from '@/lib/geo'
@@ -17,13 +18,10 @@ export default async function ManagerGeofencesPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">Geofence</h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Tandai lokasi loading dan bongkar. Sistem akan memberi saran status
-          saat unit keluar atau masuk area.
-        </p>
-      </div>
+      <PageHeader
+        title="Geofence"
+        subtitle="Tandai lokasi loading dan bongkar. Sistem akan memberi saran status saat unit keluar atau masuk area."
+      />
       <GeofenceManager initialFences={(data || []) as Geofence[]} />
     </DashboardShell>
   )

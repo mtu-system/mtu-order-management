@@ -59,7 +59,7 @@ export default async function OperationalOrdersPage() {
           </p>
         </div>
 
-        <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
+        <span className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
           {orders?.length || 0} Order
         </span>
       </div>
@@ -136,7 +136,7 @@ export default async function OperationalOrdersPage() {
                   <td className="px-6 py-4 text-gray-600">{order.trip}</td>
 
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                    <span className="inline-flex items-center rounded-md bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                       Waiting Unit
                     </span>
                   </td>
@@ -144,7 +144,7 @@ export default async function OperationalOrdersPage() {
                   <td className="px-6 py-4 text-right">
                     <Link
                       href={`/operational/orders/${order.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#2563EB] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#2563EB]/85"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[#2563EB] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#2563EB]/85"
                     >
                       Detail
                       <ArrowRight className="h-3.5 w-3.5" />

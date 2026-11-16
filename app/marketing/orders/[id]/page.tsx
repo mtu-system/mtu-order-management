@@ -124,7 +124,7 @@ export default async function OrderDetailPage({
 
                 <div className="space-y-6">
           {order.is_booking && (
-            <div className="rounded-full bg-violet-100 px-4 py-2 text-xs font-bold text-violet-700 w-fit">
+            <div className="rounded-md bg-violet-100 px-4 py-2 text-xs font-bold text-violet-700 w-fit">
               Booking · Kebutuhan{' '}
               {order.booking_date
                 ? new Date(order.booking_date).toLocaleDateString('id-ID', {
@@ -258,7 +258,7 @@ export default async function OrderDetailPage({
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                   Status Order
                 </p>
-                <span className="mt-1 inline-block rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                <span className="mt-1 inline-block rounded-md bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
                   {formatOrderStatus(order.status)}
                 </span>
               </div>
@@ -342,7 +342,7 @@ export default async function OrderDetailPage({
                   Perkembangan setiap unit dalam order.
                 </p>
               </div>
-              <span className="rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
+              <span className="rounded-md bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
                 Total {activeTrucks.length} Unit Aktif
               </span>
             </div>
@@ -488,7 +488,7 @@ export default async function OrderDetailPage({
                     tindakan.
                   </p>
                 </div>
-                <span className="rounded-full bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
+                <span className="rounded-md bg-[#2563EB]/10 px-3 py-1 text-xs font-bold text-[#2563EB]">
                   Editable
                 </span>
               </div>
@@ -539,19 +539,19 @@ export default async function OrderDetailPage({
                         </div>
 
                         {request.status === 'pending' && (
-                          <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                          <span className="shrink-0 rounded-md bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                             Menunggu Operational
                           </span>
                         )}
 
                         {request.status === 'approved' && (
-                          <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                          <span className="shrink-0 rounded-md bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
                             Disetujui
                           </span>
                         )}
 
                         {request.status === 'rejected' && (
-                          <span className="shrink-0 rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+                          <span className="shrink-0 rounded-md bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
                             Ditolak
                           </span>
                         )}

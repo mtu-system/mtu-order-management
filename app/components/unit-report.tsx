@@ -291,7 +291,7 @@ export default function UnitReport({
               key={label}
               type="button"
               onClick={() => applyPreset(days as number)}
-              className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600 hover:bg-gray-200"
+              className="rounded-md bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600 hover:bg-gray-200"
             >
               {label}
             </button>

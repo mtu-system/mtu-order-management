@@ -123,7 +123,7 @@ export default async function OrderHistoryTimeline({
       subtitle="Semua perubahan tercatat di sini dan bisa dilihat oleh Marketing, Operational, dan HSE."
       icon={<HistoryIcon className="h-4.5 w-4.5" />}
       badge={
-        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-bold text-gray-600">
+        <span className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-[11px] font-bold text-gray-600">
           {combined.length} entri
         </span>
       }

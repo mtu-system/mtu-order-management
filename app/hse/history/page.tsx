@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import PeriodSwitcher from '@/app/components/period-switcher'
 import { fetchAll } from '@/lib/fetch-all'
 import { resolvePeriod } from '@/lib/period'
@@ -144,16 +145,10 @@ export default async function HSEHistoryPage({
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">
-          Inspection History
-        </h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Order yang sudah tidak menunggu pemeriksaan HSE lagi — sudah
-          selesai diperiksa, atau memang full-VM sehingga tidak pernah
-          butuh pemeriksaan.
-        </p>
-      </div>
+      <PageHeader
+        title="Inspection History"
+        subtitle="Order yang sudah tidak menunggu pemeriksaan HSE lagi — sudah selesai diperiksa, atau memang full-VM sehingga tidak pernah butuh pemeriksaan."
+      />
 
       <PeriodSwitcher period={period} count={orders.length} truncated={truncated} />
 

@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import SafetyReportView from '@/app/components/safety-report-view'
 import { buildReport, loadAlertRows } from '@/lib/safety-report'
@@ -25,15 +26,10 @@ export default async function ManagerSafetyReportPage({
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">
-          Laporan Keselamatan
-        </h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Ringkasan pelanggaran keselamatan dari pemantauan GPS: overspeed, jalan
-          malam, jam mengemudi, dan penanganannya.
-        </p>
-      </div>
+      <PageHeader
+        title="Laporan Keselamatan"
+        subtitle="Ringkasan pelanggaran keselamatan dari pemantauan GPS: overspeed, jalan malam, jam mengemudi, dan penanganannya."
+      />
       <SafetyReportView report={report} />
     </DashboardShell>
   )

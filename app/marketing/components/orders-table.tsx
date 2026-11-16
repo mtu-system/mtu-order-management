@@ -99,7 +99,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
           >
             {item.label}
             <span
-              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${
+              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] ${
                 filter === item.key
                   ? 'bg-white/20 text-white'
                   : 'bg-gray-200 text-gray-500'
@@ -229,7 +229,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
                           -{order.reduceUnitQuantity} Unit{' '}
                           {order.reduceUnitVehicleType}
                         </div>
-                        <div className="mt-1 inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-700">
+                        <div className="mt-1 inline-flex rounded-md bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-700">
                           Menunggu Operational
                         </div>
                       </div>

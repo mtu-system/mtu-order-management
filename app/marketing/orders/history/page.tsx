@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import PeriodSwitcher from '@/app/components/period-switcher'
 import { fetchAll } from '@/lib/fetch-all'
 import { resolvePeriod } from '@/lib/period'
@@ -136,15 +137,10 @@ export default async function MarketingOrderHistoryPage({
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-extrabold text-gray-900">Order History</h1>
-          <p className="mt-0.5 text-[13px] text-gray-500">
-            Order yang sudah selesai, Ready to Depart, dibatalkan, atau Unit
-            Tidak Tersedia.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Order History"
+        subtitle="Order yang sudah selesai, Ready to Depart, dibatalkan, atau Unit Tidak Tersedia."
+      />
 
       <PeriodSwitcher period={period} count={orders.length} truncated={truncated} />
 

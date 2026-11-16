@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import { loadMonitoringRows } from '@/lib/monitoring'
 import MonitoringBoard from '@/app/components/monitoring-board'
@@ -16,12 +17,10 @@ export default async function MarketingMonitoringPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">Monitoring</h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Posisi dan status perjalanan unit untuk order kamu.
-        </p>
-      </div>
+      <PageHeader
+        title="Monitoring"
+        subtitle="Posisi dan status perjalanan unit untuk order kamu."
+      />
 
       <MonitoringBoard rows={rows} canEdit={false} />
     </DashboardShell>

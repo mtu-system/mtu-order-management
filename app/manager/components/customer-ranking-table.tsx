@@ -214,7 +214,7 @@ export default function CustomerRankingTable({
                 key={preset.key}
                 type="button"
                 onClick={() => applyPreset(preset.key)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                className={`rounded-md px-3 py-1 text-xs font-bold transition ${
                   activePreset === preset.key
                     ? 'bg-[#2563EB] text-white'
                     : 'text-gray-500 hover:bg-gray-100'

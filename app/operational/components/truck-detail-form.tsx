@@ -164,7 +164,7 @@ export default function TruckDetailForm({
           </div>
         </div>
 
-        <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-3 py-1.5 text-xs font-bold text-[#2563EB]">
+        <span className="inline-flex items-center rounded-md bg-[#2563EB]/10 px-3 py-1.5 text-xs font-bold text-[#2563EB]">
           {trucks.length} Unit
         </span>
       </div>
@@ -200,7 +200,7 @@ export default function TruckDetailForm({
                 </div>
               </div>
 
-              <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200">
+              <span className="inline-flex items-center rounded-md bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200">
                 {truck.vehicle_type}
               </span>
             </div>

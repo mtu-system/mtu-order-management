@@ -203,7 +203,7 @@ useEffect(() => {
           >
             PK
             <span
-              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${
+              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] ${
                 showPk ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
               }`}
             >
@@ -222,7 +222,7 @@ useEffect(() => {
           >
             RFT
             <span
-              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${
+              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] ${
                 showRft ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
               }`}
             >
@@ -388,7 +388,7 @@ useEffect(() => {
 
                   <td className="px-5 py-3.5">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${order.statusClass}`}
+                      className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${order.statusClass}`}
                     >
                       {order.statusLabel}
                     </span>

@@ -38,7 +38,7 @@ function getStatusBadge(status: string | null) {
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${className}`}
+      className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${className}`}
     >
       {label}
     </span>

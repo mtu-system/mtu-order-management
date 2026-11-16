@@ -9,14 +9,15 @@ export type StatTone =
   | 'red'
   | 'slate'
 
-const TONES: Record<StatTone, { box: string; value: string }> = {
-  navy: { box: 'bg-[#082868]/10 text-[#082868]', value: 'text-[#082868]' },
-  blue: { box: 'bg-blue-100 text-blue-700', value: 'text-blue-700' },
-  amber: { box: 'bg-amber-100 text-amber-700', value: 'text-amber-700' },
-  green: { box: 'bg-emerald-100 text-emerald-700', value: 'text-emerald-700' },
-  violet: { box: 'bg-violet-100 text-violet-700', value: 'text-violet-700' },
-  red: { box: 'bg-red-100 text-red-700', value: 'text-red-700' },
-  slate: { box: 'bg-slate-100 text-slate-600', value: 'text-slate-700' },
+// Warna hanya di ikon & angka -- kartu tetap putih polos.
+const TONES: Record<StatTone, { icon: string; value: string }> = {
+  navy: { icon: 'text-[#082868]', value: 'text-slate-900' },
+  blue: { icon: 'text-blue-600', value: 'text-slate-900' },
+  amber: { icon: 'text-amber-600', value: 'text-slate-900' },
+  green: { icon: 'text-emerald-600', value: 'text-slate-900' },
+  violet: { icon: 'text-violet-600', value: 'text-slate-900' },
+  red: { icon: 'text-red-600', value: 'text-red-700' },
+  slate: { icon: 'text-slate-500', value: 'text-slate-900' },
 }
 
 type StatCardProps = {
@@ -41,30 +42,33 @@ export default function StatCard({
   onClick,
 }: StatCardProps) {
   const t = TONES[tone]
-  const className = `stat-card flex w-full flex-col items-start p-5 text-left ${
-    active ? 'ring-2 ring-[#082868]' : ''
+  const className = `stat-card flex w-full flex-col items-start px-4 py-3.5 text-left ${
+    active ? 'border-[#082868] ring-1 ring-[#082868]' : ''
   } ${alert ? 'stat-card-alert' : ''} ${onClick ? 'cursor-pointer' : ''}`
 
   const body = (
     <>
-      <span
-        className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${t.box}`}
-      >
-        <Icon className="h-5 w-5" />
+      <span className="flex w-full items-center justify-between gap-2">
+        <span className="text-[12.5px] font-medium text-slate-500">{label}</span>
+        <Icon className={`h-4 w-4 shrink-0 ${t.icon}`} />
       </span>
-      <span className="text-[13px] font-semibold text-slate-600">{label}</span>
       <span
-        className={`mt-1 text-[32px] font-extrabold leading-none ${t.value}`}
+        className={`stat-value mt-1.5 text-[24px] font-bold leading-none tabular-nums ${t.value}`}
       >
         {value}
       </span>
-      {hint && <span className="mt-2 text-[12px] text-slate-500">{hint}</span>}
+      {hint && <span className="mt-1.5 text-[12px] text-slate-500">{hint}</span>}
     </>
   )
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={className}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        className={className}
+      >
         {body}
       </button>
     )

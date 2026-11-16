@@ -186,7 +186,7 @@ export default function GpsLinkManager({
                 key={label}
                 type="button"
                 onClick={() => setPlate(label.toUpperCase())}
-                className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-900 ring-1 ring-amber-200 transition hover:bg-amber-100"
+                className="rounded-md bg-white px-3 py-1 text-xs font-bold text-amber-900 ring-1 ring-amber-200 transition hover:bg-amber-100"
               >
                 {label}
               </button>

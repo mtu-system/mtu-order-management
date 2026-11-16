@@ -131,7 +131,7 @@ export default function ReadyLoadingUnitsTable({
           >
             {item.label}
             <span
-              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${
+              className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] ${
                 filter === item.key
                   ? 'bg-white/20 text-white'
                   : 'bg-gray-100 text-gray-500'

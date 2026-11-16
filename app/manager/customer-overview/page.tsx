@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import CustomerRankingTable from '@/app/manager/components/customer-ranking-table'
 import PeriodSwitcher from '@/app/components/period-switcher'
@@ -44,14 +45,10 @@ export default async function CustomerOverviewPage({
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-xl font-bold text-gray-900">
-          Customer Overview
-        </h1>
-        <p className="text-xs text-gray-500">
-          Ringkasan jumlah order dan reject per customer.
-        </p>
-      </div>
+      <PageHeader
+        title="Customer Overview"
+        subtitle="Ringkasan jumlah order dan reject per customer."
+      />
 
       <PeriodSwitcher period={period} count={rows.length} truncated={truncated} />
 

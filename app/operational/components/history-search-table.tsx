@@ -224,7 +224,7 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
             }`}
           >
             PK
-            <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${showPk ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+            <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] ${showPk ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
               {pkCount}
             </span>
           </button>
@@ -237,7 +237,7 @@ export default function HistorySearchTable({ orders }: HistorySearchTableProps) 
             }`}
           >
             RFT
-            <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] ${showRft ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+            <span className={`inline-flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] ${showRft ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
               {rftCount}
             </span>
           </button>

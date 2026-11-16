@@ -302,7 +302,7 @@ export default function BookingReportTable({ rows }: BookingReportTableProps) {
 
                   <td className="px-5 py-3.5">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${resultBadge[row.result]}`}
+                      className={`inline-flex items-center rounded-md px-2.5 py-1 text-[11px] font-bold ${resultBadge[row.result]}`}
                     >
                       {resultLabel[row.result]}
                     </span>

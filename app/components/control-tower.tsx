@@ -620,7 +620,7 @@ export default function ControlTower({
                   key={chip.key}
                   type="button"
                   onClick={() => setFilter(chip.key)}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-bold ${
                     filter === chip.key
                       ? 'bg-[#2563EB] text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -655,7 +655,7 @@ export default function ControlTower({
                         {item.row.plateNumber}
                       </p>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                           item.row.tripStatus
                             ? TRIP_BADGE[item.row.tripStatus]
                             : 'bg-gray-100 text-gray-500'

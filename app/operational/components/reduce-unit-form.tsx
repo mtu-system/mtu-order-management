@@ -334,7 +334,7 @@ export default function ReduceUnitForm({
               </p>
             </div>
 
-            <span className="inline-flex items-center rounded-full bg-[#2563EB]/10 px-3 py-1.5 text-xs font-bold text-[#2563EB]">
+            <span className="inline-flex items-center rounded-md bg-[#2563EB]/10 px-3 py-1.5 text-xs font-bold text-[#2563EB]">
               {selectedTruckIds.length}/{requestedQuantity}
             </span>
           </div>
@@ -370,7 +370,7 @@ export default function ReduceUnitForm({
 
                     <div className="text-right">
                       <div
-                        className={`mb-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
+                        className={`mb-2 inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-bold ${
                           selected
                             ? 'bg-[#2563EB] text-white'
                             : 'bg-gray-100 text-gray-600'

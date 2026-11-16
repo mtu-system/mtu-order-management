@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import GpsLinkManager from '@/app/components/gps-link-manager'
 
@@ -31,13 +32,10 @@ export default async function ManagerGpsDevicesPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">Unit GPS</h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Hubungkan plat unit ke perangkat TrackSolid yang namanya tidak sama
-          dengan plat.
-        </p>
-      </div>
+      <PageHeader
+        title="Unit GPS"
+        subtitle="Hubungkan plat unit ke perangkat TrackSolid yang namanya tidak sama dengan plat."
+      />
       <GpsLinkManager initialLinks={links || []} activePlates={activePlates} />
     </DashboardShell>
   )

@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import { Clock } from 'lucide-react'
 import ActivityLogsFeed from '@/app/manager/components/activity-logs-feed'
@@ -63,13 +64,10 @@ export default async function ManagerActivityLogsPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">Activity Logs</h1>
-        <p className="text-xs text-gray-500">
-          Riwayat perubahan order & unit terbaru dari Marketing, Operational,
-          dan HSE.
-        </p>
-      </div>
+      <PageHeader
+        title="Activity Logs"
+        subtitle="Riwayat perubahan order & unit terbaru dari Marketing, Operational, dan HSE."
+      />
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-3">

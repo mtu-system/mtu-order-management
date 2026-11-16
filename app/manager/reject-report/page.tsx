@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import PeriodSwitcher from '@/app/components/period-switcher'
 import { fetchAll } from '@/lib/fetch-all'
 import { resolvePeriod } from '@/lib/period'
@@ -98,24 +99,17 @@ export default async function RejectReportPage({
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Reject Report</h1>
-          <p className="text-xs text-gray-500">
-            Order yang unitnya sebagian atau seluruhnya tidak tersedia,
-            berdasarkan keputusan Operational.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
-            {partialCount} Sebagian Tersedia
-          </span>
-          <span className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">
-            {unavailableCount} Tidak Tersedia
-          </span>
-        </div>
-      </div>
+      <PageHeader
+        title="Reject Report"
+        subtitle="Order yang unitnya sebagian atau seluruhnya tidak tersedia, berdasarkan keputusan Operational."
+      >
+        <span className="rounded-md bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+        {partialCount} Sebagian Tersedia
+        </span>
+        <span className="rounded-md bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+        {unavailableCount} Tidak Tersedia
+        </span>
+      </PageHeader>
 
       <PeriodSwitcher period={period} count={rows.length} truncated={truncated} />
 

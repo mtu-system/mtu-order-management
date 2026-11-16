@@ -376,7 +376,7 @@ export default function BookingCapacityForm({
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                        className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-bold ${
                           valid
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-red-100 text-red-700'

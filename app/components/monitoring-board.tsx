@@ -400,7 +400,7 @@ export default function MonitoringBoard({
               key={chip.key}
               type="button"
               onClick={() => setFilter(chip.key)}
-              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+              className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
                 filter === chip.key
                   ? 'bg-[#2563EB] text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -485,7 +485,7 @@ export default function MonitoringBoard({
                       {row.tripStatus ? (
                         <>
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${TRIP_BADGE[row.tripStatus]}`}
+                            className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold ${TRIP_BADGE[row.tripStatus]}`}
                           >
                             {TRIP_LABEL[row.tripStatus]}
                           </span>
@@ -499,7 +499,7 @@ export default function MonitoringBoard({
                           )}
                         </>
                       ) : (
-                        <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-500">
+                        <span className="inline-flex rounded-md bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-500">
                           Belum Mulai
                         </span>
                       )}

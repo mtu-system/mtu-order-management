@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import { loadMonitoringRows } from '@/lib/monitoring'
 import LiveMap from '@/app/components/live-map'
@@ -13,12 +14,10 @@ export default async function OperationalLiveMapPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">Live Map</h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Posisi semua unit aktif, diperbarui otomatis.
-        </p>
-      </div>
+      <PageHeader
+        title="Live Map"
+        subtitle="Posisi semua unit aktif, diperbarui otomatis."
+      />
       <LiveMap rows={rows} />
     </DashboardShell>
   )

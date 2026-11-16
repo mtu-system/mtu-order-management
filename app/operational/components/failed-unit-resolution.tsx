@@ -486,7 +486,7 @@ export default function FailedUnitResolution({
           </p>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
           <AlertTriangle className="h-3 w-3" />
           Failed
         </span>

@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import PeriodSwitcher from '@/app/components/period-switcher'
 import { fetchAll } from '@/lib/fetch-all'
 import { resolvePeriod } from '@/lib/period'
@@ -203,28 +204,20 @@ export default async function BookingReportPage({
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Booking Report</h1>
-          <p className="text-xs text-gray-500">
-            Rekap booking kebutuhan masa depan dari Marketing — berapa yang
-            bisa dicover MTU (diambil) dan berapa yang tidak, buat lihat
-            kapasitas MTU dari waktu ke waktu.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700">
-            {activatedCount} Diambil
-          </span>
-          <span className="rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">
-            {rejectedCount} Tidak Diambil
-          </span>
-          <span className="rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800">
-            {reviewCount} Masih Proses
-          </span>
-        </div>
-      </div>
+      <PageHeader
+        title="Booking Report"
+        subtitle="Rekap booking kebutuhan masa depan dari Marketing — berapa yang bisa dicover MTU (diambil) dan berapa yang tidak, buat lihat kapasitas MTU dari waktu ke waktu."
+      >
+        <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
+        {activatedCount} Diambil
+        </span>
+        <span className="rounded-md bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+        {rejectedCount} Tidak Diambil
+        </span>
+        <span className="rounded-md bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+        {reviewCount} Masih Proses
+        </span>
+      </PageHeader>
 
       <PeriodSwitcher period={period} count={rows.length} truncated={truncated} />
 

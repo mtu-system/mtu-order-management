@@ -1,5 +1,6 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { createClient } from '@/lib/supabase/server'
 import { loadMonitoringRows } from '@/lib/monitoring'
 import ControlTower from '@/app/components/control-tower'
@@ -13,13 +14,10 @@ export default async function ManagerControlTowerPage() {
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-5">
-        <h1 className="text-lg font-extrabold text-gray-900">Control Tower</h1>
-        <p className="mt-0.5 text-[13px] text-gray-500">
-          Pantau semua unit secara realtime: kecepatan, status, sisa jarak, dan
-          peringatan mengemudi.
-        </p>
-      </div>
+      <PageHeader
+        title="Control Tower"
+        subtitle="Pantau semua unit secara realtime: kecepatan, status, sisa jarak, dan peringatan mengemudi."
+      />
       <ControlTower rows={rows} canEdit />
     </DashboardShell>
   )

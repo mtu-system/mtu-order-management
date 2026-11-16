@@ -39,7 +39,7 @@ export default async function VMUnitsPanel({ orderId }: VMUnitsPanelProps) {
       subtitle="Unit yang dipenuhi oleh Vendor — Read Only"
       icon={<Building2 className="h-4.5 w-4.5" />}
       badge={
-        <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-bold text-violet-700">
+        <span className="inline-flex items-center rounded-md bg-violet-100 px-2.5 py-0.5 text-[11px] font-bold text-violet-700">
           {trucks.length} Unit
         </span>
       }
@@ -70,7 +70,7 @@ export default async function VMUnitsPanel({ orderId }: VMUnitsPanelProps) {
                   )}
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
                 VM
               </span>
             </div>

@@ -1292,7 +1292,7 @@ export default function ChangeRequestReview({
             Permintaan Perubahan
           </h2>
 
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-amber-700 ring-1 ring-inset ring-amber-200">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-xs font-bold text-amber-700 ring-1 ring-inset ring-amber-200">
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             Menunggu Operational
           </span>

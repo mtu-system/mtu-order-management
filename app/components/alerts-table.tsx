@@ -81,7 +81,7 @@ export default function AlertsTable({
             key={key}
             type="button"
             onClick={() => setTab(key as 'open' | 'all')}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+            className={`rounded-md px-3 py-1.5 text-xs font-bold ${
               tab === key
                 ? 'bg-[#2563EB] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -132,7 +132,7 @@ export default function AlertsTable({
                     </td>
                     <td className="px-5 py-3">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                        className={`rounded-md px-2.5 py-1 text-[11px] font-bold ${
                           alert.level === 'red'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-amber-100 text-amber-800'

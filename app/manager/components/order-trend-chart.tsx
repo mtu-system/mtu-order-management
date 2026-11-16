@@ -27,7 +27,7 @@ export default function OrderTrendChart({
         <button
           type="button"
           onClick={() => setRange('7')}
-          className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+          className={`rounded-md px-3 py-1 text-[11px] font-bold transition ${
             range === '7'
               ? 'bg-white text-[#2563EB] shadow-sm'
               : 'text-gray-500'
@@ -38,7 +38,7 @@ export default function OrderTrendChart({
         <button
           type="button"
           onClick={() => setRange('30')}
-          className={`rounded-full px-3 py-1 text-[11px] font-bold transition ${
+          className={`rounded-md px-3 py-1 text-[11px] font-bold transition ${
             range === '30'
               ? 'bg-white text-[#2563EB] shadow-sm'
               : 'text-gray-500'

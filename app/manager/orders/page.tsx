@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
+import PageHeader from '@/app/components/page-header'
 import { fetchAll } from '@/lib/fetch-all'
 import { createClient } from '@/lib/supabase/server'
 import OrdersSearchTable from '@/app/manager/components/orders-search-table'
@@ -127,18 +128,14 @@ export default async function ManagerOrdersPage({
 
   return (
     <DashboardShell user={user}>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Orders</h1>
-          <p className="text-xs text-gray-500">
-            Semua order dalam sistem — read only monitoring.
-          </p>
-        </div>
-
-        <span className="rounded-full bg-[#2563EB]/10 px-3.5 py-1.5 text-xs font-bold text-[#2563EB]">
-          {orderRows.length} Order
+      <PageHeader
+        title="Orders"
+        subtitle="Semua order dalam sistem — read only monitoring."
+      >
+        <span className="rounded-md bg-[#2563EB]/10 px-2.5 py-1 text-xs font-bold text-[#2563EB]">
+        {orderRows.length} Order
         </span>
-      </div>
+      </PageHeader>
 
       <p className="mb-4 text-xs text-gray-500">
         {showAllHistory ? (

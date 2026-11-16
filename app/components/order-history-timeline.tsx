@@ -1,33 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { History as HistoryIcon } from 'lucide-react'
 import CollapsibleSection from './collapsible-section'
+import { describeActivity } from '@/lib/activity-labels'
 
 type OrderHistoryTimelineProps = {
   orderId: string
-}
-
-const actionLabels: Record<string, string> = {
-  reduce_unit: 'Kurangi Unit',
-  add_unit: 'Tambah Unit',
-  change_vehicle: 'Ganti Jenis Unit',
-  change_trip: 'Ubah Trip',
-  change_pk: 'Ubah PK',
-  change_rft: 'Ubah RFT/TR/Job',
-  change_customer: 'Ubah Customer',
-  change_instruction: 'Ubah Instruksi',
-  change_note: 'Ubah Catatan',
-  cancel_order: 'Batalkan Order',
-  replace_failed_unit: 'Ganti Detail Truk (Unit Failed)',
-  failed_unit_to_vendor: 'Unit Failed Dialihkan ke Vendor',
-  cancel_failed_unit: 'Unit Failed Dibatalkan',
-  hse_inspection: 'Pemeriksaan HSE',
-  unit_allocation: 'Alokasi Unit',
-  create_order: 'Order/Booking Dibuat',
-  booking_capacity_check: 'Cek Kapasitas oleh Operational',
-  booking_revised: 'Booking Direvisi oleh Marketing',
-  booking_approved: 'Booking Di-approve, Mulai Diproses',
-  booking_cancelled: 'Booking Dibatalkan',
-  trip_status_changed: 'Status Perjalanan Unit',
 }
 
 const roleLabels: Record<string, string> = {
@@ -63,6 +40,7 @@ export default async function OrderHistoryTimeline({
       .from('unit_history')
       .select(`
         id,
+        truck_id,
         action,
         field_name,
         old_value,
@@ -91,6 +69,25 @@ export default async function OrderHistoryTimeline({
 
   if (!combined.length) {
     return null
+  }
+
+  // Plat unit untuk kalimat riwayat (read-only, ikut RLS).
+  const truckIds = Array.from(
+    new Set(
+      (unitHistory || [])
+        .map((item) => (item as { truck_id?: string | null }).truck_id)
+        .filter(Boolean)
+    )
+  ) as string[]
+  const plateById = new Map<string, string>()
+  if (truckIds.length) {
+    const { data: trucks } = await supabase
+      .from('order_trucks')
+      .select('id, plate_number')
+      .in('id', truckIds)
+    for (const truck of trucks || []) {
+      if (truck.plate_number) plateById.set(String(truck.id), truck.plate_number)
+    }
   }
 
   const actorIds = Array.from(
@@ -128,46 +125,50 @@ export default async function OrderHistoryTimeline({
         </span>
       }
     >
-      <div className="space-y-3">
-        {combined.map((item) => (
-          <div
-            key={`${item.scope}-${item.id}`}
-            className="rounded-xl border border-gray-200 bg-gray-50/60 p-4"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-bold text-gray-900">
-                  {actionLabels[item.action] || item.action}
+      <ol className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)]">
+        {combined.map((item) => {
+          const truckId = (item as { truck_id?: string | null }).truck_id
+          const text = describeActivity({
+            ...item,
+            plate: truckId ? plateById.get(String(truckId)) || null : null,
+          })
+          const actor = item.changed_by ? actorById[item.changed_by] : undefined
+
+          return (
+            <li
+              key={`${item.scope}-${item.id}`}
+              className="flex items-start justify-between gap-4 px-4 py-2.5"
+            >
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-slate-900">
+                  {text.title}
                 </p>
-
-                {item.old_value && item.new_value && (
-                  <p className="mt-1 text-sm text-gray-600">
-                    {item.old_value} → {item.new_value}
-                  </p>
-                )}
-
-                {item.reason && (
-                  <p className="mt-1 text-xs text-gray-500">{item.reason}</p>
+                {text.detail && (
+                  <p className="mt-0.5 text-[12px] text-slate-500">{text.detail}</p>
                 )}
               </div>
 
-              <span className="shrink-0 text-right text-xs text-gray-400">
-                <span className="block">
+              <div className="shrink-0 text-right text-[12px] tabular-nums text-slate-500">
+                <p>
                   {new Date(item.changed_at).toLocaleString('id-ID', {
                     timeZone: 'Asia/Jakarta',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })}
-                </span>
-                {item.changed_by && actorById[item.changed_by] && (
-                  <span className="mt-0.5 block font-semibold text-gray-500">
-                    {actorById[item.changed_by].name} ·{' '}
-                    {actorById[item.changed_by].role}
-                  </span>
+                </p>
+                {actor && (
+                  <p className="mt-0.5 font-medium text-slate-600">
+                    {actor.name} · {actor.role}
+                  </p>
                 )}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
     </CollapsibleSection>
   )
 }

@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import PageHeader from '@/app/components/page-header'
-import RecentActivityFeed from '@/app/components/recent-activity-feed'
+import ActivityLogSection from '@/app/components/activity-log-section'
 
 export default async function HSEActivityPage() {
   const user = await requireRole(['hse'])
@@ -13,7 +13,7 @@ export default async function HSEActivityPage() {
         subtitle="Semua kejadian penting dari semua order — unit Failed, dibatalkan, dialihkan ke Vendor, dan perubahan request."
       />
 
-      <RecentActivityFeed role="hse" limit={30} showHeader={false} />
+      <ActivityLogSection role="hse" />
     </DashboardShell>
   )
 }

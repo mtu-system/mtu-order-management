@@ -1,66 +1,10 @@
 import { requireRole } from '@/lib/auth'
 import DashboardShell from '@/app/components/dashboard-shell'
 import PageHeader from '@/app/components/page-header'
-import { createClient } from '@/lib/supabase/server'
-import { Clock } from 'lucide-react'
-import ActivityLogsFeed from '@/app/manager/components/activity-logs-feed'
+import ActivityLogSection from '@/app/components/activity-log-section'
 
 export default async function ManagerActivityLogsPage() {
   const user = await requireRole(['manager'])
-
-  const supabase = await createClient()
-
-  const [{ data: orderHistoryRaw }, { data: unitHistoryRaw }] =
-    await Promise.all([
-      supabase
-        .from('order_history')
-        .select(`
-          id,
-          action,
-          new_value,
-          reason,
-          changed_at,
-          orders ( customer, pk_number )
-        `)
-        .order('changed_at', { ascending: false })
-        .limit(150),
-      supabase
-        .from('unit_history')
-        .select(`
-          id,
-          action,
-          new_value,
-          reason,
-          changed_at,
-          orders ( customer, pk_number )
-        `)
-        .order('changed_at', { ascending: false })
-        .limit(150),
-    ])
-
-  const combined = [
-    ...(orderHistoryRaw || []).map((item: any) => ({
-      id: item.id,
-      action: item.action,
-      new_value: item.new_value,
-      reason: item.reason,
-      changed_at: item.changed_at,
-      customer: item.orders?.customer || '-',
-      pkNumber: item.orders?.pk_number || null,
-    })),
-    ...(unitHistoryRaw || []).map((item: any) => ({
-      id: item.id,
-      action: item.action,
-      new_value: item.new_value,
-      reason: item.reason,
-      changed_at: item.changed_at,
-      customer: item.orders?.customer || '-',
-      pkNumber: item.orders?.pk_number || null,
-    })),
-  ].sort(
-    (a, b) =>
-      new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime()
-  )
 
   return (
     <DashboardShell user={user}>
@@ -69,16 +13,7 @@ export default async function ManagerActivityLogsPage() {
         subtitle="Riwayat perubahan order & unit terbaru dari Marketing, Operational, dan HSE."
       />
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center gap-2 border-b border-gray-200 px-5 py-3">
-          <Clock className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-bold text-gray-900">
-            Aktivitas Terbaru
-          </h2>
-        </div>
-
-        <ActivityLogsFeed items={combined} />
-      </div>
+      <ActivityLogSection role="manager" />
     </DashboardShell>
   )
 }

@@ -119,11 +119,14 @@ export function plateKeyForDevice(
   const linked = plateByImei.get(device.imei)
   if (linked) return linked
 
+  const parsed = normalizePlate(parseDeviceName(device.deviceName).plate)
+  if (parsed && knownPlateKeys.includes(parsed)) return parsed
+
   const name = normalizePlate(device.deviceName)
   if (knownPlateKeys.includes(name)) return name
 
   const hit = knownPlateKeys.find((key) => key.length >= 4 && name.includes(key))
-  return hit || name
+  return hit || parsed || name
 }
 
 export function findPool(fences: Pick<Geofence, 'type' | 'lat' | 'lng' | 'radius_m' | 'name'>[]) {
@@ -305,6 +308,11 @@ export function estimateArrival(
 export type FleetUnit = {
   imei: string
   plate: string
+  deviceName: string
+  driver: string | null
+  base: DeviceBase
+  // Tidak update > INACTIVE_DEVICE_DAYS hari: kemungkinan alat lama/dilepas.
+  inactive: boolean
   vehicleType: string | null
   lat: number | null
   lng: number | null
@@ -335,4 +343,56 @@ export type FleetResponse = {
   journeyUpdatedAt: string | null
   units: FleetUnit[]
   fetchedAt: string
+}
+
+// ==========================================
+// NAMA PERANGKAT GPS
+// ==========================================
+// Format di Tracksolid: "TH - B 9185 KEI - Selly", "TR.B 9731 KYZ - Edi",
+// "BPN-TR.B 9964 KYX - Rifandi" (BPN = unit Balikpapan).
+export const DEVICE_TYPE_LABEL: Record<string, string> = {
+  TH: 'Truck Head',
+  TR: 'Tronton',
+  FU: 'Fuso',
+  PU: 'Pick Up',
+}
+
+export type DeviceBase = 'bekasi' | 'balikpapan'
+
+export const BASE_LABEL: Record<DeviceBase, string> = {
+  bekasi: 'Pool Bekasi',
+  balikpapan: 'Unit Balikpapan',
+}
+
+// Perangkat yang tidak mengirim posisi selama ini dianggap tidak terpasang.
+export const INACTIVE_DEVICE_DAYS = 30
+
+export function parseDeviceName(name: string) {
+  const original = (name || '').trim()
+  const upper = original.toUpperCase()
+
+  const baseMatch = /^BPN\s*[-.]?\s*/.exec(upper)
+  const base: DeviceBase = baseMatch ? 'balikpapan' : 'bekasi'
+  let offset = baseMatch ? baseMatch[0].length : 0
+
+  const codeMatch = /^(TH|TR|FU|PU)(?=[\s.\-]|B\s?\d)/.exec(upper.slice(offset))
+  const typeCode = codeMatch ? codeMatch[1] : null
+  if (codeMatch) offset += codeMatch[1].length
+
+  const plateMatch = /\b([A-Z]{1,2})\s+(\d{1,4})\s+([A-Z]{1,3})\b/.exec(upper.slice(offset))
+  const plate = plateMatch ? `${plateMatch[1]} ${plateMatch[2]} ${plateMatch[3]}` : null
+
+  let driver: string | null = null
+  if (plateMatch) {
+    const after = original.slice(offset + plateMatch.index + plateMatch[0].length)
+    driver = after.replace(/^[\s\-.]+/, '').trim() || null
+  }
+
+  return {
+    base,
+    typeCode,
+    typeLabel: typeCode ? DEVICE_TYPE_LABEL[typeCode] : null,
+    plate,
+    driver,
+  }
 }

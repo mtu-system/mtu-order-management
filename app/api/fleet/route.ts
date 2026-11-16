@@ -6,6 +6,8 @@ import { LIVE_MS, MOVING_KMH } from '@/lib/alert-rules'
 import { isDalamKota, regionOf } from '@/lib/regions'
 import { loadFleetTrucks } from '@/lib/fleet-journey'
 import {
+  INACTIVE_DEVICE_DAYS,
+  parseDeviceName,
   type FleetUnit,
   type JourneyRow,
   estimateArrival,
@@ -76,6 +78,7 @@ export async function GET() {
         ? now.getTime() - new Date(device.gpsTime.replace(' ', 'T') + 'Z').getTime()
         : Infinity
       const live = hasPoint && device.online && age <= LIVE_MS
+      const parsedName = parseDeviceName(device.deviceName)
       const gps: FleetUnit['gps'] = !live
         ? 'offline'
         : device.speed >= MOVING_KMH
@@ -106,8 +109,14 @@ export async function GET() {
 
       return {
         imei: device.imei,
-        plate: latest?.plate_number || device.deviceName,
-        vehicleType: latest?.vehicle_type || null,
+        plate: latest?.plate_number || parsedName.plate || device.deviceName,
+        deviceName: device.deviceName,
+        driver: parsedName.driver,
+        base: parsedName.base,
+        inactive: age > INACTIVE_DEVICE_DAYS * 86400e3,
+        // Kategori armada dari nama perangkat (TH/TR/FU/PU); kalau tidak ada,
+        // jenis dari order terakhir.
+        vehicleType: parsedName.typeLabel || latest?.vehicle_type || null,
         lat: device.lat,
         lng: device.lng,
         speed: device.speed,

@@ -12,7 +12,15 @@ import {
   Search,
   Warehouse,
 } from 'lucide-react'
-import { type FleetResponse, type FleetUnit, JOURNEY_LABEL, RELOADED_SHOW_MS, TREND_MIN_KM } from '@/lib/fleet'
+import {
+  BASE_LABEL,
+  INACTIVE_DEVICE_DAYS,
+  JOURNEY_LABEL,
+  RELOADED_SHOW_MS,
+  TREND_MIN_KM,
+  type FleetResponse,
+  type FleetUnit,
+} from '@/lib/fleet'
 import { REGION_LABEL, REGION_ORDER, type RegionId } from '@/lib/regions'
 import { TRIP_LABEL, type TripStatus } from '@/lib/trip-status'
 
@@ -151,7 +159,19 @@ export default function FleetOverview() {
     }
   }, [])
 
-  const units = useMemo(() => data?.units || [], [data])
+  const allUnits = useMemo(() => data?.units || [], [data])
+  // Perangkat yang lama tidak update dipisah supaya hitungan armada tidak
+  // tercampur alat lama yang sudah dilepas.
+  const units = useMemo(() => allUnits.filter((unit) => !unit.inactive), [allUnits])
+  const inactiveUnits = useMemo(
+    () =>
+      allUnits
+        .filter((unit) => unit.inactive)
+        .sort((a, b) => (b.gpsTime || '').localeCompare(a.gpsTime || '')),
+    [allUnits]
+  )
+  // Hanya unit Pool Bekasi yang dihitung pulang ke pool (unit Balikpapan tidak).
+  const poolUnits = units.filter((unit) => unit.base === 'bekasi')
 
   const regions = useMemo(() => {
     const map = new Map<
@@ -178,16 +198,16 @@ export default function FleetOverview() {
   const noPosition = units.filter((unit) => !unit.region).length
   const inPool = units.filter((unit) => unit.inPool).length
 
-  const outside = units
+  const outside = poolUnits
     .filter((unit) => unit.journey === 'out_of_town' && !unit.trip)
     .sort((a, b) => (a.eta || '').localeCompare(b.eta || ''))
-  const outsideWithTrip = units.filter(
+  const outsideWithTrip = poolUnits.filter(
     (unit) => unit.journey === 'out_of_town' && unit.trip
   ).length
-  const returning = units
+  const returning = poolUnits
     .filter((unit) => unit.journey === 'returning')
     .sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0))
-  const reloaded = units.filter(
+  const reloaded = poolUnits.filter(
     (unit) =>
       unit.journey === 'reloaded' &&
       unit.reloadedAt &&
@@ -201,6 +221,7 @@ export default function FleetOverview() {
       (unit) =>
         !keyword ||
         unit.plate.toUpperCase().replace(/[^A-Z0-9]/g, '').includes(keyword) ||
+        (unit.driver || '').toUpperCase().includes(search.trim().toUpperCase()) ||
         (unit.vehicleType || '').toUpperCase().includes(search.trim().toUpperCase())
     )
     .sort((a, b) => a.plate.localeCompare(b.plate))
@@ -259,7 +280,7 @@ export default function FleetOverview() {
           <div>
             <h2 className="panel-title">Sebaran Unit</h2>
             <p className="mt-0.5 text-[12.5px] text-slate-500">
-              {units.length} unit GPS · {inPool} di pool
+              {units.length} unit aktif · {inPool} di pool
               {noPosition ? ` · ${noPosition} tanpa posisi` : ''} · diperbarui{' '}
               {data ? formatAgo(data.fetchedAt, now) : '-'}
             </p>
@@ -426,7 +447,7 @@ export default function FleetOverview() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Cari plat / jenis unit"
+              placeholder="Cari plat, jenis unit, driver"
               className="w-full rounded-md border border-[var(--border)] py-1.5 pl-8 pr-3 text-[13px] outline-none focus:border-[var(--mtu-navy)]"
             />
           </div>
@@ -448,7 +469,17 @@ export default function FleetOverview() {
             <tbody>
               {tableUnits.map((unit) => (
                 <tr key={unit.imei}>
-                  <td className="px-4 py-2 font-semibold text-slate-900">{unit.plate}</td>
+                  <td className="px-4 py-2">
+                    <span className="font-semibold text-slate-900">{unit.plate}</span>
+                    {unit.base !== 'bekasi' && (
+                      <span className="ml-1.5 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                        {BASE_LABEL[unit.base]}
+                      </span>
+                    )}
+                    {unit.driver && (
+                      <span className="block text-[12px] text-slate-500">{unit.driver}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2">{unit.vehicleType || <span className="text-slate-400">Belum diketahui</span>}</td>
                   <td className="px-4 py-2">{unit.region ? REGION_LABEL[unit.region] : '-'}</td>
                   <td className="px-4 py-2">
@@ -481,10 +512,49 @@ export default function FleetOverview() {
           </table>
         </div>
         <p className="border-t border-[var(--border)] px-4 py-2 text-[11.5px] text-slate-400">
-          Jenis unit diambil dari order terakhir unit tersebut. Jarak di daftar ini garis lurus;
-          di bagian Menuju Pool sudah dikali faktor jalan.
+          Jenis unit dibaca dari kode nama perangkat (TH, TR, FU, PU); kalau tidak ada, dari order
+          terakhir. Unit Balikpapan (BPN) tidak dihitung pulang ke Pool Bekasi. Jarak di daftar ini
+          garis lurus; di bagian Menuju Pool sudah dikali faktor jalan.
         </p>
       </div>
+
+      {inactiveUnits.length > 0 && (
+        <details className="panel overflow-hidden">
+          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-slate-700">
+            Perangkat tidak aktif ({inactiveUnits.length}){' '}
+            <span className="font-normal text-slate-500">
+              — tidak update lebih dari {INACTIVE_DEVICE_DAYS} hari, tidak dihitung di sebaran
+            </span>
+          </summary>
+          <div className="overflow-x-auto border-t border-[var(--border)]">
+            <table className="w-full min-w-[640px] text-[13px]">
+              <thead>
+                <tr>
+                  {['Nama Perangkat', 'IMEI', 'Update Terakhir', ''].map((head) => (
+                    <th key={head} className="px-4 py-2 text-left">
+                      {head}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {inactiveUnits.map((unit) => (
+                  <tr key={unit.imei}>
+                    <td className="px-4 py-2 font-medium text-slate-900">{unit.deviceName}</td>
+                    <td className="px-4 py-2 tabular-nums text-slate-500">{unit.imei}</td>
+                    <td className="px-4 py-2 text-slate-600">
+                      {unit.gpsTime ? formatAgo(new Date(unit.gpsTime.replace(' ', 'T') + 'Z').toISOString(), now) : 'Belum pernah'}
+                    </td>
+                    <td className="px-4 py-2">
+                      <MapLink unit={unit} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      )}
     </div>
   )
 }

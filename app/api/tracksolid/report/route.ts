@@ -29,11 +29,11 @@ export async function GET(request: Request) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, is_active')
     .eq('id', user.id)
     .single()
 
-  if (!profile || !ALLOWED_ROLES.includes(profile.role)) {
+  if (!profile || !profile.is_active || !ALLOWED_ROLES.includes(profile.role)) {
     return NextResponse.json({ error: 'Tidak punya akses.' }, { status: 403 })
   }
 
@@ -84,8 +84,9 @@ export async function GET(request: Request) {
 
     const allFailed = report.info.every((call) => call.code !== 0)
     if (allFailed) {
+      console.error('TRACKSOLID REPORT REJECTED:', report.info)
       return NextResponse.json(
-        { error: 'TrackSolid menolak permintaan laporan.', info: report.info },
+        { error: 'TrackSolid menolak permintaan laporan.' },
         { status: 502 }
       )
     }

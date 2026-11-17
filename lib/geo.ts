@@ -49,6 +49,8 @@ export function parseCoordinates(text: string): { lat: number; lng: number } | n
   const patterns = [
     /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
     /[?&](?:q|query|ll|destination|center)=(-?\d+(?:\.\d+)?)\s*,\s*\+?(-?\d+(?:\.\d+)?)/,
+    // .../maps/place/-6.23,106.99 atau .../maps/search/-6.23,+106.99 (titik yang dicari/di-pin)
+    /\/(?:place|search)\/(-?\d+(?:\.\d+)?)\s*,\s*\+?(-?\d+(?:\.\d+)?)/,
     /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
     /^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/,
   ]

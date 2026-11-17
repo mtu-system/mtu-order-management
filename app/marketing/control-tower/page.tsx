@@ -8,7 +8,7 @@ import ControlTower from '@/app/components/control-tower'
 export const dynamic = 'force-dynamic'
 
 export default async function MarketingControlTowerPage() {
-  const user = await requireRole(['marketing'])
+  const user = await requireRole(['marketing', 'marketing_admin'])
   const supabase = await createClient()
    const rows = await loadMonitoringRows(supabase, {
     createdBy: user.role === 'marketing' ? user.id : undefined,

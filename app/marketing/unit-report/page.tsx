@@ -13,7 +13,7 @@ export default async function MarketingUnitReportPage({
   searchParams: Promise<{ plate?: string; from?: string; to?: string }>
 }) {
   const query = await searchParams
-  const user = await requireRole(['marketing'])
+  const user = await requireRole(['marketing', 'marketing_admin'])
   const supabase = await createClient()
   const plates = await loadReportPlates(supabase)
 

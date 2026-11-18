@@ -20,6 +20,7 @@ import { TRIP_LABEL, TRIP_TIME_COLUMN, type TripStatus } from '@/lib/trip-status
 // Dicatat di order_history dengan field_name 'trip_status_auto'.
 
 export const AUTO_TRIP_FIELD = 'trip_status_auto'
+const LEAVE_MARGIN_M = 200
 
 type ActiveTruck = {
   id: string
@@ -52,6 +53,14 @@ export async function runAutoTripStatus(
   const fences = (fencesRes.data || []) as Geofence[]
   const pool = findPool(fences)
   const unloading = fences.filter((fence) => fence.type === 'unloading')
+  const loading = fences.filter((fence) => fence.type === 'loading')
+  // Unit dianggap sudah meninggalkan lokasi muat hanya kalau di luar SEMUA
+  // geofence muat (bisa ada beberapa yang tumpang tindih di satu kawasan),
+  // dengan margin supaya manuver / GPS meleset di tepi area tidak terhitung.
+  const outsideAllLoading = (point: { lat: number; lng: number }) =>
+    !loading.some((fence) =>
+      inFence(point, { ...fence, radius_m: fence.radius_m + LEAVE_MARGIN_M })
+    )
   const fenceById = new Map(fences.map((fence) => [String(fence.id), fence]))
   const linkMap = new Map(
     (linksRes.data || []).map((link) => [link.plate_key as string, link.imei as string])
@@ -95,7 +104,7 @@ export async function runAutoTripStatus(
       if (
         prevFresh &&
         prevFence?.type === 'loading' &&
-        !inFence(point, prevFence) &&
+        outsideAllLoading(point) &&
         device.speed >= MOVING_KMH
       ) {
         changes.push({ truck, to: 'on_going', where: `keluar dari ${prevFence.name}` })

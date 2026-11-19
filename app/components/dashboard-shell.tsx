@@ -31,6 +31,7 @@ import {
   MoreHorizontal,
   Menu,
   X,
+  FileSpreadsheet,
 } from 'lucide-react'
 
 type DashboardShellProps = {
@@ -393,6 +394,7 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
         {
           title: 'Laporan',
           items: [
+            { label: 'Update Customer', href: '/manager/monitoring-report', icon: FileSpreadsheet },
             { label: 'Laporan Keselamatan', href: '/manager/safety-report', icon: ShieldCheck },
             { label: 'Reject Report', href: '/manager/reject-report', icon: XCircle },
             { label: 'Booking Report', href: '/manager/booking-report', icon: CalendarClock },
@@ -466,6 +468,7 @@ function getMenuGroups(role: UserRole): MenuGroup[] {
         {
           title: 'Laporan',
           items: [
+            { label: 'Update Customer', href: '/operational/monitoring-report', icon: FileSpreadsheet },
             { label: 'Laporan Keselamatan', href: '/operational/safety-report', icon: ShieldCheck },
             { label: 'Laporan Unit', href: '/operational/unit-report', icon: RouteIcon, overflow: true },
           ],

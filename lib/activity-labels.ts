@@ -48,6 +48,7 @@ export const ACTION_LABEL: Record<string, string> = {
   booking_approved: 'Booking Di-approve',
   booking_cancelled: 'Booking Dibatalkan',
   trip_status_changed: 'Status Trip',
+  monitoring_times_updated: 'Koreksi Jam Monitoring',
 }
 
 export const actorLabel: Record<string, string> = {
@@ -73,6 +74,7 @@ export const actorLabel: Record<string, string> = {
   unit_allocation: 'Operational',
   booking_capacity_check: 'Operational',
   trip_status_changed: 'Operational',
+  monitoring_times_updated: 'Operational',
   hse_inspection: 'HSE',
 }
 
@@ -215,6 +217,12 @@ export function describeActivity(entry: ActivityEntry): ActivityText {
             .join(' · ') || null,
       }
     }
+
+    case 'monitoring_times_updated':
+      return {
+        title: `Koreksi jam monitoring ${unit || parseUnitReason(entry.reason).plate || 'unit'}`,
+        detail: to || null,
+      }
 
     case 'hse_inspection':
       return {

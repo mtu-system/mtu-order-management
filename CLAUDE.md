@@ -47,14 +47,18 @@ Because mutations come from the client, **RLS policies in `supabase/migrations/`
 
 **Automatic trip status.** The cron runs `lib/trip-auto.ts` **before** `updateJourneys`, because it reads the previous geofence from `unit_journey`. It makes three status changes:
 - `finished_loading` → `on_going`: the unit was in a loading geofence and is now outside it and moving.
-- `on_going` → `finished_unloading`: the unit is stopped inside its destination geofence. If no destination is set, any unloading geofence counts.
+- `on_going` → `finished_unloading`: the unit arrived at its destination geofence (stopped inside it; stamps `destination_arrived_at`) and then leaves it while moving, or turns up at the pool. If no destination is set, any unloading geofence counts. Before migration `20261119_monitoring_report.sql` the old rule applies (stopped inside = finished).
 - `finished_unloading` → `complete`: the unit enters the pool.
+
+Leaving a loading area means being outside **all** loading geofences plus 200 m (overlapping fences are common). A device that is online with ignition off is "parked" (`isParked` in `lib/fleet-journey.ts`): Tracksolid stops sending fixes, but the last position still counts for arriving at a fence/pool and does not raise `gps_offline`. The same pass also stamps `pool_departed_at` and `origin_arrived_at` (only when empty, so manual corrections stay).
 
 Each change is written to `order_history` with `field_name = 'trip_status_auto'` and `changed_by` null, shown as actor "Sistem" (`actorOf` in `lib/activity-labels.ts`). The "Perlu Perhatian" page (`lib/attention.ts`) lists:
 - units that have been in a loading area longer than `LOADING_WAIT_MAX_MIN` (240) without loading,
 - open alerts,
 - trips with no destination set,
 - automatic changes from the last 24 hours.
+
+**Monitoring Update (customer report).** `/operational/monitoring-report` and `/manager/monitoring-report` group units per customer + RFT (`orders.rft_tr_job`) and download one Excel per RFT in the Operational team's format (`lib/monitoring-excel.ts`; data in `lib/monitoring-report.ts`). Times map to `pool_departed_at`, `origin_arrived_at`, `finished_loading_at`, `destination_arrived_at`, `finished_unloading_at`, `completed_at`. Corrections and the Remarks note (`monitoring_note`) are saved through a server action (`app/components/monitoring-report-actions.ts`, service role, role-checked, logged as `monitoring_times_updated`).
 
 **Driver safety rules** (business rules; the constants live in `lib/alert-rules.ts`, so change them there rather than hardcoding):
 - Night rest is 22:00–04:00 WIB (`NIGHT_START_HOUR`/`NIGHT_END_HOUR`). Driving in this window raises an alert after a `NIGHT_GRACE_MIN` (30 min) grace period, except for units with `urgent_shipment`.

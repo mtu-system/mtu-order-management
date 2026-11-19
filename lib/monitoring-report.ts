@@ -37,6 +37,8 @@ export type ReportUnit = {
   unloadedAt: string | null
   poolArrivedAt: string | null
   note: string | null
+  originFenceId: string | null
+  destinationFenceId: string | null
   position: { text: string; lat: number | null; lng: number | null } | null
 }
 
@@ -46,6 +48,10 @@ export type ReportGroup = {
   rft: string
   pks: string[]
   trips: string[]
+  orderIds: string[]
+  // Lokasi order (sama untuk semua order di RFT ini; null kalau beda / kosong).
+  originFenceId: string | null
+  destinationFenceId: string | null
   units: ReportUnit[]
   activeCount: number
   doneCount: number
@@ -54,7 +60,9 @@ export type ReportGroup = {
 
 export type MonitoringReport = {
   groups: ReportGroup[]
+  fences: Geofence[]
   timesReady: boolean
+  locationsReady: boolean
   gpsError: boolean
   fetchedAt: string
 }
@@ -78,6 +86,7 @@ type TruckRow = {
   origin_arrived_at?: string | null
   destination_arrived_at?: string | null
   monitoring_note?: string | null
+  origin_fence_id?: string | null
 }
 
 type OrderRow = {
@@ -88,6 +97,8 @@ type OrderRow = {
   trip: string | null
   status: string | null
   created_at: string
+  origin_fence_id?: string | null
+  destination_fence_id?: string | null
   order_trucks: TruckRow[] | null
 }
 
@@ -95,6 +106,8 @@ const TRUCK_BASE = `id, vehicle_type, plate_number, driver_name, driver_phone, s
   finished_loading_at, on_going_at, finished_unloading_at, completed_at, destination_fence_id,
   created_at, updated_at`
 const TRUCK_TIMES = 'pool_departed_at, origin_arrived_at, destination_arrived_at, monitoring_note'
+const TRUCK_LOCATION = 'origin_fence_id'
+const ORDER_LOCATION = 'origin_fence_id, destination_fence_id'
 
 function clean(value: string | null | undefined) {
   return (value || '').replace(/\s+/g, ' ').trim()
@@ -123,22 +136,37 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
   const fetchedAt = new Date().toISOString()
   const sinceIso = new Date(Date.now() - LOOKBACK_DAYS * 86400e3).toISOString()
 
-  const query = (truckColumns: string) =>
+  const query = (truckColumns: string, orderExtra = '') =>
     supabase
       .from('orders')
-      .select(`id, customer, rft_tr_job, pk_number, trip, status, created_at, order_trucks ( ${truckColumns} )`)
+      .select(
+        `id, customer, rft_tr_job, pk_number, trip, status, created_at${orderExtra}, order_trucks ( ${truckColumns} )`
+      )
       .gte('created_at', sinceIso)
       .not('status', 'in', `(${HIDDEN_ORDER_STATUSES.join(',')})`)
       .order('created_at', { ascending: false })
       .limit(1500)
 
+  const missing = (error: { code?: string; message: string } | null) =>
+    Boolean(error && (error.code === '42703' || /does not exist/i.test(error.message)))
+  // Kolom menyusul lewat migrasi: coba dari yang paling lengkap.
   let timesReady = true
-  let res = await query(`${TRUCK_BASE}, ${TRUCK_TIMES}`)
-  if (res.error && (res.error.code === '42703' || /does not exist/i.test(res.error.message))) {
+  let locationsReady = true
+  let res = await query(`${TRUCK_BASE}, ${TRUCK_TIMES}, ${TRUCK_LOCATION}`, `, ${ORDER_LOCATION}`)
+  if (missing(res.error)) {
+    locationsReady = false
+    res = await query(`${TRUCK_BASE}, ${TRUCK_TIMES}`)
+  }
+  if (missing(res.error)) {
     timesReady = false
     res = await query(TRUCK_BASE)
   }
   if (res.error) throw new Error(res.error.message)
+
+  const fencesRes = await supabase.from('geofences').select('id, name, type, lat, lng, radius_m')
+  const fences = (fencesRes.data || []) as Geofence[]
+  const fenceById = new Map(fences.map((fence) => [String(fence.id), fence]))
+  const fenceName = (id: string | null | undefined) => (id ? fenceById.get(String(id))?.name || null : null)
 
   const orders = (res.data || []) as unknown as OrderRow[]
   const keepDoneSince = Date.now() - KEEP_DONE_DAYS * 86400e3
@@ -163,6 +191,9 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
         rft,
         pks: [],
         trips: [],
+        orderIds: [],
+        originFenceId: null,
+        destinationFenceId: null,
         units: [],
         activeCount: 0,
         doneCount: 0,
@@ -173,6 +204,7 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
     }
     if (order.pk_number && !group.pks.includes(clean(order.pk_number))) group.pks.push(clean(order.pk_number))
     if (order.trip && !group.trips.includes(clean(order.trip))) group.trips.push(clean(order.trip))
+    group.orderIds.push(String(order.id))
     for (const truck of trucks) group.trucks.push({ order, truck })
   }
 
@@ -189,20 +221,17 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
     group.trucks.filter(({ truck }) => truck.trip_status !== 'complete').map(({ truck }) => truck)
   )
   const deviceByPlate = new Map<string, Awaited<ReturnType<typeof getDeviceLocations>>[number]>()
-  let fences: Geofence[] = []
   let gpsError = false
 
   if (needGps.length > 0) {
     const plateKeys = Array.from(new Set(needGps.map((truck) => normalizePlate(truck.plate_number))))
-    const [devices, linksRes, fencesRes] = await Promise.all([
+    const [devices, linksRes] = await Promise.all([
       getDeviceLocations().catch(() => {
         gpsError = true
         return []
       }),
       supabase.from('gps_device_links').select('plate_key, imei'),
-      supabase.from('geofences').select('id, name, type, lat, lng, radius_m'),
     ])
-    fences = (fencesRes.data || []) as Geofence[]
     const plateByImei = new Map(
       (linksRes.data || []).map((link) => [link.imei as string, link.plate_key as string])
     )
@@ -240,9 +269,20 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
   }
 
   const result: ReportGroup[] = visible.map(({ trucks, ...group }) => {
+    const orders = Array.from(new Map(trucks.map(({ order }) => [order.id, order])).values())
+    const common = (pick: (order: OrderRow) => string | null | undefined) => {
+      const values = new Set(orders.map((order) => pick(order) || ''))
+      const [only] = Array.from(values)
+      return values.size === 1 && only ? only : null
+    }
+
     const units = trucks
       .map(({ order, truck }): ReportUnit => {
-        const { origin, destination } = splitTrip(order.trip)
+        const fromTrip = splitTrip(order.trip)
+        const originFenceId = truck.origin_fence_id || order.origin_fence_id || null
+        const destinationFenceId = truck.destination_fence_id || order.destination_fence_id || null
+        const origin = fenceName(originFenceId) || fromTrip.origin
+        const destination = fenceName(destinationFenceId) || fromTrip.destination
         return {
           id: String(truck.id),
           orderId: String(order.id),
@@ -263,6 +303,8 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
           unloadedAt: truck.finished_unloading_at,
           poolArrivedAt: truck.completed_at,
           note: truck.monitoring_note || null,
+          originFenceId: originFenceId ? String(originFenceId) : null,
+          destinationFenceId: destinationFenceId ? String(destinationFenceId) : null,
           position: positionOf(truck),
         }
       })
@@ -277,6 +319,9 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
 
     return {
       ...group,
+      orderIds: Array.from(new Set(group.orderIds)),
+      originFenceId: common((order) => order.origin_fence_id),
+      destinationFenceId: common((order) => order.destination_fence_id),
       units,
       activeCount: units.filter((unit) => unit.tripStatus !== 'complete').length,
       doneCount: units.filter((unit) => unit.tripStatus === 'complete').length,
@@ -290,5 +335,12 @@ export async function loadMonitoringReport(supabase: SupabaseClient): Promise<Mo
       b.lastActivity.localeCompare(a.lastActivity)
   )
 
-  return { groups: result, timesReady, gpsError, fetchedAt }
+  return {
+    groups: result,
+    fences: fences.filter((fence) => fence.type !== 'pool'),
+    timesReady,
+    locationsReady,
+    gpsError,
+    fetchedAt,
+  }
 }

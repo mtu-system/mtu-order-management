@@ -4,7 +4,7 @@ import { parseCoordinates } from '@/lib/geo'
 
 export const dynamic = 'force-dynamic'
 
-const ALLOWED_ROLES = ['manager', 'operational']
+const ALLOWED_ROLES = ['manager', 'operational', 'marketing', 'marketing_admin']
 const MAX_HOPS = 5
 
 // Hanya domain Google Maps yang boleh diikuti (mencegah server dipakai

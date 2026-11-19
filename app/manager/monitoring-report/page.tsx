@@ -6,6 +6,8 @@ import { loadMonitoringReport } from '@/lib/monitoring-report'
 import MonitoringReportView from '@/app/components/monitoring-report'
 
 export const dynamic = 'force-dynamic'
+// Tombol "Isi dari GPS" mengambil riwayat rute per unit (bisa lama).
+export const maxDuration = 60
 
 export default async function ManagerMonitoringReportPage() {
   const user = await requireRole(['manager'])

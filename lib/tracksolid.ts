@@ -580,6 +580,57 @@ export async function getUnitReport(imei: string, from: Date, to: Date) {
   }
 }
 
+// ===== Titik rute mentah (untuk mengisi jam perjalanan dari riwayat) =====
+// Dipecah per 24 jam & berurutan supaya tidak kena batas rentang /
+// frekuensi. Tidak di-downsample (dibutuhkan jam masuk/keluar geofence).
+const TRACK_CHUNK_MS = 24 * 60 * 60 * 1000
+
+export async function getTrackPoints(imei: string, from: Date, to: Date) {
+  const points: RoutePoint[] = []
+  let failed = 0
+
+  for (let start = from.getTime(); start < to.getTime(); start += TRACK_CHUNK_MS) {
+    const end = Math.min(start + TRACK_CHUNK_MS, to.getTime())
+    let data: ApiResponse | null = null
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        data = await callAuthed('jimi.device.track.list', {
+          imei,
+          begin_time: formatUtc(new Date(start)),
+          end_time: formatUtc(new Date(end)),
+        })
+      } catch {
+        data = null
+      }
+      if (data && data.code !== 1006) break
+      await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)))
+    }
+
+    if (!data || data.code !== 0) {
+      failed += 1
+      continue
+    }
+
+    const rows = findRows(data.result, 'gpsTime').map((row) => ({
+      lat: num(row.lat),
+      lng: num(row.lng),
+      time: asIso(row.gpsTime),
+      speed: num(row.gpsSpeed),
+      posType: String(row.posType ?? ''),
+    }))
+    const hasGps = rows.some((row) => row.posType === '1' || row.posType === '')
+    for (const row of rows) {
+      if ((row.lat === 0 && row.lng === 0) || !row.time) continue
+      if (hasGps && row.posType !== '1' && row.posType !== '') continue
+      points.push({ lat: row.lat, lng: row.lng, time: row.time, speed: row.speed })
+    }
+  }
+
+  points.sort((a, b) => a.time.localeCompare(b.time))
+  return { points, failed }
+}
+
 // ===== Statistik mengemudi dari riwayat rute (24 jam terakhir) =====
 
 export type DriveState = {

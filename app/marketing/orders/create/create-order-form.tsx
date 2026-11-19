@@ -19,6 +19,8 @@ import CustomerAutocomplete from '@/app/marketing/components/customer-autocomple
 import VehicleTypeAutocomplete from '@/app/marketing/components/vehicle-type-autocomplete'
 import PageHeader from '@/app/components/page-header'
 import { OrderStatusBadge } from '@/app/components/status-badge'
+import LocationPicker from '@/app/components/location-picker'
+import type { Geofence } from '@/lib/geo'
 
 type VehicleRequirement = {
   id: number
@@ -57,6 +59,45 @@ export default function CreateOrderForm() {
   const [bawaRa, setBawaRa] = useState('Tidak')
   const [instruction, setInstruction] = useState('')
   const [notes, setNotes] = useState('')
+
+  // Lokasi muat & bongkar (geofence) -- dasar jam otomatis laporan
+  // Monitoring Update. Opsional, tapi tanpa ini jam tidak bisa terisi tepat.
+  const [fences, setFences] = useState<Geofence[]>([])
+  const [originId, setOriginId] = useState('')
+  const [destinationId, setDestinationId] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    createClient()
+      .from('geofences')
+      .select('id, name, type, lat, lng, radius_m')
+      .neq('type', 'pool')
+      .then(({ data }) => {
+        if (!cancelled) setFences((data || []) as Geofence[])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const originFence = fences.find((fence) => String(fence.id) === originId)
+  const destinationFence = fences.find((fence) => String(fence.id) === destinationId)
+
+  function pickLocation(kind: 'origin' | 'destination', id: string) {
+    const nextOrigin = kind === 'origin' ? id : originId
+    const nextDestination = kind === 'destination' ? id : destinationId
+    if (kind === 'origin') setOriginId(id)
+    else setDestinationId(id)
+
+    // Trip masih kosong -> isi dari nama lokasi.
+    const o = fences.find((fence) => String(fence.id) === nextOrigin)
+    const d = fences.find((fence) => String(fence.id) === nextDestination)
+    if (!trip.trim() && o && d) setTrip(`${o.name} - ${d.name}`)
+  }
+
+  function addFence(fence: Geofence) {
+    setFences((current) => [...current.filter((item) => item.id !== fence.id), fence])
+  }
 
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
   const [recentLoading, setRecentLoading] = useState(false)
@@ -296,42 +337,57 @@ const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
       .map((item) => item.vehicle_type)
       .join(', ')
 
-    const { data: order, error } = await supabase
-      .from('orders')
-      .insert({
-        customer: canonicalCustomer,
-        order_type: orderType,
-        rft_tr_job,
-        pk_number,
-        vehicle_type: vehicleSummary,
-        quantity: totalQuantity,
-        trip,
-        status: isBooking ? 'booking_review' : 'waiting_unit',
-        is_booking: isBooking,
-        booking_date: isBooking ? bookingDate : null,
-        instruction,
-        bawa_ra,
-        notes,
-        created_by: user.id,
-      })
-      .select()
-      .single()
+    const locationFields = {
+      ...(originId ? { origin_fence_id: originId } : {}),
+      ...(destinationId ? { destination_fence_id: destinationId } : {}),
+    }
 
-    if (error) {
+    const insertOrder = (extra: Record<string, string>) =>
+      supabase
+        .from('orders')
+        .insert({ ...baseOrder, ...extra })
+        .select()
+        .single()
+
+    const baseOrder = {
+      customer: canonicalCustomer,
+      order_type: orderType,
+      rft_tr_job,
+      pk_number,
+      vehicle_type: vehicleSummary,
+      quantity: totalQuantity,
+      trip,
+      status: isBooking ? 'booking_review' : 'waiting_unit',
+      is_booking: isBooking,
+      booking_date: isBooking ? bookingDate : null,
+      instruction,
+      bawa_ra,
+      notes,
+      created_by: user.id,
+    }
+
+    let { data: order, error } = await insertOrder(locationFields)
+
+    // Migrasi lokasi order belum dijalankan: simpan tanpa lokasi.
+    if (error && /origin_fence_id|destination_fence_id/.test(error.message || '')) {
+      ;({ data: order, error } = await insertOrder({}))
+    }
+
+    if (error || !order) {
       console.error('CREATE ORDER ERROR:', error)
 
-      if (error.code === '23505') {
+      if (error?.code === '23505') {
         toast.error(
           'Nomor PK Sudah Dipakai',
           'Nomor PK ini sudah digunakan order lain. Cek kembali nomor PK-nya.'
         )
-      } else if (error.code === '23514') {
+      } else if (error?.code === '23514') {
         toast.error(
           'Data Belum Lengkap',
           'Customer, Trip, dan minimal salah satu (PK atau RFT/TR/Job) wajib diisi.'
         )
       } else {
-        toast.error('Gagal Membuat Order', error.message)
+        toast.error('Gagal Membuat Order', error?.message || 'Order tidak tersimpan.')
       }
 
       setSaving(false)
@@ -416,6 +472,10 @@ const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
       ok: hasIdentity,
     },
     { label: 'Trip diisi', ok: Boolean(trip.trim()) },
+    {
+      label: 'Lokasi muat & bongkar (agar jam terisi otomatis)',
+      ok: Boolean(originId && destinationId),
+    },
     { label: 'Jenis & jumlah kendaraan lengkap', ok: !hasInvalidRequirement },
     ...(isBooking
       ? [{ label: 'Tanggal kebutuhan booking', ok: Boolean(bookingDate) }]
@@ -528,7 +588,7 @@ const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
             </label>
           </FormSection>
 
-          <FormSection number={2} title="Trip">
+          <FormSection number={2} title="Trip & Lokasi">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
               <div>
                 <label htmlFor="trip" className={labelClass}>
@@ -563,6 +623,31 @@ const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
                   <option value="Ya">Ya</option>
                 </select>
               </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <LocationPicker
+                id="origin_fence"
+                label="Lokasi Muat"
+                type="loading"
+                fences={fences}
+                value={originId}
+                onChange={(id) => pickLocation('origin', id)}
+                onCreated={addFence}
+                disabled={saving}
+                hint="Jam tiba & selesai muat dicatat otomatis dari GPS."
+              />
+              <LocationPicker
+                id="destination_fence"
+                label="Lokasi Bongkar"
+                type="unloading"
+                fences={fences}
+                value={destinationId}
+                onChange={(id) => pickLocation('destination', id)}
+                onCreated={addFence}
+                disabled={saving}
+                hint="Jam tiba & selesai bongkar dicatat otomatis dari GPS."
+              />
             </div>
           </FormSection>
 
@@ -717,6 +802,8 @@ const orderType = trimmedPk ? 'PK' : trimmedRft ? 'RFT' : null
               <SummaryRow label="Nomor PK" value={pkNumber} />
               <SummaryRow label="RFT/TR/Job" value={rftTrJob} />
               <SummaryRow label="Trip" value={trip} />
+              <SummaryRow label="Lokasi Muat" value={originFence?.name || ''} />
+              <SummaryRow label="Lokasi Bongkar" value={destinationFence?.name || ''} />
               <SummaryRow label="Bawa RA" value={bawaRa} />
               {isBooking && (
                 <SummaryRow

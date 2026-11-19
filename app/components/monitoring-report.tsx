@@ -2,11 +2,14 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, ChevronRight, Download, Pencil, RefreshCw, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, Download, Loader2, MapPin, Pencil, RefreshCw, Satellite, Search } from 'lucide-react'
 import { useToast } from '@/app/components/toast-provider'
 import type { MonitoringReport, ReportGroup, ReportUnit } from '@/lib/monitoring-report'
 import { downloadMonitoringExcel, formatStandby, remarkOf, wibStamp } from '@/lib/monitoring-excel'
 import { saveMonitoringUnit, type MonitoringTimeField } from './monitoring-report-actions'
+import { fillTimesFromGps, setOrdersLocations } from './order-location-actions'
+import LocationPicker from './location-picker'
+import type { Geofence } from '@/lib/geo'
 
 const TIME_COLUMNS: { field: MonitoringTimeField; key: keyof ReportUnit; label: string }[] = [
   { field: 'pool_departed_at', key: 'poolDepartedAt', label: 'ATD Pool' },
@@ -16,6 +19,31 @@ const TIME_COLUMNS: { field: MonitoringTimeField; key: keyof ReportUnit; label: 
   { field: 'finished_unloading_at', key: 'unloadedAt', label: 'Selesai Bongkar' },
   { field: 'completed_at', key: 'poolArrivedAt', label: 'Tiba Pool' },
 ]
+
+// Jumlah kolom jam (urut TIME_COLUMNS) yang seharusnya sudah terisi untuk
+// status trip unit -- yang kosong ditandai supaya dicek sebelum dikirim.
+function expectedTimes(unit: ReportUnit) {
+  switch (unit.tripStatus) {
+    case 'complete':
+      return 6
+    case 'finished_unloading':
+      return 5
+    case 'on_going':
+      return unit.destinationArrivedAt ? 4 : 3
+    case 'finished_loading':
+      return 3
+    default:
+      return unit.originArrivedAt ? 2 : unit.poolDepartedAt ? 1 : 0
+  }
+}
+
+function missingTimes(unit: ReportUnit) {
+  return TIME_COLUMNS.slice(0, expectedTimes(unit)).filter((col) => !unit[col.key])
+}
+
+const LABEL_FIELD: Record<string, string> = Object.fromEntries(
+  TIME_COLUMNS.map((col) => [col.field, col.label])
+)
 
 const inputClass =
   'h-8 w-full rounded-md border border-[var(--border-strong)] bg-white px-2 text-[12.5px] outline-none focus:border-[#082868] focus:ring-2 focus:ring-[#082868]/10'
@@ -40,6 +68,7 @@ function UnitRow({ unit, index, editable }: { unit: ReportUnit; index: number; e
   const [editing, setEditing] = useState(false)
   const [pending, startTransition] = useTransition()
   const [draft, setDraft] = useState<Record<string, string>>({})
+  const missing = new Set(missingTimes(unit).map((col) => col.field))
 
   function startEdit() {
     const next: Record<string, string> = { note: unit.note || '' }
@@ -79,7 +108,11 @@ function UnitRow({ unit, index, editable }: { unit: ReportUnit; index: number; e
         {unit.pk && <div className="text-[11px] text-slate-400">{unit.pk}</div>}
       </td>
       {TIME_COLUMNS.map((col) => (
-        <td key={col.field} className="px-2 py-2 text-[12.5px] text-slate-700">
+        <td
+          key={col.field}
+          className={`px-2 py-2 text-[12.5px] text-slate-700 ${!editing && missing.has(col.field) ? 'bg-amber-50' : ''}`}
+          title={!editing && missing.has(col.field) ? 'Seharusnya sudah terisi, cek atau isi manual' : undefined}
+        >
           {editing ? (
             <input
               type="datetime-local"
@@ -89,7 +122,13 @@ function UnitRow({ unit, index, editable }: { unit: ReportUnit; index: number; e
               disabled={pending}
             />
           ) : (
-            <span className={unit[col.key] ? '' : 'text-slate-300'}>{shortWib(unit[col.key] as string | null)}</span>
+            <span
+              className={
+                unit[col.key] ? '' : missing.has(col.field) ? 'font-semibold text-amber-700' : 'text-slate-300'
+              }
+            >
+              {unit[col.key] ? shortWib(unit[col.key] as string | null) : missing.has(col.field) ? 'kosong' : '-'}
+            </span>
           )}
         </td>
       ))}
@@ -150,10 +189,92 @@ function UnitRow({ unit, index, editable }: { unit: ReportUnit; index: number; e
   )
 }
 
-function GroupPanel({ group, editable }: { group: ReportGroup; editable: boolean }) {
+function fenceLabel(fences: Geofence[], id: string | null) {
+  if (!id) return null
+  return fences.find((fence) => String(fence.id) === id)?.name || null
+}
+
+function GroupPanel({
+  group,
+  editable,
+  fences,
+  locationsReady,
+  onFenceCreated,
+}: {
+  group: ReportGroup
+  editable: boolean
+  fences: Geofence[]
+  locationsReady: boolean
+  onFenceCreated: (fence: Geofence) => void
+}) {
   const toast = useToast()
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [filling, setFilling] = useState(false)
+  const [editingLocations, setEditingLocations] = useState(false)
+  const [origin, setOrigin] = useState(group.originFenceId || '')
+  const [destination, setDestination] = useState(group.destinationFenceId || '')
+  const [savingLocations, startSaveLocations] = useTransition()
+
+  const missingCount = group.units.reduce((total, unit) => total + missingTimes(unit).length, 0)
+  const originName = fenceLabel(fences, group.originFenceId)
+  const destinationName = fenceLabel(fences, group.destinationFenceId)
+
+  function saveLocations() {
+    startSaveLocations(async () => {
+      const result = await setOrdersLocations(group.orderIds, {
+        origin: origin || null,
+        destination: destination || null,
+      })
+      if (!result.ok) {
+        toast.error('Gagal menyimpan lokasi', result.message)
+        return
+      }
+      toast.success('Lokasi disimpan', 'Berlaku untuk semua unit di RFT ini.')
+      setEditingLocations(false)
+      router.refresh()
+    })
+  }
+
+  async function fillFromGps() {
+    // Unit yang belum lengkap 6 jamnya (yang sudah lengkap tidak perlu).
+    const targets = group.units.filter((unit) => TIME_COLUMNS.some((col) => !unit[col.key]))
+    if (targets.length === 0) {
+      toast.success('Sudah lengkap', 'Semua jam sudah terisi.')
+      return
+    }
+    setFilling(true)
+    try {
+      const result = await fillTimesFromGps(targets.map((unit) => unit.id))
+      if (!result.ok) {
+        toast.error('Gagal mengisi dari GPS', result.message)
+        return
+      }
+      const filled = result.results.filter((item) => item.filled.length > 0)
+      const failed = result.results.filter((item) => item.error)
+      if (filled.length > 0) {
+        toast.success(
+          `${filled.length} unit terisi dari GPS`,
+          filled
+            .map((item) => `${item.plate}: ${item.filled.map((field) => LABEL_FIELD[field] || field).join(', ')}`)
+            .join(' · ')
+        )
+      } else {
+        toast.error(
+          'Tidak ada jam baru',
+          failed.length > 0
+            ? failed.map((item) => `${item.plate}: ${item.error}`).join(' · ')
+            : 'Riwayat GPS tidak menunjukkan kunjungan ke lokasi muat/bongkar.'
+        )
+      }
+      router.refresh()
+    } catch {
+      toast.error('Gagal mengisi dari GPS', 'Coba lagi sebentar lagi.')
+    } finally {
+      setFilling(false)
+    }
+  }
 
   async function download() {
     setBusy(true)
@@ -199,11 +320,103 @@ function GroupPanel({ group, editable }: { group: ReportGroup; editable: boolean
               {group.doneCount} selesai
             </span>
           )}
+          {missingCount > 0 && (
+            <span className="rounded-md bg-amber-100 px-2 py-0.5 font-semibold text-amber-800">
+              {missingCount} jam kosong
+            </span>
+          )}
+          {editable && locationsReady && (
+            <button
+              type="button"
+              className="btn btn-secondary h-8 px-3"
+              onClick={fillFromGps}
+              disabled={filling}
+              title="Isi jam yang masih kosong dari riwayat rute GPS"
+            >
+              {filling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Satellite className="h-4 w-4" />}
+              {filling ? 'Mengambil GPS...' : 'Isi dari GPS'}
+            </button>
+          )}
           <button type="button" className="btn btn-primary h-8 px-3" onClick={download} disabled={busy}>
             <Download className="h-4 w-4" /> Excel
           </button>
         </div>
       </div>
+
+      {locationsReady && (
+        <div className="border-t border-slate-100 px-4 py-2.5 text-[12.5px]">
+          {editingLocations ? (
+            <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_1fr_auto]">
+              <LocationPicker
+                id={`origin-${group.key}`}
+                label="Lokasi Muat"
+                type="loading"
+                fences={fences}
+                value={origin}
+                onChange={setOrigin}
+                onCreated={onFenceCreated}
+                disabled={savingLocations}
+              />
+              <LocationPicker
+                id={`destination-${group.key}`}
+                label="Lokasi Bongkar"
+                type="unloading"
+                fences={fences}
+                value={destination}
+                onChange={setDestination}
+                onCreated={onFenceCreated}
+                disabled={savingLocations}
+              />
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className="btn btn-secondary h-9 px-3"
+                  onClick={() => setEditingLocations(false)}
+                  disabled={savingLocations}
+                >
+                  Batal
+                </button>
+                <button type="button" className="btn btn-primary h-9 px-3" onClick={saveLocations} disabled={savingLocations}>
+                  Simpan
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600">
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                Muat:{' '}
+                {originName ? (
+                  <b className="font-semibold text-slate-800">{originName}</b>
+                ) : (
+                  <span className="font-semibold text-amber-700">belum dipilih</span>
+                )}
+              </span>
+              <span>
+                Bongkar:{' '}
+                {destinationName ? (
+                  <b className="font-semibold text-slate-800">{destinationName}</b>
+                ) : (
+                  <span className="font-semibold text-amber-700">belum dipilih</span>
+                )}
+              </span>
+              {editable && (
+                <button
+                  type="button"
+                  className="font-semibold text-[#082868] hover:underline"
+                  onClick={() => {
+                    setOrigin(group.originFenceId || '')
+                    setDestination(group.destinationFenceId || '')
+                    setEditingLocations(true)
+                  }}
+                >
+                  Ubah lokasi
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {open && (
         <div className="overflow-x-auto border-t border-slate-100">
@@ -246,6 +459,11 @@ export default function MonitoringReportView({
   const [refreshing, startRefresh] = useTransition()
   const [query, setQuery] = useState('')
   const [showDone, setShowDone] = useState(false)
+  const [extraFences, setExtraFences] = useState<Geofence[]>([])
+  const fences = useMemo(
+    () => [...report.fences, ...extraFences.filter((fence) => !report.fences.some((f) => f.id === fence.id))],
+    [report.fences, extraFences]
+  )
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -274,6 +492,13 @@ export default function MonitoringReportView({
           Kolom jam laporan belum ada di database. Jalankan migrasi{' '}
           <code className="font-mono">20261119_monitoring_report.sql</code> supaya ATD Pool, tiba di lokasi muat dan
           tiba di lokasi bongkar terisi otomatis dan bisa dikoreksi.
+        </div>
+      )}
+      {report.timesReady && !report.locationsReady && (
+        <div className="panel border-amber-200 bg-amber-50/70 px-4 py-3 text-[13px] text-amber-900">
+          Lokasi muat/bongkar per order belum aktif. Jalankan migrasi{' '}
+          <code className="font-mono">20261120_order_locations.sql</code> supaya Finished Loading dan semua jam terisi
+          otomatis, serta tombol Isi dari GPS muncul.
         </div>
       )}
       {report.gpsError && (
@@ -311,7 +536,16 @@ export default function MonitoringReportView({
           Tidak ada RFT yang cocok.
         </div>
       ) : (
-        groups.map((group) => <GroupPanel key={group.key} group={group} editable={editable} />)
+        groups.map((group) => (
+          <GroupPanel
+            key={group.key}
+            group={group}
+            editable={editable}
+            fences={fences}
+            locationsReady={report.locationsReady}
+            onFenceCreated={(fence) => setExtraFences((current) => [...current, fence])}
+          />
+        ))
       )}
     </div>
   )

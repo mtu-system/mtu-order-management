@@ -49,6 +49,8 @@ export const ACTION_LABEL: Record<string, string> = {
   booking_cancelled: 'Booking Dibatalkan',
   trip_status_changed: 'Status Trip',
   monitoring_times_updated: 'Koreksi Jam Monitoring',
+  monitoring_times_gps: 'Jam dari GPS',
+  order_locations_updated: 'Lokasi Order',
 }
 
 export const actorLabel: Record<string, string> = {
@@ -75,6 +77,8 @@ export const actorLabel: Record<string, string> = {
   booking_capacity_check: 'Operational',
   trip_status_changed: 'Operational',
   monitoring_times_updated: 'Operational',
+  monitoring_times_gps: 'Sistem',
+  order_locations_updated: 'Operational',
   hse_inspection: 'HSE',
 }
 
@@ -223,6 +227,29 @@ export function describeActivity(entry: ActivityEntry): ActivityText {
         title: `Koreksi jam monitoring ${unit || parseUnitReason(entry.reason).plate || 'unit'}`,
         detail: to || null,
       }
+
+    case 'monitoring_times_gps': {
+      const GPS_FIELD: Record<string, string> = {
+        pool_departed_at: 'ATD Pool',
+        origin_arrived_at: 'Tiba Muat',
+        finished_loading_at: 'Selesai Muat',
+        destination_arrived_at: 'Tiba Bongkar',
+        finished_unloading_at: 'Selesai Bongkar',
+        completed_at: 'Tiba Pool',
+      }
+      return {
+        title: `Jam ${unit || parseUnitReason(entry.reason).plate || 'unit'} diisi dari riwayat GPS`,
+        detail:
+          (to || '')
+            .split(',')
+            .map((field) => GPS_FIELD[field.trim()] || field.trim())
+            .filter(Boolean)
+            .join(', ') || null,
+      }
+    }
+
+    case 'order_locations_updated':
+      return { title: 'Lokasi muat & bongkar diubah', detail: to || null }
 
     case 'hse_inspection':
       return {

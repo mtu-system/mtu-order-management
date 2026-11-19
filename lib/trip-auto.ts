@@ -6,15 +6,31 @@ import { MOVING_KMH } from '@/lib/alert-rules'
 import { type JourneyRow, findPool, inFence } from '@/lib/fleet'
 import { hasPosition, isLive } from '@/lib/fleet-journey'
 import { TRIP_LABEL, TRIP_TIME_COLUMN, type TripStatus } from '@/lib/trip-status'
+import {
+  FILL_TRUCK_COLUMNS,
+  LEAVE_MARGIN_M,
+  MIN_LOADING_MIN,
+  areaOf,
+  fillTruckTimesFromGps,
+  inArea,
+  loadImeiByPlate,
+} from '@/lib/trip-times'
 
 // ==========================================
 // STATUS TRIP OTOMATIS DARI GEOFENCE
 // ==========================================
 // Dijalankan cron (service role) SEBELUM unit_journey diperbarui, supaya
 // geofence "sebelumnya" masih terbaca dari unit_journey:
-// - Finished Loading -> On Going: tadinya tercatat di area muat, sekarang
-//   sudah di luar SEMUA area muat dan bergerak. (Lokasi muat tanpa geofence:
-//   tetap manual.)
+// - Belum mulai -> On Going (Finished Loading otomatis): unit sudah tiba &
+//   diam di lokasi muat order (origin_arrived_at) minimal MIN_LOADING_MIN,
+//   lalu meninggalkannya sambil bergerak. finished_loading_at & on_going_at
+//   diisi sekaligus. Tombol manual tetap ada.
+// - Finished Loading -> On Going: tadinya di area muat, sekarang sudah di
+//   luar area muat dan bergerak.
+//   Lokasi muat/bongkar = geofence yang dipilih di order (order_trucks.
+//   origin_fence_id / destination_fence_id, turunan dari orders lewat
+//   trigger) dengan toleransi PIN_TOLERANCE_M karena titiknya sering
+//   meleset. Kalau belum dipilih: geofence muat / bongkar mana pun.
 // - On Going -> Finished Unloading: sudah tiba di area bongkar tujuan
 //   (kalau tujuan belum diset: area bongkar mana pun), lalu meninggalkannya
 //   sambil bergerak. Kalau jam tiba tidak tercatat (kolom belum ada / GPS
@@ -27,7 +43,6 @@ import { TRIP_LABEL, TRIP_TIME_COLUMN, type TripStatus } from '@/lib/trip-status
 //   pool_departed_at, origin_arrived_at, destination_arrived_at.
 
 export const AUTO_TRIP_FIELD = 'trip_status_auto'
-const LEAVE_MARGIN_M = 200
 // Unit yang belum muat tapi sudah dialokasikan (masih dipantau jam
 // keluar pool & tiba di lokasi muat).
 const PENDING_UNIT_STATUSES = ['ready_to_depart', 'departed', 'driver_started']
@@ -40,6 +55,7 @@ type ActiveTruck = {
   vehicle_type: string | null
   trip_status: TripStatus | null
   destination_fence_id: string | null
+  origin_fence_id?: string | null
   created_at?: string | null
   pool_departed_at?: string | null
   origin_arrived_at?: string | null
@@ -53,6 +69,11 @@ type JourneyPick = Pick<
 
 const BASE_COLUMNS = 'id, order_id, plate_number, vehicle_type, trip_status, destination_fence_id'
 const TIME_COLUMNS = 'created_at, pool_departed_at, origin_arrived_at, destination_arrived_at'
+const LOCATION_COLUMNS = 'origin_fence_id'
+// Unit Complete yang jamnya dilengkapi dari riwayat rute per putaran cron
+// (Tracksolid membatasi frekuensi permintaan).
+const BACKFILL_PER_RUN = 1
+const BACKFILL_DAYS = 3
 
 // Kolom jam baru belum ada sampai migrasi 20261119 dijalankan: jangan sampai
 // cron ikut gagal, cukup lewati pencatatan jam.
@@ -82,13 +103,20 @@ async function loadTrucks(admin: SupabaseClient) {
         .limit(2000),
     ])
 
-  let [active, pending] = await query(`${BASE_COLUMNS}, ${TIME_COLUMNS}`)
-  let withTimes = true
-
-  if (missingColumn(active.error) || missingColumn(pending.error)) {
-    withTimes = false
-    ;[active, pending] = await query(BASE_COLUMNS)
+  // Kolom baru menyusul lewat migrasi: coba dari yang paling lengkap.
+  const tiers = [
+    { columns: `${BASE_COLUMNS}, ${TIME_COLUMNS}, ${LOCATION_COLUMNS}`, withTimes: true, withLocations: true },
+    { columns: `${BASE_COLUMNS}, ${TIME_COLUMNS}`, withTimes: true, withLocations: false },
+    { columns: BASE_COLUMNS, withTimes: false, withLocations: false },
+  ]
+  let tier = tiers[0]
+  let [active, pending] = await query(tier.columns)
+  for (const next of tiers.slice(1)) {
+    if (!missingColumn(active.error) && !missingColumn(pending.error)) break
+    tier = next
+    ;[active, pending] = await query(next.columns)
   }
+  const { withTimes, withLocations } = tier
 
   if (active.error) throw new Error(active.error.message)
 
@@ -96,14 +124,14 @@ async function loadTrucks(admin: SupabaseClient) {
     ...((active.data || []) as unknown as ActiveTruck[]),
     ...(withTimes ? ((pending.data || []) as unknown as ActiveTruck[]) : []),
   ]
-  return { trucks, withTimes }
+  return { trucks, withTimes, withLocations }
 }
 
 export async function runAutoTripStatus(
   admin: SupabaseClient,
   devices: TracksolidDevice[]
 ) {
-  const [{ trucks, withTimes }, fencesRes, linksRes, journeysRes] = await Promise.all([
+  const [{ trucks, withTimes, withLocations }, fencesRes, linksRes, journeysRes] = await Promise.all([
     loadTrucks(admin),
     admin.from('geofences').select('id, name, type, lat, lng, radius_m'),
     admin.from('gps_device_links').select('plate_key, imei'),
@@ -164,15 +192,23 @@ export async function runAutoTripStatus(
       prev?.updated_at && now.getTime() - new Date(prev.updated_at).getTime() < 30 * 60 * 1000
     const prevFence = prev?.fence_id ? fenceById.get(prev.fence_id) : undefined
 
-    const destination = truck.destination_fence_id
+    const originFence = truck.origin_fence_id ? fenceById.get(String(truck.origin_fence_id)) : undefined
+    const destinationFence = truck.destination_fence_id
       ? fenceById.get(String(truck.destination_fence_id))
       : undefined
-    const destinationCandidates = destination ? [destination] : unloading
-    const atDestination = destinationCandidates.find((fence) => inFence(point, fence))
+    const originArea = areaOf(originFence, loading)
+    const destinationArea = areaOf(destinationFence, unloading)
+    const atOrigin = inArea(point, originArea)
+    const atDestination = inArea(point, destinationArea)
+    // Sudah meninggalkan lokasi muat: di luar area + margin. Tanpa lokasi
+    // order: di luar SEMUA geofence muat (bisa tumpang tindih).
+    const leftOrigin = originFence
+      ? !inArea(point, originArea, LEAVE_MARGIN_M)
+      : outsideAllLoading(point)
     // Jam masuk area: pakai fence_entered_at dari unit_journey kalau unit
-    // sudah tercatat di area yang sama sejak cron sebelumnya.
-    const enteredAt = (fence: Geofence) =>
-      prevFresh && prev?.fence_id === String(fence.id) && prev.fence_entered_at
+    // sudah tercatat di salah satu fence area itu sejak cron sebelumnya.
+    const enteredAt = (fences: Geofence[]) =>
+      prevFresh && prev?.fence_entered_at && fences.some((fence) => prev.fence_id === String(fence.id))
         ? prev.fence_entered_at
         : nowIso
 
@@ -194,10 +230,11 @@ export async function runAutoTripStatus(
       if (
         !truck.origin_arrived_at &&
         (truck.trip_status === null || truck.trip_status === 'finished_loading') &&
-        stopped
+        stopped &&
+        atOrigin
       ) {
-        const origin = loading.find((fence) => inFence(point, fence))
-        if (origin) patch.origin_arrived_at = enteredAt(origin)
+        patch.origin_arrived_at = enteredAt(originArea.fences)
+        truck.origin_arrived_at = patch.origin_arrived_at
       }
 
       if (
@@ -206,7 +243,7 @@ export async function runAutoTripStatus(
         stopped &&
         atDestination
       ) {
-        patch.destination_arrived_at = enteredAt(atDestination)
+        patch.destination_arrived_at = enteredAt(destinationArea.fences)
         truck.destination_arrived_at = patch.destination_arrived_at
       }
 
@@ -214,28 +251,35 @@ export async function runAutoTripStatus(
     }
 
     // ---------- Status trip ----------
-    if (truck.trip_status === 'finished_loading') {
-      if (
-        moving &&
-        prevFresh &&
-        prevFence?.type === 'loading' &&
-        outsideAllLoading(point)
-      ) {
-        changes.push({ truck, to: 'on_going', where: `keluar dari ${prevFence.name}` })
+    const originName = originFence?.name || (prevFence?.type === 'loading' ? prevFence.name : 'lokasi muat')
+    if (truck.trip_status === null) {
+      // Finished Loading otomatis: sudah cukup lama di lokasi muat lalu pergi.
+      const loadedLongEnough =
+        Boolean(truck.origin_arrived_at) &&
+        now.getTime() - new Date(truck.origin_arrived_at as string).getTime() >= MIN_LOADING_MIN * 60000
+      if (withTimes && loadedLongEnough && moving && leftOrigin) {
+        changes.push({ truck, to: 'on_going', where: `selesai muat, keluar dari ${originName}` })
+      }
+    } else if (truck.trip_status === 'finished_loading') {
+      const wasAtOrigin = Boolean(truck.origin_arrived_at) || (prevFresh && prevFence?.type === 'loading')
+      if (moving && wasAtOrigin && leftOrigin) {
+        changes.push({ truck, to: 'on_going', where: `keluar dari ${originName}` })
       }
     } else if (truck.trip_status === 'on_going') {
       if (withTimes && truck.destination_arrived_at) {
         // Sudah tiba -> selesai bongkar saat meninggalkan area tujuan.
-        const outside = !destinationCandidates.some((fence) => inFence(point, widen(fence)))
+        const outside = !inArea(point, destinationArea, LEAVE_MARGIN_M)
         if (moving && outside) {
-          const left = prevFence && prevFence.type === 'unloading' ? prevFence.name : 'lokasi bongkar'
+          const left =
+            destinationFence?.name || (prevFence?.type === 'unloading' ? prevFence.name : 'lokasi bongkar')
           changes.push({ truck, to: 'finished_unloading', where: `meninggalkan ${left}` })
         } else if (pool && inFence(point, pool)) {
           // GPS terlewat saat keluar dari lokasi bongkar, unit sudah pulang.
           changes.push({ truck, to: 'finished_unloading', where: 'sudah kembali ke pool' })
         }
       } else if (!withTimes && stopped && atDestination) {
-        changes.push({ truck, to: 'finished_unloading', where: `tiba di ${atDestination.name}` })
+        const name = destinationFence?.name || unloading.find((fence) => inFence(point, fence))?.name
+        changes.push({ truck, to: 'finished_unloading', where: `tiba di ${name || 'lokasi bongkar'}` })
       }
     } else if (truck.trip_status === 'finished_unloading' && pool && inFence(point, pool)) {
       changes.push({ truck, to: 'complete', where: `masuk ${pool.name}` })
@@ -253,18 +297,20 @@ export async function runAutoTripStatus(
   let applied = 0
 
   for (const { truck, to, where } of changes) {
-    const from = truck.trip_status as TripStatus
+    const from = truck.trip_status
+    const patch: Record<string, string | null> = {
+      trip_status: to,
+      [TRIP_TIME_COLUMN[to]]: nowIso,
+      trip_status_updated_by: null,
+    }
+    // Belum mulai -> On Going: Finished Loading ikut tercatat.
+    if (from === null) patch.finished_loading_at = nowIso
     // Hanya kalau status belum diubah orang lain sejak dibaca.
-    const { data, error } = await admin
-      .from('order_trucks')
-      .update({
-        trip_status: to,
-        [TRIP_TIME_COLUMN[to]]: nowIso,
-        trip_status_updated_by: null,
-      })
-      .eq('id', truck.id)
-      .eq('trip_status', from)
-      .select('id')
+    const base = admin.from('order_trucks').update(patch).eq('id', truck.id)
+    const { data, error } = await (from === null
+      ? base.is('trip_status', null)
+      : base.eq('trip_status', from)
+    ).select('id')
 
     if (error || !data || data.length === 0) {
       if (error) console.error('AUTO TRIP UPDATE ERROR:', error)
@@ -277,7 +323,7 @@ export async function runAutoTripStatus(
       order_id: truck.order_id,
       action: 'trip_status_changed',
       field_name: AUTO_TRIP_FIELD,
-      old_value: TRIP_LABEL[from],
+      old_value: from ? TRIP_LABEL[from] : 'Belum Mulai',
       new_value: TRIP_LABEL[to],
       reason: `Unit ${truck.plate_number || '-'} (${truck.vehicle_type || '-'}) · otomatis: ${where}`,
       changed_by: null,
@@ -285,5 +331,36 @@ export async function runAutoTripStatus(
     if (historyError) console.error('AUTO TRIP HISTORY ERROR:', historyError)
   }
 
-  return { checked: trucks.length, applied, stamped: stamps.length }
+  const backfilled = withLocations ? await backfillFromHistory(admin, fences) : 0
+
+  return { checked: trucks.length, applied, stamped: stamps.length, backfilled }
+}
+
+// Unit yang baru Complete: lengkapi jam yang bolong (GPS putus, parkir,
+// terlewat cron 5 menit) dari riwayat rute. Satu kali per unit.
+async function backfillFromHistory(admin: SupabaseClient, fences: Geofence[]) {
+  const since = new Date(Date.now() - BACKFILL_DAYS * 86400e3).toISOString()
+  const { data, error } = await admin
+    .from('order_trucks')
+    .select(FILL_TRUCK_COLUMNS)
+    .eq('trip_status', 'complete')
+    .gte('completed_at', since)
+    .is('gps_times_filled_at', null)
+    .not('plate_number', 'is', null)
+    .order('completed_at', { ascending: true })
+    .limit(BACKFILL_PER_RUN)
+
+  if (error || !data || data.length === 0) {
+    if (error) console.error('AUTO TRIP BACKFILL ERROR:', error)
+    return 0
+  }
+
+  const trucks = data as unknown as Parameters<typeof fillTruckTimesFromGps>[1][]
+  const imeiByPlate = await loadImeiByPlate(admin, trucks.map((truck) => truck.plate_number))
+  let filled = 0
+  for (const truck of trucks) {
+    const result = await fillTruckTimesFromGps(admin, truck, { fences, imeiByPlate })
+    if (result.filled.length > 0) filled += 1
+  }
+  return filled
 }

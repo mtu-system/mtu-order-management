@@ -4,7 +4,7 @@ import type { Geofence } from '@/lib/geo'
 import { normalizePlate } from '@/lib/plate'
 import { MOVING_KMH } from '@/lib/alert-rules'
 import { type JourneyRow, findPool, inFence } from '@/lib/fleet'
-import { isLive } from '@/lib/fleet-journey'
+import { hasPosition, isLive } from '@/lib/fleet-journey'
 import { TRIP_LABEL, TRIP_TIME_COLUMN, type TripStatus } from '@/lib/trip-status'
 
 // ==========================================
@@ -90,7 +90,10 @@ export async function runAutoTripStatus(
 
   for (const truck of (trucksRes.data || []) as ActiveTruck[]) {
     const device = resolveDevice(normalizePlate(truck.plate_number))
-    if (!device || device.lat === null || device.lng === null || !isLive(device)) continue
+    // Keluar dari lokasi muat butuh GPS live (bergerak); tiba di bongkar / pool
+    // boleh dari posisi parkir (mesin mati, titik GPS tidak bertambah).
+    if (!device || device.lat === null || device.lng === null || !hasPosition(device)) continue
+    const live = isLive(device)
 
     const point = { lat: device.lat, lng: device.lng }
     const stopped = device.speed < MOVING_KMH
@@ -102,6 +105,7 @@ export async function runAutoTripStatus(
       const prevFence = prev?.fence_id ? fenceById.get(prev.fence_id) : undefined
 
       if (
+        live &&
         prevFresh &&
         prevFence?.type === 'loading' &&
         outsideAllLoading(point) &&

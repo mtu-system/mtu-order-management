@@ -8,7 +8,7 @@ import {
 } from '@/lib/tracksolid'
 import { normalizePlate } from '@/lib/plate'
 import { LIVE_MS, MOVING_KMH, evaluateAlerts } from '@/lib/alert-rules'
-import { updateJourneys } from '@/lib/fleet-journey'
+import { isParked, updateJourneys } from '@/lib/fleet-journey'
 import { runAutoTripStatus } from '@/lib/trip-auto'
 
 export const dynamic = 'force-dynamic'
@@ -164,7 +164,9 @@ export async function GET(request: Request) {
     const { candidates, driveEvaluated } = evaluateAlerts({
       tripStatus: truck.trip_status,
       hasDevice: Boolean(device),
-      live,
+      // Parkir mesin mati (titik GPS berhenti, perangkat masih online)
+      // bukan "GPS tidak update".
+      live: live || (device ? isParked(device) : false),
       speed: device ? device.speed : 0,
       urgent: Boolean(truck.urgent_shipment),
       now: nowDate,

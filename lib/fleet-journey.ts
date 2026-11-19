@@ -41,10 +41,32 @@ export function fenceAt(point: { lat: number; lng: number }, fences: Geofence[])
   return hits[0] ? { id: String(hits[0].id), type: hits[0].type } : null
 }
 
+function gpsAge(device: TracksolidDevice) {
+  if (!device.gpsTime) return Infinity
+  return Date.now() - new Date(device.gpsTime.replace(' ', 'T') + 'Z').getTime()
+}
+
 export function isLive(device: TracksolidDevice) {
-  if (!device.online || !device.gpsTime) return false
-  const age = Date.now() - new Date(device.gpsTime.replace(' ', 'T') + 'Z').getTime()
-  return age <= LIVE_MS
+  return device.online && gpsAge(device) <= LIVE_MS
+}
+
+// Parkir mesin mati: GPS berhenti mengirim titik baru, tapi perangkat masih
+// online (heartbeat). Posisi terakhir tetap posisi unit -- jangan dianggap
+// "GPS mati", dan boleh dipakai untuk cek geofence saat unit diam.
+export const PARKED_MAX_MS = 24 * 60 * 60 * 1000
+
+export function isParked(device: TracksolidDevice) {
+  return (
+    device.online &&
+    !device.accOn &&
+    device.speed < MOVING_KMH &&
+    gpsAge(device) <= PARKED_MAX_MS
+  )
+}
+
+// Posisi bisa dipercaya: live, atau sedang parkir.
+export function hasPosition(device: TracksolidDevice) {
+  return isLive(device) || isParked(device)
 }
 
 // Dipanggil cron (service role). Memperbarui unit_journey untuk semua
@@ -75,7 +97,7 @@ export async function updateJourneys(admin: SupabaseClient, devices: TracksolidD
   const upserts: (JourneyRow & { updated_at: string })[] = []
 
   for (const device of devices) {
-    if (device.lat === null || device.lng === null || !isLive(device)) continue
+    if (device.lat === null || device.lng === null || !hasPosition(device)) continue
 
     const point = { lat: device.lat, lng: device.lng }
     const plateKey = plateKeyForDevice(device, plateByImei, plateKeys)
